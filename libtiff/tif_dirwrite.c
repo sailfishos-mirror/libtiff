@@ -3325,6 +3325,20 @@ static int TIFFLinkDirectory(TIFF *tif)
             fflush(stderr);
         }
 
+        /* Ensure all written data is visible before reading directory chain.
+         * On some platforms (Cygwin in Docker), even after fsync, read
+         * operations may not see recently written data without another sync.
+         */
+#if defined(HAVE_UNISTD_H)
+        if (tif->tif_fd >= 0)
+        {
+            fsync(tif->tif_fd);
+            fprintf(stderr,
+                    "  [TIFFLinkDirectory] fsync before read loop\n");
+            fflush(stderr);
+        }
+#endif
+
         while (1)
         {
             uint16_t dircount;
