@@ -2224,24 +2224,54 @@ static int test_curdircount_setting(unsigned int openMode)
     fprintf(stderr, "  [test_curdircount_setting] Reopen done, tif=%p\n",
             (void *)tif);
     fflush(stderr);
+    if (!tif)
+    {
+        fprintf(stderr,
+                "  [test_curdircount_setting] ERROR: Second TIFFOpen returned "
+                "NULL!\n");
+        fflush(stderr);
+        return 1;
+    }
+    fprintf(stderr,
+            "  [test_curdircount_setting] After reopen: "
+            "TIFFNumberOfDirectories=%u\n",
+            TIFFNumberOfDirectories(tif));
+    fflush(stderr);
     CHECKCURDIRNUM_M(tif, 0, __LINE__);
     fprintf(stderr, "  [test_curdircount_setting] Calling TIFFRewriteDirectory\n");
     fflush(stderr);
-    TIFFRewriteDirectory(tif);
-    fprintf(stderr, "  [test_curdircount_setting] TIFFRewriteDirectory done\n");
+    int rewrite_ret = TIFFRewriteDirectory(tif);
+    fprintf(stderr,
+            "  [test_curdircount_setting] TIFFRewriteDirectory returned %d\n",
+            rewrite_ret);
+    fflush(stderr);
+    fprintf(stderr,
+            "  [test_curdircount_setting] After rewrite: "
+            "TIFFNumberOfDirectories=%u\n",
+            TIFFNumberOfDirectories(tif));
     fflush(stderr);
     CHECKCURDIRNUM_M(tif, 0, __LINE__);
     fprintf(stderr, "  [test_curdircount_setting] Calling TIFFCreateDirectory\n");
     fflush(stderr);
     TIFFCreateDirectory(tif);
-    fprintf(stderr, "  [test_curdircount_setting] Calling TIFFWriteDirectory\n");
+    fprintf(stderr, "  [test_curdircount_setting] TIFFCreateDirectory done\n");
     fflush(stderr);
-    TIFFWriteDirectory(tif);
-    fprintf(stderr, "  [test_curdircount_setting] TIFFWriteDirectory done\n");
+    fprintf(stderr, "  [test_curdircount_setting] Calling TIFFWriteDirectory "
+                    "(empty dir)\n");
+    fflush(stderr);
+    int write_ret = TIFFWriteDirectory(tif);
+    fprintf(stderr,
+            "  [test_curdircount_setting] TIFFWriteDirectory returned %d\n",
+            write_ret);
+    fflush(stderr);
+    fprintf(stderr,
+            "  [test_curdircount_setting] After write: "
+            "TIFFNumberOfDirectories=%u\n",
+            TIFFNumberOfDirectories(tif));
     fflush(stderr);
     CHECKCURDIRNUM_M(tif, 2, __LINE__);
     fprintf(stderr,
-            "  [test_curdircount_setting] Calling TIFFNumberOfDirectories\n");
+            "  [test_curdircount_setting] Final TIFFNumberOfDirectories\n");
     fflush(stderr);
     numdir = TIFFNumberOfDirectories(tif);
     fprintf(stderr,
