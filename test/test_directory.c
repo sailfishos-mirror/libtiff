@@ -355,6 +355,10 @@ static int test_arbitrary_directrory_loading(unsigned int openMode)
     int expected_original_dirnumber;
     tdir_t expected_curdir = (tdir_t)(-1);
 
+    fprintf(stderr, "  [test_arbitrary_directrory_loading] ENTER openMode=%u\n",
+            openMode);
+    fflush(stderr);
+
     if (openMode >= (sizeof(openModeStrings) / sizeof(openModeStrings[0])))
     {
         fprintf(stderr, "Index %u for openMode parameter out of range.\n",
@@ -814,6 +818,10 @@ static int test_SubIFD_directrory_handling(unsigned int openMode)
     tdir_t currentDirNumber;
     int blnRead;
 
+    fprintf(stderr, "  [test_SubIFD_directrory_handling] ENTER openMode=%u\n",
+            openMode);
+    fflush(stderr);
+
     if (openMode >= (sizeof(openModeStrings) / sizeof(openModeStrings[0])))
     {
         fprintf(stderr, "Index %u for openMode parameter out of range.\n",
@@ -1089,6 +1097,10 @@ static int test_SetSubDirectory_failure(unsigned int openMode)
     TIFF *tif;
     tdir_t expected_curdir = 0;
 
+    fprintf(stderr, "  [test_SetSubDirectory_failure] ENTER openMode=%u\n",
+            openMode);
+    fflush(stderr);
+
     if (openMode >= (sizeof(openModeStrings) / sizeof(openModeStrings[0])))
     {
         fprintf(stderr, "Index %u for openMode parameter out of range.\n",
@@ -1232,6 +1244,10 @@ static int test_rewrite_lastdir_offset(unsigned int openMode)
     int i, count;
     TIFF *tif;
     uint64_t off1, off2;
+
+    fprintf(stderr, "  [test_rewrite_lastdir_offset] ENTER openMode=%u\n",
+            openMode);
+    fflush(stderr);
 
     if (openMode >= (sizeof(openModeStrings) / sizeof(openModeStrings[0])))
     {
@@ -1392,6 +1408,9 @@ static int test_lastdir_offset(unsigned int openMode)
     uint64_t offsets_base[N_DIRECTORIES];
     uint64_t offsets_comparison[N_DIRECTORIES];
     TIFF *tif;
+
+    fprintf(stderr, "  [test_lastdir_offset] ENTER openMode=%u\n", openMode);
+    fflush(stderr);
 
     if (openMode >= (sizeof(openModeStrings) / sizeof(openModeStrings[0])))
     {
@@ -1588,6 +1607,12 @@ static int test_current_dirnum_incrementing(int testcase, unsigned int openMode)
     char filename[128] = {0};
     tdir_t lastdir;
     tdir_t expected_curdir = (tdir_t)(-1);
+
+    fprintf(stderr,
+            "  [test_current_dirnum_incrementing] ENTER testcase=%d "
+            "openMode=%u\n",
+            testcase, openMode);
+    fflush(stderr);
 
     if (openMode >= (sizeof(openModeStrings) / sizeof(openModeStrings[0])))
     {
@@ -2120,6 +2145,10 @@ static int test_curdircount_setting(unsigned int openMode)
     TIFF *tif;
     tdir_t numdir;
 
+    fprintf(stderr, "  [test_curdircount_setting] ENTER openMode=%u\n",
+            openMode);
+    fflush(stderr);
+
     if (openMode >= (sizeof(openModeStrings) / sizeof(openModeStrings[0])))
     {
         fprintf(stderr, "Index %u for openMode parameter out of range.\n",
@@ -2129,15 +2158,22 @@ static int test_curdircount_setting(unsigned int openMode)
 
     /* Get individual filenames and delete existent ones. */
     sprintf(filename, "test_dircount_%s.tif", openModeStrings[openMode]);
+    fprintf(stderr, "  [test_curdircount_setting] unlink(%s)\n", filename);
+    fflush(stderr);
     unlink(filename);
 
     /* Create a file and write N_DIRECTORIES_2 directories to it. */
+    fprintf(stderr, "  [test_curdircount_setting] TIFFOpen(%s, %s)\n", filename,
+            openModeStrings[openMode]);
+    fflush(stderr);
     tif = TIFFOpen(filename, openModeStrings[openMode]);
     if (!tif)
     {
         fprintf(stderr, "Can't create %s\n", filename);
         return 1;
     }
+    fprintf(stderr, "  [test_curdircount_setting] TIFFOpen succeeded\n");
+    fflush(stderr);
 
     /*-- Standard case for writing sequential IFDs. --*/
     for (int i = 0; i < N_DIRECTORIES_2; i++)
@@ -2213,6 +2249,10 @@ static int test_solitary_custom_directory(unsigned int openMode)
 {
     char filename[128] = {0};
 
+    fprintf(stderr, "  [test_solitary_custom_directory] ENTER openMode=%u\n",
+            openMode);
+    fflush(stderr);
+
     if (openMode >= (sizeof(openModeStrings) / sizeof(openModeStrings[0])))
     {
         fprintf(stderr, "Index %u for openMode parameter out of range.\n",
@@ -2223,6 +2263,9 @@ static int test_solitary_custom_directory(unsigned int openMode)
     /* Get individual filenames and delete existent ones. */
     sprintf(filename, "test_solitary_custom_directory_%s.tif",
             openModeStrings[openMode]);
+    fprintf(stderr, "  [test_solitary_custom_directory] unlink(%s)\n",
+            filename);
+    fflush(stderr);
     unlink(filename);
 
     /* Create a dummy file without IFD. */
@@ -2293,6 +2336,8 @@ failure:
 
 int main(void)
 {
+    fprintf(stderr, "=== test_directory: STARTING ===\n");
+    fflush(stderr);
 
     unsigned int openModeMax =
         (sizeof(openModeStrings) / sizeof(openModeStrings[0]));
@@ -2300,28 +2345,52 @@ int main(void)
     {
         fprintf(stderr, "\n--- Test for %s open option. ---\n",
                 openModeText[openMode]);
+        fflush(stderr);
+
+        fprintf(stderr, "[DEBUG] Starting test_curdircount_setting(%u)...\n",
+                openMode);
+        fflush(stderr);
         if (test_curdircount_setting(openMode))
         {
             fprintf(stderr, "Failed during %s test_curdircount_setting test.\n",
                     openModeText[openMode]);
             return 1;
         }
+        fprintf(stderr, "[DEBUG] Completed test_curdircount_setting(%u)\n",
+                openMode);
+        fflush(stderr);
 
+        fprintf(stderr, "[DEBUG] Starting test_lastdir_offset(%u)...\n",
+                openMode);
+        fflush(stderr);
         if (test_lastdir_offset(openMode))
         {
             fprintf(stderr, "Failed during %s WriteDirectory test.\n",
                     openModeText[openMode]);
             return 1;
         }
+        fprintf(stderr, "[DEBUG] Completed test_lastdir_offset(%u)\n",
+                openMode);
+        fflush(stderr);
 
+        fprintf(stderr, "[DEBUG] Starting test_rewrite_lastdir_offset(%u)...\n",
+                openMode);
+        fflush(stderr);
         if (test_rewrite_lastdir_offset(openMode))
         {
             fprintf(stderr, "Failed during %s RewriteDirectory test.\n",
                     openModeText[openMode]);
             return 1;
         }
+        fprintf(stderr, "[DEBUG] Completed test_rewrite_lastdir_offset(%u)\n",
+                openMode);
+        fflush(stderr);
 
         /* Test arbitrary directory loading */
+        fprintf(stderr,
+                "[DEBUG] Starting test_arbitrary_directrory_loading(%u)...\n",
+                openMode);
+        fflush(stderr);
         if (test_arbitrary_directrory_loading(openMode))
         {
             fprintf(stderr,
@@ -2329,8 +2398,16 @@ int main(void)
                     openModeText[openMode]);
             return 1;
         }
+        fprintf(stderr,
+                "[DEBUG] Completed test_arbitrary_directrory_loading(%u)\n",
+                openMode);
+        fflush(stderr);
 
         /* Test SubIFD writing and reading */
+        fprintf(stderr,
+                "[DEBUG] Starting test_SubIFD_directrory_handling(%u)...\n",
+                openMode);
+        fflush(stderr);
         if (test_SubIFD_directrory_handling(openMode))
         {
             fprintf(stderr,
@@ -2338,13 +2415,25 @@ int main(void)
                     openModeText[openMode]);
             return 1;
         }
+        fprintf(stderr,
+                "[DEBUG] Completed test_SubIFD_directrory_handling(%u)\n",
+                openMode);
+        fflush(stderr);
+
         /* Test for failure in TIFFSetSubDirectory() */
+        fprintf(stderr,
+                "[DEBUG] Starting test_SetSubDirectory_failure(%u)...\n",
+                openMode);
+        fflush(stderr);
         if (test_SetSubDirectory_failure(openMode))
         {
             fprintf(stderr, "Failed during %s SetSubDirectory_failure test.\n",
                     openModeText[openMode]);
             return 1;
         }
+        fprintf(stderr, "[DEBUG] Completed test_SetSubDirectory_failure(%u)\n",
+                openMode);
+        fflush(stderr);
     }
 
     /* Test for correct "current directory number" incrementing.*/
@@ -2357,6 +2446,12 @@ int main(void)
                     "testcase %d. "
                     "---\n",
                     openModeText[openMode], i);
+            fflush(stderr);
+            fprintf(stderr,
+                    "[DEBUG] Starting test_current_dirnum_incrementing(%d, "
+                    "%u)...\n",
+                    i, openMode);
+            fflush(stderr);
             if (test_current_dirnum_incrementing(i, openMode))
             {
                 fprintf(stderr,
@@ -2365,6 +2460,11 @@ int main(void)
                         i, openModeText[openMode]);
                 return 1;
             }
+            fprintf(stderr,
+                    "[DEBUG] Completed test_current_dirnum_incrementing(%d, "
+                    "%u)\n",
+                    i, openMode);
+            fflush(stderr);
         }
     }
 
@@ -2375,6 +2475,11 @@ int main(void)
         fprintf(stderr,
                 "\n--- Test for test_solitary_custom_directory %s ---\n",
                 openModeText[openMode]);
+        fflush(stderr);
+        fprintf(stderr,
+                "[DEBUG] Starting test_solitary_custom_directory(%u)...\n",
+                openMode);
+        fflush(stderr);
         if (test_solitary_custom_directory(openMode))
         {
             fprintf(stderr,
@@ -2382,7 +2487,13 @@ int main(void)
                     openModeText[openMode]);
             return 1;
         }
+        fprintf(stderr,
+                "[DEBUG] Completed test_solitary_custom_directory(%u)\n",
+                openMode);
+        fflush(stderr);
     }
 
+    fprintf(stderr, "=== test_directory: ALL TESTS PASSED ===\n");
+    fflush(stderr);
     return 0;
 }
