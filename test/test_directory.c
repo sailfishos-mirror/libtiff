@@ -201,6 +201,17 @@ static int write_data_to_current_directory(TIFF *tif, int i, bool is_corrupted)
         return 1;
     }
 
+    /* Log strip offset for debugging */
+    {
+        uint64_t *stripoffsets = NULL;
+        if (TIFFGetField(tif, TIFFTAG_STRIPOFFSETS, &stripoffsets) && stripoffsets)
+        {
+            fprintf(stderr, "  [write_data] i=%d, STRIPOFFSETS[0]=%" PRIu64 "\n",
+                    i, stripoffsets[0]);
+            fflush(stderr);
+        }
+    }
+
     return 0;
 }
 
@@ -368,6 +379,20 @@ static int get_dir_offsets(const char *filename, uint64_t *offsets,
         }
 
         offsets[dirn] = TIFFCurrentDirOffset(tif);
+
+        /* Log strip offset for debugging */
+        {
+            uint64_t *stripoffsets = NULL;
+            if (TIFFGetField(tif, TIFFTAG_STRIPOFFSETS, &stripoffsets) &&
+                stripoffsets)
+            {
+                fprintf(stderr,
+                        "  [get_dir_offsets] dir %u: offset=%" PRIu64
+                        ", STRIPOFFSETS[0]=%" PRIu64 "\n",
+                        dirn, offsets[dirn], stripoffsets[0]);
+                fflush(stderr);
+            }
+        }
 
         /* Check, if dirn is requested directory */
         if (!is_requested_directory(tif, dirn, filename))
