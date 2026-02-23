@@ -49,6 +49,33 @@
 #include <unistd.h>
 #endif
 
+#include <fcntl.h>
+#include <sys/stat.h>
+
+/* Helper function to get file size for debugging */
+static long get_file_size(const char *filename)
+{
+    struct stat st;
+    if (stat(filename, &st) == 0)
+        return (long)st.st_size;
+    return -1;
+}
+
+/* Helper function to sync file to disk for debugging */
+static void sync_file(const char *filename)
+{
+    int fd = open(filename, O_RDONLY);
+    if (fd >= 0)
+    {
+#ifdef _WIN32
+        _commit(fd);
+#else
+        fsync(fd);
+#endif
+        close(fd);
+    }
+}
+
 /* Global settings for the test image. It is not save to change. */
 #define SPP 3            /* Samples per pixel */
 #define N_DIRECTORIES 10 /* Number of directories to write */
@@ -2210,7 +2237,10 @@ static int test_curdircount_setting(unsigned int openMode)
                     "TIFFClose\n");
     fflush(stderr);
     TIFFClose(tif);
-    fprintf(stderr, "  [test_curdircount_setting] First TIFFClose done\n");
+    sync_file(filename);
+    fprintf(stderr,
+            "  [test_curdircount_setting] First TIFFClose done, file size=%ld\n",
+            get_file_size(filename));
     fflush(stderr);
 
     /* Simulate case for trap in TIFFLinkDirectory() where tif_lastdiroff is set
@@ -2238,12 +2268,18 @@ static int test_curdircount_setting(unsigned int openMode)
             TIFFNumberOfDirectories(tif));
     fflush(stderr);
     CHECKCURDIRNUM_M(tif, 0, __LINE__);
+    fprintf(stderr,
+            "  [test_curdircount_setting] Before TIFFRewriteDirectory: file "
+            "size=%ld\n",
+            get_file_size(filename));
+    fflush(stderr);
     fprintf(stderr, "  [test_curdircount_setting] Calling TIFFRewriteDirectory\n");
     fflush(stderr);
     int rewrite_ret = TIFFRewriteDirectory(tif);
     fprintf(stderr,
-            "  [test_curdircount_setting] TIFFRewriteDirectory returned %d\n",
-            rewrite_ret);
+            "  [test_curdircount_setting] TIFFRewriteDirectory returned %d, "
+            "file size=%ld\n",
+            rewrite_ret, get_file_size(filename));
     fflush(stderr);
     fprintf(stderr,
             "  [test_curdircount_setting] After rewrite: "
@@ -2254,15 +2290,19 @@ static int test_curdircount_setting(unsigned int openMode)
     fprintf(stderr, "  [test_curdircount_setting] Calling TIFFCreateDirectory\n");
     fflush(stderr);
     TIFFCreateDirectory(tif);
-    fprintf(stderr, "  [test_curdircount_setting] TIFFCreateDirectory done\n");
+    fprintf(stderr,
+            "  [test_curdircount_setting] TIFFCreateDirectory done, file "
+            "size=%ld\n",
+            get_file_size(filename));
     fflush(stderr);
     fprintf(stderr, "  [test_curdircount_setting] Calling TIFFWriteDirectory "
                     "(empty dir)\n");
     fflush(stderr);
     int write_ret = TIFFWriteDirectory(tif);
     fprintf(stderr,
-            "  [test_curdircount_setting] TIFFWriteDirectory returned %d\n",
-            write_ret);
+            "  [test_curdircount_setting] TIFFWriteDirectory returned %d, file "
+            "size=%ld\n",
+            write_ret, get_file_size(filename));
     fflush(stderr);
     fprintf(stderr,
             "  [test_curdircount_setting] After write: "
@@ -2279,7 +2319,11 @@ static int test_curdircount_setting(unsigned int openMode)
             numdir);
     fflush(stderr);
     TIFFClose(tif);
-    fprintf(stderr, "  [test_curdircount_setting] Second TIFFClose done\n");
+    sync_file(filename);
+    fprintf(stderr,
+            "  [test_curdircount_setting] Second TIFFClose done, file "
+            "size=%ld\n",
+            get_file_size(filename));
     fflush(stderr);
 
     /* Testcase iswrittentofile=0 for SetSubDirectory(0). */
