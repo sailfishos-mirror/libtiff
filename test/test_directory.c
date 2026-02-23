@@ -2257,7 +2257,25 @@ static int test_curdircount_setting(unsigned int openMode)
             "  [test_curdircount_setting] Third TIFFOpen with r+ mode\n");
     fflush(stderr);
     tif = TIFFOpen(filename, "r+");
-    fprintf(stderr, "  [test_curdircount_setting] Calling TIFFSetSubDirectory\n");
+    fprintf(stderr,
+            "  [test_curdircount_setting] Third TIFFOpen done, tif=%p\n",
+            (void *)tif);
+    fflush(stderr);
+    if (!tif)
+    {
+        fprintf(stderr,
+                "  [test_curdircount_setting] ERROR: Third TIFFOpen returned "
+                "NULL!\n");
+        fflush(stderr);
+        return 1;
+    }
+    fprintf(stderr,
+            "  [test_curdircount_setting] TIFFCurrentDirectory=%u before "
+            "SetSubDirectory\n",
+            TIFFCurrentDirectory(tif));
+    fflush(stderr);
+    fprintf(stderr,
+            "  [test_curdircount_setting] Calling TIFFSetSubDirectory(tif, 0)\n");
     fflush(stderr);
     TIFFSetSubDirectory(tif, 0);
     fprintf(stderr, "  [test_curdircount_setting] TIFFSetSubDirectory done\n");
