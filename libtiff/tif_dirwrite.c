@@ -31,6 +31,13 @@
 #include <float.h> /*--: for Rational2Double */
 #include <math.h>  /*--: for Rational2Double */
 
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+#ifdef HAVE_IO_H
+#include <io.h>
+#endif
+
 #ifdef HAVE_IEEEFP
 #define TIFFCvtNativeToIEEEFloat(tif, n, fp)
 #define TIFFCvtNativeToIEEEDouble(tif, n, dp)
@@ -3176,6 +3183,19 @@ static int TIFFWriteDirectoryTagData(TIFF *tif, uint32_t *ndir,
 static int TIFFLinkDirectory(TIFF *tif)
 {
     static const char module[] = "TIFFLinkDirectory";
+
+    /*
+     * Flush any pending writes to ensure SEEK_END returns the correct
+     * file position. This is needed on some platforms (like Cygwin in Docker)
+     * where the file size metadata may not be updated immediately after writes.
+     */
+#if defined(HAVE_UNISTD_H)
+    if (tif->tif_fd >= 0)
+        fsync(tif->tif_fd);
+#elif defined(HAVE_IO_H) && defined(_WIN32)
+    if (tif->tif_fd >= 0)
+        _commit(tif->tif_fd);
+#endif
 
     tif->tif_diroff = (TIFFSeekFile(tif, 0, SEEK_END) + 1) & (~((toff_t)1));
 
