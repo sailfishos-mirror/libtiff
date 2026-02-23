@@ -2176,8 +2176,15 @@ static int test_curdircount_setting(unsigned int openMode)
     fflush(stderr);
 
     /*-- Standard case for writing sequential IFDs. --*/
+    fprintf(stderr, "  [test_curdircount_setting] Starting IFD write loop\n");
+    fflush(stderr);
     for (int i = 0; i < N_DIRECTORIES_2; i++)
     {
+        fprintf(stderr,
+                "  [test_curdircount_setting] Loop i=%d: calling "
+                "write_data_to_current_directory\n",
+                i);
+        fflush(stderr);
         if (write_data_to_current_directory(tif, i, false))
         {
             fprintf(stderr,
@@ -2185,50 +2192,120 @@ static int test_curdircount_setting(unsigned int openMode)
                     filename, __LINE__);
             goto failure;
         }
+        fprintf(stderr,
+                "  [test_curdircount_setting] Loop i=%d: calling "
+                "TIFFWriteDirectory\n",
+                i);
+        fflush(stderr);
         TIFFWriteDirectory_M(tif, filename, __LINE__);
+        fprintf(stderr,
+                "  [test_curdircount_setting] Loop i=%d: TIFFWriteDirectory "
+                "done\n",
+                i);
+        fflush(stderr);
         expected_curdir++;
         CHECKCURDIRNUM_M(tif, expected_curdir, __LINE__);
     }
+    fprintf(stderr, "  [test_curdircount_setting] IFD write loop done, calling "
+                    "TIFFClose\n");
+    fflush(stderr);
     TIFFClose(tif);
+    fprintf(stderr, "  [test_curdircount_setting] First TIFFClose done\n");
+    fflush(stderr);
 
     /* Simulate case for trap in TIFFLinkDirectory() where tif_lastdiroff is set
      * but tif_curdircount is not.
      * https://gitlab.com/libtiff/libtiff/-/merge_requests/634#note_1990250515
      */
+    fprintf(stderr,
+            "  [test_curdircount_setting] Reopening file with r+ mode\n");
+    fflush(stderr);
     tif = TIFFOpen(filename, "r+");
+    fprintf(stderr, "  [test_curdircount_setting] Reopen done, tif=%p\n",
+            (void *)tif);
+    fflush(stderr);
     CHECKCURDIRNUM_M(tif, 0, __LINE__);
+    fprintf(stderr, "  [test_curdircount_setting] Calling TIFFRewriteDirectory\n");
+    fflush(stderr);
     TIFFRewriteDirectory(tif);
+    fprintf(stderr, "  [test_curdircount_setting] TIFFRewriteDirectory done\n");
+    fflush(stderr);
     CHECKCURDIRNUM_M(tif, 0, __LINE__);
+    fprintf(stderr, "  [test_curdircount_setting] Calling TIFFCreateDirectory\n");
+    fflush(stderr);
     TIFFCreateDirectory(tif);
+    fprintf(stderr, "  [test_curdircount_setting] Calling TIFFWriteDirectory\n");
+    fflush(stderr);
     TIFFWriteDirectory(tif);
+    fprintf(stderr, "  [test_curdircount_setting] TIFFWriteDirectory done\n");
+    fflush(stderr);
     CHECKCURDIRNUM_M(tif, 2, __LINE__);
+    fprintf(stderr,
+            "  [test_curdircount_setting] Calling TIFFNumberOfDirectories\n");
+    fflush(stderr);
     numdir = TIFFNumberOfDirectories(tif);
+    fprintf(stderr,
+            "  [test_curdircount_setting] TIFFNumberOfDirectories=%u\n",
+            numdir);
+    fflush(stderr);
     TIFFClose(tif);
+    fprintf(stderr, "  [test_curdircount_setting] Second TIFFClose done\n");
+    fflush(stderr);
 
     /* Testcase iswrittentofile=0 for SetSubDirectory(0). */
+    fprintf(stderr,
+            "  [test_curdircount_setting] Third TIFFOpen with r+ mode\n");
+    fflush(stderr);
     tif = TIFFOpen(filename, "r+");
+    fprintf(stderr, "  [test_curdircount_setting] Calling TIFFSetSubDirectory\n");
+    fflush(stderr);
     TIFFSetSubDirectory(tif, 0);
+    fprintf(stderr, "  [test_curdircount_setting] TIFFSetSubDirectory done\n");
+    fflush(stderr);
     /* After TIFFSetSubDirectory(tif, 0) the read IFD is re-written as a
      * new IFD and tif_curdir and tif_curdircount shall be updated.
      * The latter was not the case before resetting iswrittentofile=0 at
      * SetSubDirectory(0). Even an IFD-Loop was then wrongly assumed at the next
      * TIFFNumberOfDirectories() call. */
+    fprintf(stderr,
+            "  [test_curdircount_setting] Calling TIFFWriteDirectory after "
+            "SetSubDirectory(0)\n");
+    fflush(stderr);
     TIFFWriteDirectory(tif);
+    fprintf(stderr, "  [test_curdircount_setting] TIFFWriteDirectory done\n");
+    fflush(stderr);
     CHECKCURDIRNUM_M(tif, numdir, __LINE__);
 
     /* Unlink all directories. */
+    fprintf(stderr,
+            "  [test_curdircount_setting] Getting TIFFNumberOfDirectories\n");
+    fflush(stderr);
     numdir = TIFFNumberOfDirectories(tif);
+    fprintf(stderr,
+            "  [test_curdircount_setting] Unlinking %u directories\n", numdir);
+    fflush(stderr);
     for (int i = numdir; 0 < i; i--)
     {
+        fprintf(stderr,
+                "  [test_curdircount_setting] TIFFUnlinkDirectory(%d)\n", i);
+        fflush(stderr);
         TIFFUnlinkDirectory(tif, i);
         CHECKCURDIRNUM_M(tif, (tdir_t)(-1), __LINE__);
     }
 
+    fprintf(stderr, "  [test_curdircount_setting] Final TIFFClose\n");
+    fflush(stderr);
     TIFFClose(tif);
+    fprintf(stderr, "  [test_curdircount_setting] Cleanup unlink\n");
+    fflush(stderr);
     unlink(filename);
+    fprintf(stderr, "  [test_curdircount_setting] EXIT success\n");
+    fflush(stderr);
     return 0;
 
 failure:
+    fprintf(stderr, "  [test_curdircount_setting] EXIT failure\n");
+    fflush(stderr);
     TIFFClose(tif);
     return 1;
 } /*-- test_curdircount_setting() --*/
