@@ -1456,6 +1456,9 @@ static int test_lastdir_offset(unsigned int openMode)
 
     /* First file: open it and add multiple directories. This uses the
      * lastdir optimization. */
+    fprintf(stderr, "  [test_lastdir_offset] Creating optimized file: %s\n",
+            filename_optimized);
+    fflush(stderr);
     tif = TIFFOpen(filename_optimized, openModeStrings[openMode]);
     if (!tif)
     {
@@ -1478,10 +1481,18 @@ static int test_lastdir_offset(unsigned int openMode)
         }
     }
     TIFFClose(tif);
+    sync_file(filename_optimized);
+    fprintf(stderr,
+            "  [test_lastdir_offset] Optimized file size: %ld\n",
+            get_file_size(filename_optimized));
+    fflush(stderr);
     tif = NULL;
 
     /* Second file: close it after adding each directory. This avoids the
      * lastdir optimization. */
+    fprintf(stderr, "  [test_lastdir_offset] Creating non-optimized file: %s\n",
+            filename_non_optimized);
+    fflush(stderr);
     for (i = 0; i < N_DIRECTORIES; i++)
     {
         if (write_directory_to_closed_file(filename_non_optimized, openMode, i))
@@ -1490,7 +1501,12 @@ static int test_lastdir_offset(unsigned int openMode)
                     filename_non_optimized);
             goto failure;
         }
+        sync_file(filename_non_optimized);
     }
+    fprintf(stderr,
+            "  [test_lastdir_offset] Non-optimized file size: %ld\n",
+            get_file_size(filename_non_optimized));
+    fflush(stderr);
 
     /* Check that both files have the expected number of directories */
     if (count_directories(filename_optimized, &count_optimized))
@@ -1534,6 +1550,13 @@ static int test_lastdir_offset(unsigned int openMode)
                 filename_optimized);
         goto failure;
     }
+    fprintf(stderr, "  [test_lastdir_offset] Base offsets (optimized file):\n");
+    for (i = 0; i < N_DIRECTORIES; i++)
+    {
+        fprintf(stderr, "    dir[%d] = %" PRIu64 "\n", i, offsets_base[i]);
+    }
+    fflush(stderr);
+
     for (int file_i = 0; file_i < 2; ++file_i)
     {
         const char *filename =
@@ -1550,6 +1573,18 @@ static int test_lastdir_offset(unsigned int openMode)
                         filename, mode);
                 goto failure;
             }
+            fprintf(stderr,
+                    "  [test_lastdir_offset] Comparison offsets (file=%s, "
+                    "mode=%u):\n",
+                    (file_i == 0) ? "optimized" : "non-optimized", mode);
+            for (i = 0; i < N_DIRECTORIES; i++)
+            {
+                fprintf(stderr, "    dir[%d] = %" PRIu64 "%s\n", i,
+                        offsets_comparison[i],
+                        (offsets_base[i] != offsets_comparison[i]) ? " MISMATCH"
+                                                                   : "");
+            }
+            fflush(stderr);
             for (i = 0; i < N_DIRECTORIES; i++)
             {
                 if (offsets_base[i] != offsets_comparison[i])
