@@ -214,12 +214,24 @@ static int write_directory_to_closed_file(const char *filename,
     char strAux[8] = {0};
     strncpy(strAux, openModeStrings[openMode], sizeof(strAux) - 1);
     strAux[0] = 'a';
+
+    fprintf(stderr,
+            "  [write_directory_to_closed_file] i=%d, mode='%s', file_size "
+            "before open=%ld\n",
+            i, strAux, get_file_size(filename));
+    fflush(stderr);
+
     tif = TIFFOpen(filename, strAux);
     if (!tif)
     {
         fprintf(stderr, "Can't create/open %s\n", filename);
         return 1;
     }
+
+    fprintf(stderr, "  [write_directory_to_closed_file] i=%d, TIFFIsBigTIFF=%d, "
+                    "TIFFCurrentDirOffset=%" PRIu64 "\n",
+            i, TIFFIsBigTIFF(tif), TIFFCurrentDirOffset(tif));
+    fflush(stderr);
 
     if (write_data_to_current_directory(tif, i, false))
     {
@@ -237,7 +249,19 @@ static int write_directory_to_closed_file(const char *filename,
         return 1;
     }
 
+    fprintf(stderr, "  [write_directory_to_closed_file] i=%d, after write: "
+                    "TIFFCurrentDirOffset=%" PRIu64 ", TIFFNumberOfDirectories=%"
+                    PRIu16 "\n",
+            i, TIFFCurrentDirOffset(tif), TIFFNumberOfDirectories(tif));
+    fflush(stderr);
+
     TIFFClose(tif);
+
+    fprintf(stderr, "  [write_directory_to_closed_file] i=%d, file_size after "
+                    "close=%ld\n",
+            i, get_file_size(filename));
+    fflush(stderr);
+
     return 0;
 }
 
@@ -324,6 +348,11 @@ static int get_dir_offsets(const char *filename, uint64_t *offsets,
         fprintf(stderr, "Can't read %s\n", filename);
         return 1;
     }
+
+    fprintf(stderr, "  [get_dir_offsets] %s: BigTIFF=%d, header_size implied by "
+                    "first offset\n",
+            filename, TIFFIsBigTIFF(tif));
+    fflush(stderr);
 
     for (i = 0; i < N_DIRECTORIES; i++)
     {
@@ -1465,6 +1494,10 @@ static int test_lastdir_offset(unsigned int openMode)
         fprintf(stderr, "Can't create %s\n", filename_optimized);
         return 1;
     }
+    fprintf(stderr, "  [test_lastdir_offset] Optimized file: TIFFIsBigTIFF=%d, "
+                    "mode='%s'\n",
+            TIFFIsBigTIFF(tif), openModeStrings[openMode]);
+    fflush(stderr);
     for (i = 0; i < N_DIRECTORIES; i++)
     {
         if (write_data_to_current_directory(tif, i, false))
@@ -1479,6 +1512,11 @@ static int test_lastdir_offset(unsigned int openMode)
                     filename_optimized);
             goto failure;
         }
+        fprintf(stderr,
+                "  [test_lastdir_offset] optimized dir %d: "
+                "TIFFCurrentDirOffset=%" PRIu64 "\n",
+                i, TIFFCurrentDirOffset(tif));
+        fflush(stderr);
     }
     TIFFClose(tif);
     sync_file(filename_optimized);
