@@ -3184,6 +3184,14 @@ static int TIFFLinkDirectory(TIFF *tif)
 {
     static const char module[] = "TIFFLinkDirectory";
 
+    fprintf(stderr, "  [TIFFLinkDirectory] ENTER: tif_lastdiroff=%" PRIu64
+                    ", header.tiff_diroff=%u\n",
+            tif->tif_lastdiroff,
+            (!(tif->tif_flags & TIFF_BIGTIFF))
+                ? tif->tif_header.classic.tiff_diroff
+                : (uint32_t)tif->tif_header.big.tiff_diroff);
+    fflush(stderr);
+
     /*
      * Flush any pending writes to ensure SEEK_END returns the correct
      * file position. This is only needed when appending to a file that has
@@ -3194,6 +3202,8 @@ static int TIFFLinkDirectory(TIFF *tif)
      */
     if (tif->tif_lastdiroff == 0)
     {
+        fprintf(stderr, "  [TIFFLinkDirectory] Calling fsync (lastdiroff==0)\n");
+        fflush(stderr);
 #if defined(HAVE_UNISTD_H)
         if (tif->tif_fd >= 0)
             fsync(tif->tif_fd);
@@ -3204,6 +3214,9 @@ static int TIFFLinkDirectory(TIFF *tif)
     }
 
     tif->tif_diroff = (TIFFSeekFile(tif, 0, SEEK_END) + 1) & (~((toff_t)1));
+    fprintf(stderr, "  [TIFFLinkDirectory] After SEEK_END: tif_diroff=%" PRIu64 "\n",
+            tif->tif_diroff);
+    fflush(stderr);
 
     /*
      * Handle SubIFDs
@@ -3299,17 +3312,31 @@ static int TIFFLinkDirectory(TIFF *tif)
              * number. */
             nextdir = (uint32_t)tif->tif_lastdiroff;
             ndir = dirn + 1;
+            fprintf(stderr,
+                    "  [TIFFLinkDirectory] Using lastdiroff optimization: "
+                    "nextdir=%u, ndir=%u\n",
+                    nextdir, ndir);
+            fflush(stderr);
         }
         else
         {
             nextdir = tif->tif_header.classic.tiff_diroff;
             ndir = 1; /* start searching from the first IFD */
+            fprintf(stderr,
+                    "  [TIFFLinkDirectory] Starting from header: nextdir=%u\n",
+                    nextdir);
+            fflush(stderr);
         }
 
         while (1)
         {
             uint16_t dircount;
             uint32_t nextnextdir;
+
+            fprintf(stderr,
+                    "  [TIFFLinkDirectory] Traversing: nextdir=%u, ndir=%u\n",
+                    nextdir, ndir);
+            fflush(stderr);
 
             if (!SeekOK(tif, nextdir) || !ReadOK(tif, &dircount, 2))
             {
@@ -3318,9 +3345,17 @@ static int TIFFLinkDirectory(TIFF *tif)
             }
             if (tif->tif_flags & TIFF_SWAB)
                 TIFFSwabShort(&dircount);
+            fprintf(stderr,
+                    "  [TIFFLinkDirectory] dircount=%u, seeking to %u\n",
+                    dircount, nextdir + 2 + dircount * 12);
+            fflush(stderr);
             (void)TIFFSeekFile(tif, nextdir + 2 + dircount * 12, SEEK_SET);
             if (!ReadOK(tif, &nextnextdir, 4))
             {
+                fprintf(stderr,
+                        "  [TIFFLinkDirectory] ReadOK FAILED at offset %u\n",
+                        nextdir + 2 + dircount * 12);
+                fflush(stderr);
                 TIFFErrorExtR(tif, module, "Error fetching directory link");
                 return (0);
             }
