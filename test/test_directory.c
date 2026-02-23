@@ -250,8 +250,7 @@ static int write_directory_to_closed_file(const char *filename,
     }
 
     fprintf(stderr, "  [write_directory_to_closed_file] i=%d, after write: "
-                    "TIFFCurrentDirOffset=%" PRIu64 ", TIFFNumberOfDirectories=%"
-                    PRIu16 "\n",
+                    "TIFFCurrentDirOffset=%" PRIu64 ", TIFFNumberOfDirectories=%u\n",
             i, TIFFCurrentDirOffset(tif), TIFFNumberOfDirectories(tif));
     fflush(stderr);
 
