@@ -3194,24 +3194,21 @@ static int TIFFLinkDirectory(TIFF *tif)
 
     /*
      * Flush any pending writes to ensure SEEK_END returns the correct
-     * file position. This is only needed when appending to a file that has
-     * existing directories that were written in a previous session.
-     * tif_lastdiroff == 0 indicates we haven't written any directories yet
-     * in this session. This avoids unnecessary fsync calls when writing
-     * multiple directories in sequence within the same session.
+     * file position. This is needed on some platforms (like Cygwin in Docker)
+     * where the file size metadata may not be updated immediately after writes.
      */
-    if (tif->tif_lastdiroff == 0)
-    {
-        fprintf(stderr, "  [TIFFLinkDirectory] Calling fsync (lastdiroff==0)\n");
-        fflush(stderr);
 #if defined(HAVE_UNISTD_H)
-        if (tif->tif_fd >= 0)
-            fsync(tif->tif_fd);
-#elif defined(HAVE_IO_H) && defined(_WIN32)
-        if (tif->tif_fd >= 0)
-            _commit(tif->tif_fd);
-#endif
+    if (tif->tif_fd >= 0)
+    {
+        int fsync_ret = fsync(tif->tif_fd);
+        fprintf(stderr, "  [TIFFLinkDirectory] fsync(fd=%d) returned %d\n",
+                tif->tif_fd, fsync_ret);
+        fflush(stderr);
     }
+#elif defined(HAVE_IO_H) && defined(_WIN32)
+    if (tif->tif_fd >= 0)
+        _commit(tif->tif_fd);
+#endif
 
     tif->tif_diroff = (TIFFSeekFile(tif, 0, SEEK_END) + 1) & (~((toff_t)1));
     fprintf(stderr, "  [TIFFLinkDirectory] After SEEK_END: tif_diroff=%" PRIu64 "\n",
