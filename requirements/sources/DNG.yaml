@@ -1,0 +1,3584 @@
+document: DNG
+title: "Digital Negative (DNG) Specification, Version 1.7.1.0"
+date: "September 2023"
+notes: >
+  DNG is an extension of TIFF 6.0 and is compatible with (but not required to conform to)
+  the TIFF/EP standard (ISO 12234-2). This extraction uses conformance: DNG for all entries
+  per the second-wave brief. The `location:` field on tags uses DNG's own IFD-placement
+  vocabulary rather than the base enum, because DNG places tags in named SubIFDs (Raw IFD,
+  Preview IFD, Enhanced IFD, Camera Profile IFD, Semantic Mask IFD, Depth IFD) rather than
+  Exif/GPS/Interop IFDs. Values used: ifd0, raw-ifd, preview-ifd, enhanced-ifd,
+  camera-profile-ifd, semantic-mask-ifd, depth-ifd, ifd0-or-camera-profile-ifd,
+  jxl-ifd, any-ifd. "Camera Profile IFD" is a TIFF-format IFD reached via ExtraCameraProfiles
+  (50933); the primary camera profile lives in IFD 0. Many DNG files also carry TIFF/EP- and
+  Exif-coded tags (via ExifIFD 34665 / GPSIFD 34853); those are governed by TIFF/EP and Exif,
+  not enumerated here. Color-science matrix derivations (Chapter 6) are summarized as INFO.
+
+requirements:
+  # ---------- Format overview / structure ----------
+  - id: DNG-001
+    section: "DNG Format Overview"
+    heading: "TIFF Basis"
+    page: 13
+    level: MUST
+    actor: file
+    category: structure
+    conformance: DNG
+    statement: >
+      A DNG file is an extension of TIFF 6.0 and must follow all TIFF 6.0 formatting rules
+      (header, IFD layout, field/data types, offset rules, value inlining). DNG is also
+      compatible with, but not required to conform to, the TIFF/EP standard.
+
+  - id: DNG-002
+    section: "DNG Format Overview"
+    heading: "File Extensions"
+    page: 13
+    level: SHOULD
+    actor: reader
+    category: structure
+    conformance: DNG
+    statement: >
+      The recommended file extension is ".DNG". Readers should accept either ".DNG" or ".TIF"
+      extensions for compatibility with TIFF/EP.
+
+  - id: DNG-003
+    section: "DNG Format Overview"
+    heading: "SubIFD Trees"
+    page: 13
+    level: SHOULD
+    actor: file
+    category: structure
+    conformance: DNG
+    tags: [330, 254]
+    statement: >
+      DNG recommends the use of SubIFD trees (via SubIFDs tag 330) as described in TIFF/EP.
+      SubIFD chains are NOT supported. The highest-resolution/quality IFD should use
+      NewSubFileType (254) = 0; reduced-resolution/quality thumbnails or previews should use
+      NewSubFileType = 1 (primary preview) or 0x10001 (alternate preview).
+
+  - id: DNG-004
+    section: "DNG Format Overview"
+    heading: "SubIFD Trees"
+    page: 13
+    level: SHOULD
+    actor: writer
+    category: structure
+    conformance: DNG
+    statement: >
+      DNG recommends, but does not require, that the first IFD (IFD 0) contain a low-resolution
+      thumbnail, as described in TIFF/EP.
+
+  - id: DNG-005
+    section: "DNG Format Overview"
+    heading: "Byte Order"
+    page: 13
+    level: MUST
+    actor: reader
+    category: structure
+    conformance: DNG
+    statement: >
+      DNG readers are required to support either byte order (big-endian "MM" or little-endian
+      "II"), even for files from a particular camera model. Writers may write either byte order.
+
+  - id: DNG-006
+    section: "DNG Format Overview"
+    heading: "Masked Pixels"
+    page: 13
+    level: MUST
+    actor: file
+    category: structure
+    conformance: DNG
+    tags: [50829]
+    statement: >
+      If masked (fully-masked black-reference) pixels are not trimmed from the stored image,
+      the area of the non-masked pixels must be specified using the ActiveArea tag (50829).
+
+  - id: DNG-007
+    section: "DNG Format Overview"
+    heading: "Masked Pixels"
+    page: 14
+    level: MUST
+    actor: writer
+    category: structure
+    conformance: DNG
+    tags: [50714, 50715, 50716]
+    statement: >
+      Black encoding level information is required even when masked pixels are not trimmed:
+      the writer must either pre-compensate the stored raw data for black level, or include the
+      black level using the DNG black-level tags (BlackLevel 50714, BlackLevelDeltaH 50715,
+      BlackLevelDeltaV 50716), so readers can process the image without camera-specific knowledge.
+
+  - id: DNG-008
+    section: "DNG Format Overview"
+    heading: "Defective Pixels"
+    page: 14
+    level: MAY
+    actor: writer
+    category: structure
+    conformance: DNG
+    tags: [51008]
+    statement: >
+      Defective pixels may be handled either by mapping out (interpolating over) them before
+      storing raw data, or by including a bad-pixel-fixing opcode (FixBadPixelsConstant /
+      FixBadPixelsList) in the OpcodeList1 tag (51008).
+
+  - id: DNG-009
+    section: "DNG Format Overview"
+    heading: "Metadata"
+    page: 14
+    level: MAY
+    actor: file
+    category: metadata
+    conformance: DNG
+    tags: [33723, 700, 34665]
+    statement: >
+      Additional metadata may be embedded using TIFF/EP or Exif metadata tags, the IPTC tag
+      (33723), or the XMP tag (700). TIFF/EP stores Exif-like tags in IFD 0 while Exif stores
+      them in a separate Exif IFD (via 34665); either location is allowed but the Exif location
+      is preferred.
+
+  - id: DNG-010
+    section: "DNG Format Overview"
+    heading: "Proprietary Data"
+    page: 14
+    level: SHOULD
+    actor: writer
+    category: metadata
+    conformance: DNG
+    tags: [50740, 50741]
+    statement: >
+      Proprietary data may be stored using private tags, private IFDs, and/or a private
+      MakerNote. Manufacturers are recommended to use DNGPrivateData (50740) and MakerNoteSafety
+      (50741) so DNG-editing programs preserve this data.
+
+  - id: DNG-011
+    section: "DNG Format Overview"
+    heading: "Camera Profiles"
+    page: 14
+    level: MUST
+    actor: file
+    category: color
+    conformance: DNG
+    supplement_version: "1.2.0.0"
+    tags: [50933]
+    statement: >
+      The primary camera profile is stored in IFD 0 (for backward compatibility). Additional
+      camera profiles are embedded via the ExtraCameraProfiles tag (50933) which points to a
+      list of Camera Profile IFDs. The camera-profile tag set comprises BaselineExposureOffset,
+      CalibrationIlluminant1/2/3, ColorMatrix1/2/3, DefaultBlackRender, ForwardMatrix1/2/3,
+      IlluminantData1/2/3, ProfileCalibrationSignature, ProfileCopyright, ProfileDynamicRange,
+      ProfileEmbedPolicy, ProfileGroupName, ProfileHueSatMapData1/2/3, ProfileHueSatMapDims,
+      ProfileHueSatMapEncoding, ProfileLookTableData, ProfileLookTableDims,
+      ProfileLookTableEncoding, ProfileName, ProfileToneCurve, and ReductionMatrix1/2/3.
+
+  - id: DNG-012
+    section: "DNG Format Overview"
+    heading: "Opcode Lists"
+    page: 15
+    level: INFO
+    actor: reader
+    category: behavior
+    conformance: DNG
+    supplement_version: "1.3.0.0"
+    tags: [51008, 51009, 51022]
+    statement: >
+      DNG 1.3.0.0+ defines Opcode Lists (OpcodeList1 51008, OpcodeList2 51009, OpcodeList3
+      51022) allowing extensible additional processing steps (e.g. lens corrections) to be
+      moved off the camera and applied by the reader at defined pipeline stages.
+
+  - id: DNG-013
+    section: "DNG Format Overview"
+    heading: "Floating Point Image Data"
+    page: 16
+    level: MAY
+    actor: file
+    category: data-layout
+    conformance: DNG
+    supplement_version: "1.4.0.0"
+    tags: [339, 258]
+    statement: >
+      DNG 1.4.0.0+ supports floating point image data (SampleFormat 339 = 3) in addition to
+      unsigned integer. Supported floating point bit depths (BitsPerSample 258) are 16, 24 and 32.
+
+  - id: DNG-014
+    section: "DNG Format Overview"
+    heading: "Transparent Pixels"
+    page: 16
+    level: MUST
+    actor: file
+    category: data-layout
+    conformance: DNG
+    supplement_version: "1.4.0.0"
+    tags: [254]
+    statement: >
+      Transparency (DNG 1.4.0.0+) is stored in IFDs with the same width and length as the image
+      IFDs and NewSubFileType (254) = 4 (full-resolution raw) or 5 (reduced resolution). Fully
+      transparent (undefined) pixels have mask value 0; fully opaque pixels have mask value 1.0
+      (floating point) or the maximum unsigned integer; intermediate values are allowed.
+      Semi-transparent pixel image values must be stored as if the pixel were fully opaque
+      (not matted to white or black).
+
+  - id: DNG-015
+    section: "DNG Format Overview"
+    heading: "Proxy DNG Files"
+    page: 16
+    level: INFO
+    actor: file
+    category: structure
+    conformance: DNG
+    supplement_version: "1.4.0.0"
+    tags: [51089, 51090, 51091]
+    statement: >
+      Proxy DNG files (DNG 1.4.0.0+) are lower resolution/quality versions of an original DNG.
+      The size of the corresponding original is specified by OriginalDefaultFinalSize (51089),
+      OriginalBestQualityFinalSize (51090), and OriginalDefaultCropSize (51091).
+
+  - id: DNG-016
+    section: "DNG Format Overview"
+    heading: "Depth Maps"
+    page: 16
+    level: SHOULD
+    actor: file
+    category: data-layout
+    conformance: DNG
+    supplement_version: "1.5.0.0"
+    tags: [254, 262, 51177, 51178, 51179, 51180, 51181]
+    statement: >
+      Depth maps (DNG 1.5.0.0+) are stored in IFDs with NewSubFileType (254) = 8 (highest
+      resolution) or 9 (lower resolution), and should use PhotometricInterpretation (262) =
+      51177 (Depth). Depth is an 8- or 16-bit single-channel unsigned integer image where 0
+      encodes the nearest distance and the maximum value encodes the farthest distance; the
+      distance mapping is given by DepthFormat/DepthNear/DepthFar/DepthUnits/DepthMeasureType.
+
+  - id: DNG-017
+    section: "DNG Format Overview"
+    heading: "Depth Maps"
+    page: 17
+    level: MUST
+    actor: writer
+    category: data-layout
+    conformance: DNG
+    supplement_version: "1.5.0.0"
+    statement: >
+      A depth map should match the field of view of the main image; it may have a different
+      pixel resolution but resampled pixels should correspond. No holes are allowed: depth
+      values must be filled in by an estimation algorithm for areas that cannot be measured.
+
+  - id: DNG-018
+    section: "DNG Format Overview"
+    heading: "Enhanced Image Data"
+    page: 17
+    level: MUST
+    actor: file
+    category: data-layout
+    conformance: DNG
+    supplement_version: "1.5.0.0"
+    tags: [254, 262, 51182]
+    statement: >
+      Enhanced image data (DNG 1.5.0.0+) is a more-processed, always at least demosaiced
+      version of the raw data stored in an IFD with NewSubFileType (254) = 16. It must use
+      PhotometricInterpretation (262) = 34892 (LinearRaw) and the same color space as the raw
+      image data, encoded as 16-bit unsigned integer or 16/24/32-bit floating point. The
+      enhanced IFD should have a non-null EnhanceParams tag (51182).
+
+  - id: DNG-019
+    section: "DNG Format Overview"
+    heading: "Enhanced Image Data"
+    page: 17
+    level: MUST
+    actor: file
+    category: data-layout
+    conformance: DNG
+    supplement_version: "1.5.0.0"
+    tags: [50714]
+    statement: >
+      Enhanced image data is assumed already mapped to linear reference values, except it may
+      have a non-zero BlackLevel (50714) if unsigned integer encoding is used; that black level
+      is required to be the same for all color planes of the enhanced image data.
+
+  - id: DNG-020
+    section: "DNG Format Overview"
+    heading: "Semantic Masks"
+    page: 17
+    level: SHOULD
+    actor: file
+    category: data-layout
+    conformance: DNG
+    supplement_version: "1.6.0.0"
+    tags: [254, 262, 52526]
+    statement: >
+      Semantic masks (DNG 1.6.0.0+) are stored in IFDs with NewSubFileType (254) = 65540
+      (0x10004) and should use PhotometricInterpretation (262) = 52527 (PhotometricMask). A
+      semantic mask is a single-channel image using 8-bit uint (0-255), 16-bit uint (0-65535),
+      or 32-bit float (0.0-1.0); 0 = "not part of the semantic attribute", maximum = "is part",
+      intermediate = partial. Each mask IFD should include a unique SemanticName tag (52526).
+
+  - id: DNG-021
+    section: "DNG Format Overview"
+    heading: "Semantic Masks"
+    page: 18
+    level: SHOULD
+    actor: file
+    category: data-layout
+    conformance: DNG
+    supplement_version: "1.6.0.0"
+    tags: [50829, 274]
+    statement: >
+      A semantic mask should match the field of view of the main image (as specified by
+      ActiveArea 50829), may have a different (usually lower) pixel resolution, and should have
+      the same Orientation (274) as the main image.
+
+  - id: DNG-022
+    section: "DNG Format Overview"
+    heading: "Semantic Masks"
+    page: 18
+    level: MAY
+    actor: file
+    category: compression
+    conformance: DNG
+    supplement_version: "1.6.0.0"
+    tags: [259]
+    statement: >
+      Semantic masks may be stored uncompressed or with: Lossless JPEG (Compression 259 = 7;
+      8/16-bit uint), Baseline lossy JPEG (259 = 34892; 8-bit uint), Deflate/Zip (259 = 8;
+      8/16-bit uint and 32-bit float), or JPEG XL (259 = 52546; 8/16-bit uint and 16-bit float,
+      requires DNG 1.7.0.0+).
+
+  - id: DNG-023
+    section: "DNG Format Overview"
+    heading: "64-bit Format"
+    page: 18
+    level: MAY
+    actor: file
+    category: structure
+    conformance: DNG
+    statement: >
+      DNG allows the 64-bit (BigTIFF) container extension, independent of DNG version. In
+      64-bit DNG the value at offset 2 is 43 (not 42), offset 4 is 8, offset 6 is 0, the first
+      IFD offset at offset 8 is 64-bit, and IFD entry counts, element counts, data entries, and
+      next-IFD offsets are all 64-bit. Three new IFD entry data types are defined: 16 = unsigned
+      64-bit integer (LONG8), 17 = signed 64-bit integer (SLONG8), 18 = 64-bit IFD offset (IFD8).
+
+  - id: DNG-024
+    section: "DNG Format Overview"
+    heading: "64-bit Format"
+    page: 19
+    level: SHOULD
+    actor: writer
+    category: structure
+    conformance: DNG
+    statement: >
+      DNG writers should only use the 64-bit extension when the resulting file would exceed 4
+      gigabytes, to maximize compatibility with existing DNG readers.
+
+  # ---------- Restrictions/extensions to existing TIFF tags ----------
+  - id: DNG-025
+    section: "Restrictions and Extensions to Existing TIFF Tags"
+    heading: "BitsPerSample"
+    page: 20
+    level: MUST
+    actor: file
+    category: data-layout
+    conformance: DNG
+    tags: [258]
+    statement: >
+      Supported BitsPerSample (258) values are 8 to 32 bits/sample. The depth must be the same
+      for each sample when SamplesPerPixel != 1. If BitsPerSample is not 8, 16, or 32, the bits
+      must be packed into bytes using the TIFF default FillOrder of 1 (big-endian), even if the
+      TIFF file itself uses little-endian byte order.
+
+  - id: DNG-026
+    section: "Restrictions and Extensions to Existing TIFF Tags"
+    heading: "SampleFormat"
+    page: 20
+    level: MUST
+    actor: file
+    category: data-layout
+    conformance: DNG
+    supplement_version: "1.4.0.0"
+    tags: [339, 258]
+    statement: >
+      DNG before 1.4.0.0 always uses SampleFormat (339) = 1 (unsigned integer). DNG 1.4.0.0+
+      allows SampleFormat = 3 (IEEE floating point); allowed BitsPerSample for float images are
+      16, 24, and 32.
+
+  - id: DNG-027
+    section: "Restrictions and Extensions to Existing TIFF Tags"
+    heading: "Compression"
+    page: 20
+    level: MUST
+    actor: file
+    category: compression
+    conformance: DNG
+    tags: [259, 262, 258]
+    statement: >
+      DNG before 1.4.0.0 supports only Compression (259) = 1 (uncompressed) and 7 (JPEG:
+      baseline DCT or lossless). When PhotometricInterpretation (262) = 6 (YCbCr) with
+      BitsPerSample 8/8/8, or 262 = 1 (BlackIsZero) with BitsPerSample = 8, the JPEG variant
+      must be baseline DCT JPEG; otherwise it must be lossless Huffman JPEG.
+
+  - id: DNG-028
+    section: "Restrictions and Extensions to Existing TIFF Tags"
+    heading: "Compression"
+    page: 21
+    level: MAY
+    actor: file
+    category: compression
+    conformance: DNG
+    supplement_version: "1.4.0.0"
+    tags: [259]
+    statement: >
+      For lossless JPEG in DNG, the internal width/length/component count in the JPEG stream is
+      not required to match the strip or tile dimensions; only the total sample counts must
+      match. CFA images are commonly encoded with a different width/length/component count so
+      that JPEG prediction operates across like colors.
+
+  - id: DNG-029
+    section: "Restrictions and Extensions to Existing TIFF Tags"
+    heading: "Compression"
+    page: 21
+    level: MUST
+    actor: file
+    category: compression
+    conformance: DNG
+    supplement_version: "1.4.0.0"
+    tags: [259, 262, 258]
+    statement: >
+      DNG 1.4.0.0+ adds Compression (259) = 8 (Deflate/ZIP) and 34892 (Lossy JPEG). Deflate is
+      allowed for floating point, 32-bit integer, transparency mask, and depth map data. Lossy
+      JPEG (34892) is allowed only for IFDs using 8-bit integer data with
+      PhotometricInterpretation (262) = 34892 (LinearRaw) or 52527 (PhotometricMask); this code
+      signals the reader to use a lossy rather than lossless JPEG decoder.
+
+  - id: DNG-030
+    section: "Restrictions and Extensions to Existing TIFF Tags"
+    heading: "Compression"
+    page: 21
+    level: MUST
+    actor: file
+    category: compression
+    conformance: DNG
+    supplement_version: "1.7.0.0"
+    tags: [259, 262, 258]
+    statement: >
+      DNG 1.7.0.0+ adds Compression (259) = 52546 (JPEG XL, ISO/IEC 18181-1:2022). JPEG XL is
+      allowed for N-bit integer image data (8 <= N <= 16) and 16-bit floating point; the number
+      of image planes must be 1 or 3; and PhotometricInterpretation (262) must be one of 0
+      (WhiteIsZero), 1 (BlackIsZero), 2 (RGB), 4 (TransparencyMask), 32803 (ColorFilterArray),
+      34892 (LinearRaw), 51177 (Depth), or 52527 (PhotometricMask).
+
+  - id: DNG-031
+    section: "Restrictions and Extensions to Existing TIFF Tags"
+    heading: "Compression"
+    page: 21
+    level: SHOULD
+    actor: writer
+    category: compression
+    conformance: DNG
+    supplement_version: "1.7.0.0"
+    tags: [259]
+    statement: >
+      Both "bare" (no metadata) and "container" (ISO BMFF box structure) JPEG XL bitstreams are
+      supported. With multiple tiles the bare format is recommended (smaller per-tile, no
+      per-tile metadata); for a preview IFD (thumbnail or full-res rendered preview) a single
+      tile with the container format is recommended so a standalone JPEG XL file can be
+      extracted by copying the IFD bytes.
+
+  - id: DNG-032
+    section: "Restrictions and Extensions to Existing TIFF Tags"
+    heading: "Predictor"
+    page: 22
+    level: MUST
+    actor: file
+    category: compression
+    conformance: DNG
+    supplement_version: "1.4.0.0"
+    tags: [317, 259]
+    statement: >
+      For IFDs using Compression (259) = 8 (deflate), the allowed Predictor (317) codes are:
+      1 (none), 2 (horizontal difference), 3 (floating point, per Adobe TIFF Technical Note 3),
+      34892 (horizontal difference X2, uses pixel two to the left), 34893 (horizontal difference
+      X4, pixel four to the left), 34894 (floating point X2), and 34895 (floating point X4).
+
+  - id: DNG-033
+    section: "Restrictions and Extensions to Existing TIFF Tags"
+    heading: "PhotometricInterpretation"
+    page: 22
+    level: MUST
+    actor: file
+    category: color
+    conformance: DNG
+    tags: [262, 50970]
+    statement: >
+      For thumbnail/preview IFDs only, PhotometricInterpretation (262) may be 1 (BlackIsZero,
+      assumed gamma 2.2 unless PreviewColorSpace 50970 says otherwise), 2 (RGB, assumed sRGB
+      unless PreviewColorSpace says otherwise), or 6 (YCbCr, for JPEG-encoded previews).
+
+  - id: DNG-034
+    section: "Restrictions and Extensions to Existing TIFF Tags"
+    heading: "PhotometricInterpretation"
+    page: 22
+    level: MUST
+    actor: file
+    category: color
+    conformance: DNG
+    tags: [262, 33421, 33422]
+    statement: >
+      For the raw IFD, PhotometricInterpretation (262) may be 32803 (CFA/ColorFilterArray) or
+      34892 (LinearRaw), assumed to be the camera's native color space. The CFA value (from
+      TIFF/EP) requires the CFARepeatPatternDim (33421) and CFAPattern (33422) tags in the same
+      IFD; the CFA pattern origin is the top-left corner of the ActiveArea rectangle. LinearRaw
+      is for cameras capturing all color components at each pixel, or for demosaiced CFA data,
+      and may be used in reduced-resolution and enhanced IFDs even if the raw IFD uses CFA.
+
+  - id: DNG-035
+    section: "Restrictions and Extensions to Existing TIFF Tags"
+    heading: "PhotometricInterpretation"
+    page: 22
+    level: MUST
+    actor: file
+    category: color
+    conformance: DNG
+    supplement_version: "1.5.0.0"
+    tags: [262]
+    statement: >
+      PhotometricInterpretation (262) = 51177 (Depth) is required for depth map IFDs, and
+      52527 (PhotometricMask, 0xCD2F) is required for semantic mask IFDs.
+
+  - id: DNG-036
+    section: "Restrictions and Extensions to Existing TIFF Tags"
+    heading: "Orientation"
+    page: 23
+    level: MUST
+    actor: file
+    category: metadata
+    conformance: DNG
+    tags: [274]
+    statement: >
+      Orientation (274) is a required tag for DNG. Readers should support all orientations
+      including mirrored ones. Mirrored orientations are not allowed by TIFF/EP, so writers
+      wanting TIFF/EP compatibility should not use them.
+
+  - id: DNG-037
+    section: "Restrictions and Extensions to Existing TIFF Tags"
+    heading: "NewSubFileType"
+    page: 20
+    level: MUST
+    actor: file
+    category: structure
+    conformance: DNG
+    tags: [254]
+    statement: >
+      NewSubFileType (254) DNG values: 0 = full-resolution raw / highest quality; 1 = reduced
+      resolution rendered preview (primary); 0x10001 = alternate/non-primary rendered preview
+      (DNG 1.2.0.0+); 4 = transparency for full-resolution raw (1.4.0.0+); 5 = transparency for
+      reduced resolution (1.4.0.0+); 8 = highest-resolution depth map (1.5.0.0+); 9 = lower-
+      resolution depth map (1.5.0.0+); 16 = enhanced image data (1.5.0.0+); 65540 (0x10004) =
+      semantic mask (1.6.0.0+).
+
+  - id: DNG-038
+    section: "Restrictions and Extensions to Existing TIFF Tags"
+    heading: "NewSubFileType"
+    page: 20
+    level: SHOULD
+    actor: reader
+    category: behavior
+    conformance: DNG
+    supplement_version: "1.2.0.0"
+    tags: [254]
+    statement: >
+      DNG reading software that displays a preview should by default display a preview from an
+      IFD with NewSubFileType (254) = 1; alternative renderings (NewSubFileType = 0x10001)
+      should only be displayed if requested by the user.
+
+  # ---------- Version / identification tag rules ----------
+  - id: DNG-039
+    section: "DNG Tags"
+    heading: "DNGVersion / DNGBackwardVersion"
+    page: 24
+    level: MUST
+    actor: reader
+    category: behavior
+    conformance: DNG
+    tags: [50706, 50707]
+    statement: >
+      Readers should not attempt to read a file if DNGBackwardVersion (50707) specifies a
+      version higher than the specification the reader was based on. In addition to the version
+      tags, readers should verify types, counts, and values of all tags before reading.
+
+  # ---------- Color processing model (Chapter 5 & 6) ----------
+  - id: DNG-040
+    section: "Mapping Raw Values to Linear Reference Values"
+    heading: "Processing model"
+    page: 99
+    level: INFO
+    actor: reader
+    category: color
+    conformance: DNG
+    tags: [50712, 50714, 50715, 50716, 50717]
+    statement: >
+      Raw-to-linear mapping proceeds: (1) Linearization through LinearizationTable (50712)
+      [values beyond the table map to its last entry]; (2) Black subtraction of the per-pixel
+      black level = BlackLevel (50714) + BlackLevelDeltaH (50715) + BlackLevelDeltaV (50716);
+      (3) Rescaling by the inverse of (WhiteLevel 50717 minus the maximum computed black level
+      for the sample plane); (4) Clipping values above 1.0 to 1.0. Each sample plane is
+      processed independently. Negative values may be clipped to 0.0 but are recommended to be
+      preserved in early pipeline stages.
+
+  - id: DNG-041
+    section: "Mapping Camera Color Space to CIE XYZ Space"
+    heading: "Color transform model"
+    page: 100
+    level: INFO
+    actor: reader
+    category: color
+    conformance: DNG
+    tags: [50721, 50722, 52531, 50723, 50724, 52530, 50727, 50964, 50965, 52532, 50725, 50726, 52538]
+    statement: >
+      Camera-to-XYZ(D50) mapping: XYZtoCamera = AB * CC * CM where CM is interpolated from
+      ColorMatrix1/2/3, CC from CameraCalibration1/2/3 (or identity if calibration signatures
+      do not match), AB is the diagonal AnalogBalance matrix, RM from ReductionMatrix1/2/3, and
+      FM from ForwardMatrix1/2/3. With 1/2/3 illuminant sets the reader interpolates using
+      linear interpolation on inverse correlated color temperature. If ForwardMatrix tags are
+      present, CameraToXYZ_D50 = FM * D * Inverse(AB * CC); otherwise the XYZtoCamera matrix is
+      inverted (with ReductionMatrix used or pseudo-inverse when n>3) and chromatically adapted
+      to D50 via the Bradford algorithm. (Full derivation summarized; see Chapter 6.)
+
+  - id: DNG-042
+    section: "Mapping Camera Color Space to CIE XYZ Space"
+    heading: "Camera Calibration Matrices"
+    page: 100
+    level: SHOULD
+    actor: reader
+    category: color
+    conformance: DNG
+    supplement_version: "1.2.0.0"
+    tags: [50931, 50932, 50723, 50724, 52530]
+    statement: >
+      The CameraCalibration1/2/3 tags should only be used in the color transform if the
+      CameraCalibrationSignature (50931) string exactly matches the ProfileCalibrationSignature
+      (50932) of the selected camera profile; otherwise identity matrices should be used to
+      minimize worst-case calibration mismatch error.
+
+  - id: DNG-043
+    section: "Mapping Camera Color Space to CIE XYZ Space"
+    heading: "One, Two, or Three Color Calibrations"
+    page: 100
+    level: SHOULD
+    actor: writer
+    category: color
+    conformance: DNG
+    tags: [50778, 50779, 52529]
+    statement: >
+      If exactly two calibrations are included, one should be a low color temperature
+      illuminant (e.g. Standard-A) and the other a higher color temperature illuminant (e.g.
+      D55 or D65). If three are included, the first two should follow that recommendation and
+      the third should characterize the "as shot" illuminant.
+
+  - id: DNG-044
+    section: "Mapping Camera Color Space to CIE XYZ Space"
+    heading: "Requirements for three calibrations"
+    page: 101
+    level: MUST
+    actor: file
+    category: color
+    conformance: DNG
+    supplement_version: "1.6.0.0"
+    tags: [52529, 50778, 50779, 52531, 50964, 50965, 52532, 50725, 50726, 52538, 50938, 50939, 52537]
+    statement: >
+      If CalibrationIlluminant3 (52529) is included then: CalibrationIlluminant1 (50778) and
+      CalibrationIlluminant2 (50779) must be included; ColorMatrix3 (52531) must be included;
+      either all three ForwardMatrix tags are included or none; either all three ReductionMatrix
+      tags are included or none; either all three ProfileHueSatMapData tags are included or
+      none; and the white points (x-y chromaticities) of all three calibration illuminants must
+      be distinct.
+
+  - id: DNG-045
+    section: "Mapping Camera Color Space to CIE XYZ Space"
+    heading: "Applying the Hue/Saturation/Value Mapping Table"
+    page: 103
+    level: INFO
+    actor: reader
+    category: color
+    conformance: DNG
+    tags: [50938, 50939, 52537, 50937, 51107]
+    statement: >
+      After conversion to XYZ(D50), the HueSatMap table (if any) is applied in linear ProPhoto
+      RGB (RIMM) space: convert XYZ to ProPhoto RGB, to HSV, index the table (tri-linear,
+      wrap-around on hue), apply hue shift + saturation scale (clipped to <=1.0) + value scale,
+      convert back. ValueDivisions = 1 is recommended so the table is indexed by hue and
+      saturation only. HDR profiles apply an encoding/decoding function around the table.
+
+  # ---------- Opcode list processing ----------
+  - id: DNG-046
+    section: "Opcode List Processing"
+    heading: "Opcode list format"
+    page: 105
+    level: MUST
+    actor: file
+    category: data-layout
+    conformance: DNG
+    supplement_version: "1.3.0.0"
+    tags: [51008, 51009, 51022]
+    statement: >
+      Opcode lists are always stored in big-endian byte order regardless of the file's byte
+      order. A list begins with a 32-bit unsigned count of opcodes, followed by each opcode.
+      Each opcode is: 32-bit opcode ID; 32-bit DNG spec version in which the opcode was defined;
+      32-bit flag bits (bit0=optional, bit1=skippable for preview-quality); 32-bit byte count
+      of the variable parameter area; then the parameter area.
+
+  - id: DNG-047
+    section: "Opcode List Processing"
+    heading: "Opcode processing"
+    page: 105
+    level: MUST
+    actor: reader
+    category: behavior
+    conformance: DNG
+    supplement_version: "1.3.0.0"
+    statement: >
+      Opcodes are applied in sequence. A reader must never process an opcode whose version is
+      higher than the DNG spec it supports. If flag bit0 (optional) is set, the reader may skip
+      the opcode (e.g. if it does not understand the ID). After each opcode, image values are
+      clipped to the logical range of the image: for OpcodeList1, 0..2^32-1 (bit depth > 16) or
+      0..2^16-1 otherwise; for OpcodeList2 and OpcodeList3, 0.0..1.0.
+
+  - id: DNG-048
+    section: "Opcode List Processing"
+    heading: "Opcode list stage semantics"
+    page: 58
+    level: MUST
+    actor: reader
+    category: behavior
+    conformance: DNG
+    supplement_version: "1.3.0.0"
+    tags: [51008, 51009, 51022]
+    statement: >
+      OpcodeList1 (51008) opcodes apply to the raw image as read directly from the file;
+      OpcodeList2 (51009) opcodes apply just after mapping to linear reference values;
+      OpcodeList3 (51022) opcodes apply just after demosaicing.
+
+  - id: DNG-049
+    section: "Opcode List Processing"
+    heading: "WarpRectilinear2 skip rule"
+    page: 105
+    level: SHOULD
+    actor: reader
+    category: behavior
+    conformance: DNG
+    supplement_version: "1.6.0.0"
+    statement: >
+      Readers should skip processing an opcode if it is a WarpRectilinear (ID 1) or WarpFisheye
+      (ID 2) opcode that immediately follows, in the same opcode list, a WarpRectilinear2 (ID
+      14) opcode marked as Optional. This lets a writer pair a more accurate WarpRectilinear2
+      (for 1.6+ readers) with a baseline warp opcode for earlier readers.
+
+  - id: DNG-050
+    section: "Opcode List Processing"
+    heading: "Opcode area/plane parameters"
+    page: 113
+    level: INFO
+    actor: reader
+    category: behavior
+    conformance: DNG
+    supplement_version: "1.3.0.0"
+    statement: >
+      Area/plane opcodes (MapTable ID7, MapPolynomial ID8, GainMap ID9, DeltaPerRow ID10,
+      DeltaPerColumn ID11, ScalePerRow ID12, ScalePerColumn ID13) share Top/Left/Bottom/Right
+      bounds, Plane/Planes range, and RowPitch/ColPitch parameters: only every RowPitch-th row
+      from Top and every ColPitch-th column from Left are affected. MapPolynomial Degree max is
+      8; per-row/column Count must match the number of affected rows/columns.
+
+  # ---------- Compatibility / DNGBackwardVersion obligations ----------
+  - id: DNG-051
+    section: "Appendix A"
+    heading: "DNGBackwardVersion obligations"
+    page: 123
+    level: MUST
+    actor: writer
+    category: behavior
+    conformance: DNG
+    tags: [50707, 50829, 50974, 50975, 50711, 339, 259, 52547]
+    statement: >
+      DNG writers must raise DNGBackwardVersion (50707) to at least: 1.1.0.0 if masked pixels
+      (ActiveArea 50829) are stored; 1.2.0.0 for non-default SubTileBlockSize (50974),
+      RowInterleaveFactor (50975), or PreviewColorSpace (50970); 1.3.0.0 for CFALayout (50711)
+      values 6-9 and for non-optional opcodes; 1.4.0.0 for floating point main image, an IFD
+      with NewSubFileType 4, or Compression (259) 8 or 34892; 1.6.0.0 if CalibrationIlluminant1
+      or 2 is set to 255 or a required WarpRectilinear2 opcode is used; 1.7.0.0 for Compression
+      52546 (JPEG XL); 1.7.1.0 for non-default ColumnInterleaveFactor (52547). Writers should
+      not raise the version higher than otherwise required for features whose reading is optional
+      (depth maps, enhanced data, semantic masks, ProfileGainTableMap).
+
+  - id: DNG-052
+    section: "Appendix A"
+    heading: "16-bit Lossless JPEG deviation"
+    page: 123
+    level: SHOULD
+    actor: reader
+    category: compression
+    conformance: DNG
+    statement: >
+      DNG files with version < 1.1.0.0 using 16-bit lossless JPEG were mostly written by Adobe
+      applications that deviated from the Lossless JPEG spec: the special-case zero-bit encoding
+      of difference -32768 was not applied and the difference was stored like all others.
+      Software reading/writing DNG < 1.1.0.0 is strongly recommended to incorporate this
+      deviation; for version >= 1.1.0.0 the lossless JPEG stream is fully spec-compliant.
+
+  # ---------- Selected per-tag normative rules (dependencies restated in dependencies:) ----------
+  - id: DNG-053
+    section: "DNG Tags"
+    heading: "CFAPlaneColor"
+    page: 26
+    level: MUST
+    actor: file
+    category: tag
+    conformance: DNG
+    tags: [50710, 33422]
+    statement: >
+      CFAPlaneColor (50710) provides a mapping between the values in the CFAPattern tag (33422)
+      and the plane numbers in LinearRaw space; it is a required tag for non-RGB CFA images.
+
+  - id: DNG-054
+    section: "DNG Tags"
+    heading: "ColorMatrix1"
+    page: 32
+    level: MUST
+    actor: file
+    category: tag
+    conformance: DNG
+    tags: [50721]
+    statement: >
+      The ColorMatrix1 tag (50721) is required for all non-monochrome DNG files.
+
+  - id: DNG-055
+    section: "DNG Tags"
+    heading: "AsShotNeutral / AsShotWhiteXY"
+    page: 36
+    level: MUST-NOT
+    actor: file
+    category: tag
+    conformance: DNG
+    tags: [50728, 50729]
+    statement: >
+      Inclusion of AsShotNeutral (50728) precludes inclusion of AsShotWhiteXY (50729), and vice
+      versa; at most one of the two may be present.
+
+  - id: DNG-056
+    section: "DNG Tags"
+    heading: "CalibrationIlluminant1/2 both present"
+    page: 32
+    level: MUST-NOT
+    actor: file
+    category: tag
+    conformance: DNG
+    tags: [50778, 50779]
+    statement: >
+      If both CalibrationIlluminant1 (50778) and CalibrationIlluminant2 (50779) are included,
+      neither is allowed to have the value 0 (unknown).
+
+  - id: DNG-057
+    section: "DNG Tags"
+    heading: "DNGPrivateData rules"
+    page: 41
+    level: MUST
+    actor: file
+    category: tag
+    conformance: DNG
+    tags: [50740]
+    statement: >
+      DNGPrivateData (50740) must start with a null-terminated ASCII string beginning with the
+      manufacturer's name; must be self-contained (all internal offsets relative to the start of
+      the private data, none pointing outside it); and must be byte-order independent.
+
+  - id: DNG-058
+    section: "DNG Tags"
+    heading: "MakerNote safety rules"
+    page: 41
+    level: MUST
+    actor: file
+    category: tag
+    conformance: DNG
+    tags: [50741]
+    statement: >
+      A MakerNote is only safe to preserve (MakerNoteSafety 50741 = 1) if its data is
+      self-contained (all internal offsets relative to the MakerNote start, none pointing
+      outside) and byte-order independent.
+
+  - id: DNG-059
+    section: "DNG Tags"
+    heading: "OriginalRawFileData byte order"
+    page: 42
+    level: MUST
+    actor: file
+    category: tag
+    conformance: DNG
+    tags: [50828]
+    statement: >
+      The contents of OriginalRawFileData (50828) always use big-endian byte order. Readers
+      should ignore extra trailing bytes (future data blocks) and assume default values for
+      missing trailing blocks.
+
+  - id: DNG-060
+    section: "DNG Tags"
+    heading: "MaskedAreas rules"
+    page: 44
+    level: MUST
+    actor: file
+    category: tag
+    conformance: DNG
+    tags: [50830, 50714]
+    statement: >
+      MaskedAreas (50830) rectangles must be non-overlapping (coordinates top,left,bottom,
+      right). If the raw data has already had its black encoding level subtracted, MaskedAreas
+      should not be used. DNG writers are still required to estimate and store the black
+      encoding level using the black-level tags; reader support for MaskedAreas is not required.
+
+  - id: DNG-061
+    section: "DNG Tags"
+    heading: "ProfileName required when multiple profiles"
+    page: 49
+    level: MUST
+    actor: file
+    category: tag
+    conformance: DNG
+    supplement_version: "1.2.0.0"
+    tags: [50936]
+    statement: >
+      ProfileName (50936) is optional if there is a single camera profile, but is required for
+      all camera profiles if more than one camera profile is stored in the file.
+
+  - id: DNG-062
+    section: "DNG Tags"
+    heading: "ProfileHueSatMapDims / LookTableDims constraints"
+    page: 49
+    level: MUST
+    actor: file
+    category: tag
+    conformance: DNG
+    supplement_version: "1.2.0.0"
+    tags: [50937, 50981]
+    statement: >
+      ProfileHueSatMapDims (50937) and ProfileLookTableDims (50981) must satisfy HueDivisions
+      >= 1, SaturationDivisions >= 2, and ValueDivisions >= 1. All zero-input-saturation entries
+      in the corresponding data tables are required to have a value scale factor of 1.0.
+
+  - id: DNG-063
+    section: "DNG Tags"
+    heading: "ProfileToneCurve endpoints"
+    page: 51
+    level: MUST
+    actor: file
+    category: tag
+    conformance: DNG
+    supplement_version: "1.2.0.0"
+    tags: [50940]
+    statement: >
+      ProfileToneCurve (50940) samples must be strictly increasing in x. For SDR profiles the
+      first sample must be (0.0, 0.0) and the last (1.0, 1.0). For HDR profiles the first sample
+      must be (0.0, 0.0) and the curve is applied in encoded space; readers extend beyond the
+      final point using slope extension. Readers should interpolate using a cubic spline.
+
+  - id: DNG-064
+    section: "DNG Tags"
+    heading: "ExtraCameraProfiles format"
+    page: 48
+    level: MUST
+    actor: file
+    category: tag
+    conformance: DNG
+    supplement_version: "1.2.0.0"
+    tags: [50933]
+    statement: >
+      Each Camera Profile IFD referenced by ExtraCameraProfiles (50933) begins with a 16-bit
+      byte order mark (MM or II), a 16-bit magic number 0x4352 ("CR"), a 32-bit IFD offset, then
+      a standard TIFF IFD; all offsets are relative to the start of the byte order mark. The
+      primary camera profile tags should be stored in IFD 0, and ExtraCameraProfiles should only
+      be used when more than one camera profile is stored.
+
+  - id: DNG-065
+    section: "DNG Tags"
+    heading: "NoiseProfile constraints"
+    page: 59
+    level: MUST
+    actor: file
+    category: tag
+    conformance: DNG
+    supplement_version: "1.3.0.0"
+    tags: [51041, 50710]
+    statement: >
+      NoiseProfile (51041) count must be 2 (one model for all planes) or 2*ColorPlanes (per
+      plane, ordered per CFAPlaneColor 50710). Each scale term S_i must be > 0 and each offset
+      term O_i must be >= 0.
+
+  - id: DNG-066
+    section: "DNG Tags"
+    heading: "DefaultUserCrop constraints"
+    page: 62
+    level: MUST
+    actor: file
+    category: tag
+    conformance: DNG
+    supplement_version: "1.4.0.0"
+    tags: [51125]
+    statement: >
+      DefaultUserCrop (51125) values (Top,Left,Bottom,Right, relative coordinates) must satisfy
+      0 <= Top < Bottom <= 1.0 and 0 <= Left < Right <= 1.0.
+
+  - id: DNG-067
+    section: "DNG Tags"
+    heading: "EnhanceParams required for enhanced IFD"
+    page: 70
+    level: MUST
+    actor: file
+    category: tag
+    conformance: DNG
+    supplement_version: "1.5.0.0"
+    tags: [51182]
+    statement: >
+      EnhanceParams (51182) is required to be non-null in an enhanced IFD and should begin with
+      the company name that wrote the enhancement algorithm.
+
+  - id: DNG-068
+    section: "DNG Tags"
+    heading: "IlluminantData required when illuminant is Other"
+    page: 83
+    level: MUST
+    actor: file
+    category: tag
+    conformance: DNG
+    supplement_version: "1.6.0.0"
+    tags: [50778, 50779, 52529, 52533, 52534, 52535]
+    statement: >
+      When CalibrationIlluminant1/2/3 (50778/50779/52529) is set to 255 (Other), the
+      corresponding IlluminantData1/2/3 tag (52533/52534/52535) is required and specifies the
+      illuminant as an x-y chromaticity coordinate (DataType 0) or a spectral power distribution
+      (DataType 1, NumLambda >= 2). Otherwise the IlluminantData tag is ignored.
+
+  - id: DNG-069
+    section: "DNG Tags"
+    heading: "RGBTables field constraints"
+    page: 75
+    level: MUST
+    actor: file
+    category: tag
+    conformance: DNG
+    supplement_version: "1.6.0.0"
+    tags: [52543, 52526]
+    statement: >
+      In RGBTables (52543): NumTables must be 1..20; CompositeMethod is 0 (Weighted Sum) or 1
+      (Sequential); at most one table may have LengthTableSemanticName = 0 (the background
+      table); Divisions must be 2..32; PixelType 0/1/2 (8-bit uint, 16-bit uint, 32-bit float);
+      GammaEncoding 0..4; ColorPrimaries 0..4; GamutExtension 0 or 1. TableSemanticName matches
+      a SemanticName (52526) case-sensitively; unmatched tables are ignored.
+
+  - id: DNG-070
+    section: "DNG Tags"
+    heading: "RGBTables IFD0 vs profile precedence"
+    page: 80
+    level: MUST
+    actor: reader
+    category: tag
+    conformance: DNG
+    supplement_version: "1.7.0.0"
+    tags: [52543]
+    statement: >
+      RGBTables (52543) was introduced in DNG 1.6 with usage in IFD 0 only. Starting with DNG
+      1.7 it may be used in both IFD 0 and Camera Profile IFD; when rendering with a camera
+      profile, the profile's RGBTables takes precedence over any RGBTables in IFD 0.
+
+  - id: DNG-071
+    section: "DNG Tags"
+    heading: "ProfileGainTableMap2 precedence"
+    page: 87
+    level: MUST
+    actor: reader
+    category: tag
+    conformance: DNG
+    supplement_version: "1.7.0.0"
+    tags: [52544, 52525]
+    statement: >
+      If both ProfileGainTableMap2 (52544) and ProfileGainTableMap (52525) are present,
+      ProfileGainTableMap2 supersedes ProfileGainTableMap (apply only 52544). Precedence for
+      choosing which gain-table-map data to use is: ProfileGainTableMap2 in Camera Profile IFD
+      (highest), then ProfileGainTableMap2 in IFD 0, then ProfileGainTableMap in Raw IFD
+      (lowest).
+
+  - id: DNG-072
+    section: "DNG Tags"
+    heading: "ProfileDynamicRange format"
+    page: 94
+    level: MUST
+    actor: file
+    category: tag
+    conformance: DNG
+    supplement_version: "1.7.0.0"
+    tags: [52551]
+    statement: >
+      ProfileDynamicRange (52551) is 8 bytes: SHORT Version (must be 1), SHORT DynamicRange
+      (0=SDR, 1=HDR), FLOAT HintMaxOutputValue. When DynamicRange is 0 (SDR), HintMaxOutputValue
+      must be <= 1; a value <= 0 means no hint. HDR mode changes the math for
+      ProfileHueSatMapData/Encoding, ProfileLookTableData/Encoding, ProfileToneCurve, and
+      RGBTables via an encoding function f(x) and its inverse.
+
+  - id: DNG-073
+    section: "DNG Tags"
+    heading: "MaskSubArea validity"
+    page: 74
+    level: MUST
+    actor: reader
+    category: tag
+    conformance: DNG
+    supplement_version: "1.6.0.0"
+    tags: [52536]
+    statement: >
+      MaskSubArea (52536) values are T_crop, L_crop, W_full, H_full. If absent, the mask covers
+      the entire ActiveArea. Pixels outside the cropped mask are assumed 0. The tag is invalid
+      and should be ignored if T_crop + ImageWidth > H_full or L_crop + ImageLength > W_full.
+
+  - id: DNG-074
+    section: "DNG Tags"
+    heading: "RawImageDigest algorithm"
+    page: 55
+    level: INFO
+    actor: writer
+    category: tag
+    conformance: DNG
+    supplement_version: "1.2.0.0"
+    tags: [50972]
+    statement: >
+      RawImageDigest (50972) is an MD5 digest of raw image data in row-scan order, each pixel
+      zero-padded to 16 bits (data <= 16 bits deep) or 32 bits (otherwise), processed in
+      little-endian byte order.
+
+tags:
+  # ---------- Extended classic TIFF tags (new DNG values only) ----------
+  - code: 254
+    hex: "0x00FE"
+    name: NewSubFileType
+    types: [LONG]
+    count: "1"
+    default: null
+    required: conditional
+    conformance: DNG
+    location: any-ifd
+    section: "Restrictions and Extensions to Existing TIFF Tags"
+    page: 20
+    description: >
+      Identifies the kind of data in the IFD. DNG defines additional values beyond TIFF 6.0.
+    values:
+      0: "Full-resolution raw image / highest quality"
+      1: "Reduced-resolution rendered preview (primary)"
+      65537: "0x10001 Alternate/non-primary rendered preview (DNG 1.2.0.0+)"
+      4: "Transparency mask for full-resolution raw (DNG 1.4.0.0+)"
+      5: "Transparency mask for reduced-resolution image (DNG 1.4.0.0+)"
+      8: "Highest-resolution depth map (DNG 1.5.0.0+)"
+      9: "Lower-resolution depth map (DNG 1.5.0.0+)"
+      16: "Enhanced image data (DNG 1.5.0.0+)"
+      65540: "0x10004 Semantic mask (DNG 1.6.0.0+)"
+    interacts_with: [262, 51182]
+
+  - code: 258
+    hex: "0x0102"
+    name: BitsPerSample
+    types: [SHORT]
+    count: "SamplesPerPixel"
+    default: null
+    required: conditional
+    conformance: DNG
+    location: any-ifd
+    section: "Restrictions and Extensions to Existing TIFF Tags"
+    page: 20
+    description: >
+      Bit depth per sample. DNG supports 8 to 32 bits/sample; depth must be the same for all
+      samples when SamplesPerPixel != 1. If not 8/16/32, bits are packed big-endian (FillOrder 1).
+    interacts_with: [339, 277, 50717]
+
+  - code: 259
+    hex: "0x0103"
+    name: Compression
+    types: [SHORT]
+    count: "1"
+    default: 1
+    required: no
+    conformance: DNG
+    location: any-ifd
+    section: "Restrictions and Extensions to Existing TIFF Tags"
+    page: 20
+    description: >
+      Compression scheme. DNG restricts/extends the allowed TIFF values.
+    values:
+      1: "Uncompressed"
+      7: "JPEG (baseline DCT or lossless Huffman JPEG)"
+      8: "Deflate (ZIP) - DNG 1.4.0.0+; float, 32-bit int, transparency, depth data"
+      34892: "Lossy JPEG (baseline DCT) - DNG 1.4.0.0+; 8-bit int with LinearRaw or PhotometricMask"
+      52546: "JPEG XL (ISO/IEC 18181-1:2022) - DNG 1.7.0.0+"
+    interacts_with: [262, 258, 317, 52553, 52554, 52555]
+
+  - code: 262
+    hex: "0x0106"
+    name: PhotometricInterpretation
+    types: [SHORT]
+    count: "1"
+    default: null
+    required: yes
+    conformance: DNG
+    location: any-ifd
+    section: "Restrictions and Extensions to Existing TIFF Tags"
+    page: 22
+    description: >
+      Color space of the image data. DNG restricts values by IFD kind and defines new raw/depth/
+      mask values.
+    values:
+      0: "WhiteIsZero (allowed for JPEG XL)"
+      1: "BlackIsZero (preview: gamma 2.2 unless PreviewColorSpace)"
+      2: "RGB (preview: sRGB unless PreviewColorSpace)"
+      6: "YCbCr (JPEG-encoded previews)"
+      32803: "CFA / ColorFilterArray (raw IFD; requires CFARepeatPatternDim + CFAPattern)"
+      34892: "LinearRaw (raw / enhanced / reduced-resolution IFD)"
+      51177: "Depth (depth map IFD)"
+      52527: "PhotometricMask (0xCD2F, semantic mask IFD)"
+    interacts_with: [33421, 33422, 50710, 50970, 259]
+
+  - code: 274
+    hex: "0x0112"
+    name: Orientation
+    types: [SHORT]
+    count: "1"
+    default: 1
+    required: yes
+    conformance: DNG
+    location: ifd0
+    section: "Restrictions and Extensions to Existing TIFF Tags"
+    page: 23
+    description: >
+      Image orientation. Required for DNG. Readers should support all values including mirrored
+      orientations (mirrored values are not TIFF/EP compatible).
+
+  - code: 317
+    hex: "0x013D"
+    name: Predictor
+    types: [SHORT]
+    count: "1"
+    default: 1
+    required: no
+    conformance: DNG
+    location: any-ifd
+    section: "Restrictions and Extensions to Existing TIFF Tags"
+    page: 22
+    supplement_version: "1.4.0.0"
+    description: >
+      Prediction scheme applied before deflate compression (Compression 8).
+    values:
+      1: "Null (no predictor)"
+      2: "Horizontal difference (TIFF 6.0)"
+      3: "Floating point (Adobe TIFF Technical Note 3)"
+      34892: "Horizontal Difference X2 (pixel two to the left)"
+      34893: "Horizontal Difference X4 (pixel four to the left)"
+      34894: "Floating Point X2"
+      34895: "Floating Point X4"
+    interacts_with: [259]
+
+  - code: 339
+    hex: "0x0153"
+    name: SampleFormat
+    types: [SHORT]
+    count: "SamplesPerPixel"
+    default: 1
+    required: no
+    conformance: DNG
+    location: any-ifd
+    section: "Restrictions and Extensions to Existing TIFF Tags"
+    page: 20
+    supplement_version: "1.4.0.0"
+    description: >
+      Numeric format of samples. DNG < 1.4.0.0 always uses 1; 1.4.0.0+ allows 3.
+    values:
+      1: "Unsigned integer"
+      3: "IEEE floating point (BitsPerSample must be 16, 24, or 32)"
+    interacts_with: [258]
+
+  # ---------- DNG core tags (v1.0.0.0 base) ----------
+  - code: 50706
+    hex: "0xC612"
+    name: DNGVersion
+    types: [BYTE]
+    count: "4"
+    default: null
+    required: yes
+    conformance: DNG
+    location: ifd0
+    section: "DNG Tags"
+    page: 24
+    supplement_version: "1.0.0.0"
+    description: >
+      Four-tier DNG version number of the file. For this spec version the bytes are 1,7,0,0.
+
+  - code: 50707
+    hex: "0xC613"
+    name: DNGBackwardVersion
+    types: [BYTE]
+    count: "4"
+    default: "DNGVersion with the last two bytes set to zero"
+    required: no
+    conformance: DNG
+    location: ifd0
+    section: "DNG Tags"
+    page: 24
+    supplement_version: "1.0.0.0"
+    description: >
+      Oldest DNG spec version with which the file is compatible. Readers must not read files
+      whose value exceeds the reader's supported version.
+
+  - code: 50708
+    hex: "0xC614"
+    name: UniqueCameraModel
+    types: [ASCII]
+    count: "String length including null"
+    default: null
+    required: yes
+    conformance: DNG
+    location: ifd0
+    section: "DNG Tags"
+    page: 25
+    supplement_version: "1.0.0.0"
+    description: >
+      Unique, non-localized camera model name including manufacturer; used to index per-model
+      preferences and replacement profiles.
+
+  - code: 50709
+    hex: "0xC615"
+    name: LocalizedCameraModel
+    types: [ASCII, BYTE]
+    count: "Byte count including null"
+    default: "Same as UniqueCameraModel"
+    required: no
+    conformance: DNG
+    location: ifd0
+    section: "DNG Tags"
+    page: 25
+    supplement_version: "1.0.0.0"
+    description: >
+      Localized (UTF-8) camera model name for different markets.
+
+  - code: 50710
+    hex: "0xC616"
+    name: CFAPlaneColor
+    types: [BYTE]
+    count: "ColorPlanes"
+    default: "0, 1, 2 (red, green, blue)"
+    required: conditional
+    conformance: DNG
+    location: raw-ifd
+    section: "DNG Tags"
+    page: 26
+    supplement_version: "1.0.0.0"
+    description: >
+      Mapping between CFAPattern values and plane numbers in LinearRaw space. Required for
+      non-RGB CFA images.
+    interacts_with: [33422, 51041, 52550]
+
+  - code: 50711
+    hex: "0xC617"
+    name: CFALayout
+    types: [SHORT]
+    count: "1"
+    default: 1
+    required: no
+    conformance: DNG
+    location: raw-ifd
+    section: "DNG Tags"
+    page: 26
+    supplement_version: "1.0.0.0"
+    description: >
+      Spatial layout of the CFA. Rows/columns numbered from one.
+    values:
+      1: "Rectangular (or square) layout"
+      2: "Staggered layout A: even columns offset down 1/2 row"
+      3: "Staggered layout B: even columns offset up 1/2 row"
+      4: "Staggered layout C: even rows offset right 1/2 column"
+      5: "Staggered layout D: even rows offset left 1/2 column"
+      6: "Staggered layout E: even rows up 1/2 row, even columns left 1/2 column (DNG 1.3.0.0+)"
+      7: "Staggered layout F: even rows up 1/2 row, even columns right 1/2 column (DNG 1.3.0.0+)"
+      8: "Staggered layout G: even rows down 1/2 row, even columns left 1/2 column (DNG 1.3.0.0+)"
+      9: "Staggered layout H: even rows down 1/2 row, even columns right 1/2 column (DNG 1.3.0.0+)"
+    interacts_with: [50718]
+
+  - code: 50712
+    hex: "0xC618"
+    name: LinearizationTable
+    types: [SHORT]
+    count: "N"
+    default: "Identity table (0, 1, 2, 3, ...)"
+    required: no
+    conformance: DNG
+    location: raw-ifd
+    section: "DNG Tags"
+    page: 27
+    supplement_version: "1.0.0.0"
+    description: >
+      Lookup table mapping stored values to linear values. If SamplesPerPixel != 1, applies to
+      all samples. Raw values beyond table size map to last entry.
+    interacts_with: [50714, 50717]
+
+  - code: 50713
+    hex: "0xC619"
+    name: BlackLevelRepeatDim
+    types: [SHORT]
+    count: "2"
+    default: "1, 1"
+    required: no
+    conformance: DNG
+    location: raw-ifd
+    section: "DNG Tags"
+    page: 27
+    supplement_version: "1.0.0.0"
+    description: >
+      Repeat pattern size (BlackLevelRepeatRows, BlackLevelRepeatCols) for the BlackLevel tag.
+    interacts_with: [50714]
+
+  - code: 50714
+    hex: "0xC61A"
+    name: BlackLevel
+    types: [SHORT, LONG, RATIONAL]
+    count: "BlackLevelRepeatRows * BlackLevelRepeatCols * SamplesPerPixel"
+    default: 0
+    required: no
+    conformance: DNG
+    location: raw-ifd
+    section: "DNG Tags"
+    page: 28
+    supplement_version: "1.0.0.0"
+    description: >
+      Zero-light (thermal black) encoding level as a repeating pattern; origin is top-left of
+      ActiveArea, stored in row-column-sample scan order.
+    interacts_with: [50713, 50715, 50716, 50717, 50829]
+
+  - code: 50715
+    hex: "0xC61B"
+    name: BlackLevelDeltaH
+    types: [SRATIONAL]
+    count: "ActiveArea width"
+    default: "All zeros"
+    required: no
+    conformance: DNG
+    location: raw-ifd
+    section: "DNG Tags"
+    page: 28
+    supplement_version: "1.0.0.0"
+    description: >
+      Per-column difference from the baseline zero-light encoding level. Applies to all samples
+      if SamplesPerPixel != 1.
+    interacts_with: [50714, 50829]
+
+  - code: 50716
+    hex: "0xC61C"
+    name: BlackLevelDeltaV
+    types: [SRATIONAL]
+    count: "ActiveArea length"
+    default: "All zeros"
+    required: no
+    conformance: DNG
+    location: raw-ifd
+    section: "DNG Tags"
+    page: 29
+    supplement_version: "1.0.0.0"
+    description: >
+      Per-row difference from the baseline zero-light encoding level. Applies to all samples if
+      SamplesPerPixel != 1.
+    interacts_with: [50714, 50829]
+
+  - code: 50717
+    hex: "0xC61D"
+    name: WhiteLevel
+    types: [SHORT, LONG]
+    count: "SamplesPerPixel"
+    default: "2^BitsPerSample - 1 (unsigned int); 1.0 (floating point)"
+    required: no
+    conformance: DNG
+    location: raw-ifd
+    section: "DNG Tags"
+    page: 29
+    supplement_version: "1.0.0.0"
+    description: >
+      Fully saturated encoding level for raw sample values.
+    interacts_with: [258, 50714]
+
+  - code: 50718
+    hex: "0xC61E"
+    name: DefaultScale
+    types: [RATIONAL]
+    count: "2"
+    default: "1.0, 1.0"
+    required: conditional
+    conformance: DNG
+    location: raw-ifd
+    section: "DNG Tags"
+    page: 30
+    supplement_version: "1.0.0.0"
+    description: >
+      Default horizontal/vertical scale factors to convert to square pixels; required for
+      cameras with non-square pixels. For CFALayout 2-5 the two values usually differ by 2.0.
+    interacts_with: [50711, 50780]
+
+  - code: 50780
+    hex: "0xC65C"
+    name: BestQualityScale
+    types: [RATIONAL]
+    count: "1"
+    default: 1.0
+    required: no
+    conformance: DNG
+    location: raw-ifd
+    section: "DNG Tags"
+    page: 30
+    supplement_version: "1.0.0.0"
+    description: >
+      Multiplier applied to DefaultScale to achieve the best quality image size.
+    interacts_with: [50718]
+
+  - code: 50719
+    hex: "0xC61F"
+    name: DefaultCropOrigin
+    types: [SHORT, LONG, RATIONAL]
+    count: "2"
+    default: "0, 0"
+    required: no
+    conformance: DNG
+    location: raw-ifd
+    section: "DNG Tags"
+    page: 31
+    supplement_version: "1.0.0.0"
+    description: >
+      Origin of the final image area in raw coordinates (before DefaultScale), relative to the
+      top-left of ActiveArea.
+    interacts_with: [50720, 50829]
+
+  - code: 50720
+    hex: "0xC620"
+    name: DefaultCropSize
+    types: [SHORT, LONG, RATIONAL]
+    count: "2"
+    default: "ImageWidth, ImageLength"
+    required: no
+    conformance: DNG
+    location: raw-ifd
+    section: "DNG Tags"
+    page: 31
+    supplement_version: "1.0.0.0"
+    description: >
+      Size of the final image area in raw coordinates (before DefaultScale).
+    interacts_with: [50719, 50718]
+
+  - code: 50778
+    hex: "0xC65A"
+    name: CalibrationIlluminant1
+    types: [SHORT]
+    count: "1"
+    default: "0 (unknown)"
+    required: no
+    conformance: DNG
+    location: ifd0-or-camera-profile-ifd
+    section: "DNG Tags"
+    page: 31
+    supplement_version: "1.0.0.0"
+    description: >
+      Illuminant for the first color calibration set. Legal values are the Exif LightSource
+      values. DNG 1.6.0.0+ allows 255 (Other) with IlluminantData1 required.
+    interacts_with: [50721, 50723, 52533, 50779]
+
+  - code: 50779
+    hex: "0xC65B"
+    name: CalibrationIlluminant2
+    types: [SHORT]
+    count: "1"
+    default: null
+    required: conditional
+    conformance: DNG
+    location: ifd0-or-camera-profile-ifd
+    section: "DNG Tags"
+    page: 32
+    supplement_version: "1.0.0.0"
+    description: >
+      Illuminant for the optional second color calibration set. Exif LightSource values; if both
+      illuminant 1 and 2 present, neither may be 0. DNG 1.6.0.0+ allows 255 (Other) with
+      IlluminantData2 required.
+    interacts_with: [50722, 50724, 52534, 50778]
+
+  - code: 50721
+    hex: "0xC621"
+    name: ColorMatrix1
+    types: [SRATIONAL]
+    count: "ColorPlanes * 3"
+    default: null
+    required: conditional
+    conformance: DNG
+    location: ifd0-or-camera-profile-ifd
+    section: "DNG Tags"
+    page: 32
+    supplement_version: "1.0.0.0"
+    description: >
+      Matrix converting XYZ to reference camera native color space under the first calibration
+      illuminant, row scan order. Required for all non-monochrome DNG files.
+    interacts_with: [50778, 50722, 52531]
+
+  - code: 50722
+    hex: "0xC622"
+    name: ColorMatrix2
+    types: [SRATIONAL]
+    count: "ColorPlanes * 3"
+    default: null
+    required: no
+    conformance: DNG
+    location: ifd0-or-camera-profile-ifd
+    section: "DNG Tags"
+    page: 33
+    supplement_version: "1.0.0.0"
+    description: >
+      Matrix converting XYZ to reference camera native color space under the second calibration
+      illuminant, row scan order.
+    interacts_with: [50779, 50721]
+
+  - code: 50723
+    hex: "0xC623"
+    name: CameraCalibration1
+    types: [SRATIONAL]
+    count: "ColorPlanes * ColorPlanes"
+    default: "Identity matrix"
+    required: no
+    conformance: DNG
+    location: ifd0
+    section: "DNG Tags"
+    page: 33
+    supplement_version: "1.0.0.0"
+    description: >
+      Calibration matrix from reference to individual camera native space under illuminant 1,
+      row scan order.
+    interacts_with: [50931, 50932, 50778]
+
+  - code: 50724
+    hex: "0xC624"
+    name: CameraCalibration2
+    types: [SRATIONAL]
+    count: "ColorPlanes * ColorPlanes"
+    default: "Identity matrix"
+    required: no
+    conformance: DNG
+    location: ifd0
+    section: "DNG Tags"
+    page: 34
+    supplement_version: "1.0.0.0"
+    description: >
+      Calibration matrix from reference to individual camera native space under illuminant 2,
+      row scan order.
+    interacts_with: [50931, 50932, 50779]
+
+  - code: 50725
+    hex: "0xC625"
+    name: ReductionMatrix1
+    types: [SRATIONAL]
+    count: "3 * ColorPlanes"
+    default: null
+    required: no
+    conformance: DNG
+    location: ifd0-or-camera-profile-ifd
+    section: "DNG Tags"
+    page: 34
+    supplement_version: "1.0.0.0"
+    description: >
+      Dimensionality reduction matrix (first stage) converting camera native to XYZ under
+      illuminant 1. Only usable if ColorPlanes > 3. Row scan order.
+    interacts_with: [50726]
+
+  - code: 50726
+    hex: "0xC626"
+    name: ReductionMatrix2
+    types: [SRATIONAL]
+    count: "3 * ColorPlanes"
+    default: null
+    required: no
+    conformance: DNG
+    location: ifd0-or-camera-profile-ifd
+    section: "DNG Tags"
+    page: 35
+    supplement_version: "1.0.0.0"
+    description: >
+      Dimensionality reduction matrix (first stage) converting camera native to XYZ under
+      illuminant 2. Only usable if ColorPlanes > 3. Row scan order.
+    interacts_with: [50725]
+
+  - code: 50727
+    hex: "0xC627"
+    name: AnalogBalance
+    types: [RATIONAL]
+    count: "ColorPlanes"
+    default: "All 1.0"
+    required: no
+    conformance: DNG
+    location: ifd0
+    section: "DNG Tags"
+    page: 35
+    supplement_version: "1.0.0.0"
+    description: >
+      Gain (analog recommended) applied to the stored raw values before digitization.
+
+  - code: 50728
+    hex: "0xC628"
+    name: AsShotNeutral
+    types: [SHORT, RATIONAL]
+    count: "ColorPlanes"
+    default: null
+    required: no
+    conformance: DNG
+    location: ifd0
+    section: "DNG Tags"
+    page: 36
+    supplement_version: "1.0.0.0"
+    description: >
+      Selected white balance at capture as coordinates of a neutral color in linear reference
+      space. Precludes AsShotWhiteXY.
+    interacts_with: [50729]
+
+  - code: 50729
+    hex: "0xC629"
+    name: AsShotWhiteXY
+    types: [RATIONAL]
+    count: "2"
+    default: null
+    required: no
+    conformance: DNG
+    location: ifd0
+    section: "DNG Tags"
+    page: 36
+    supplement_version: "1.0.0.0"
+    description: >
+      Selected white balance at capture as x-y chromaticity coordinates. Precludes AsShotNeutral.
+    interacts_with: [50728]
+
+  - code: 50730
+    hex: "0xC62A"
+    name: BaselineExposure
+    types: [SRATIONAL]
+    count: "1"
+    default: 0.0
+    required: no
+    conformance: DNG
+    location: ifd0
+    section: "DNG Tags"
+    page: 36
+    supplement_version: "1.0.0.0"
+    description: >
+      EV offset to move the zero point of exposure compensation for this camera model.
+    interacts_with: [51109]
+
+  - code: 50731
+    hex: "0xC62B"
+    name: BaselineNoise
+    types: [RATIONAL]
+    count: "1"
+    default: 1.0
+    required: no
+    conformance: DNG
+    location: ifd0
+    section: "DNG Tags"
+    page: 37
+    supplement_version: "1.0.0.0"
+    description: >
+      Relative noise level of the camera at ISO 100 vs a reference camera. NoiseProfile is
+      recommended instead.
+    interacts_with: [51041]
+
+  - code: 50732
+    hex: "0xC62C"
+    name: BaselineSharpness
+    types: [RATIONAL]
+    count: "1"
+    default: 1.0
+    required: no
+    conformance: DNG
+    location: ifd0
+    section: "DNG Tags"
+    page: 37
+    supplement_version: "1.0.0.0"
+    description: >
+      Relative amount of sharpening required for this camera model vs a reference camera. May
+      appear in an enhanced IFD with a different value.
+
+  - code: 50733
+    hex: "0xC62D"
+    name: BayerGreenSplit
+    types: [LONG]
+    count: "1"
+    default: 0
+    required: no
+    conformance: DNG
+    location: raw-ifd
+    section: "DNG Tags"
+    page: 38
+    supplement_version: "1.0.0.0"
+    description: >
+      For Bayer CFA images, how closely blue/green-row and red/green-row green pixels track (0
+      = close, up to ~5000 = large divergence).
+
+  - code: 50734
+    hex: "0xC62E"
+    name: LinearResponseLimit
+    types: [RATIONAL]
+    count: "1"
+    default: 1.0
+    required: no
+    conformance: DNG
+    location: ifd0
+    section: "DNG Tags"
+    page: 38
+    supplement_version: "1.0.0.0"
+    description: >
+      Fraction of the encoding range above which sensor response may become significantly
+      non-linear.
+
+  - code: 50735
+    hex: "0xC62F"
+    name: CameraSerialNumber
+    types: [ASCII]
+    count: "String length including null"
+    default: null
+    required: no
+    conformance: DNG
+    location: ifd0
+    section: "DNG Tags"
+    page: 39
+    supplement_version: "1.0.0.0"
+    description: >
+      Serial number of the camera/body that captured the image.
+
+  - code: 50736
+    hex: "0xC630"
+    name: LensInfo
+    types: [RATIONAL]
+    count: "4"
+    default: null
+    required: no
+    conformance: DNG
+    location: ifd0
+    section: "DNG Tags"
+    page: 39
+    supplement_version: "1.0.0.0"
+    description: >
+      Lens info: min focal length (mm), max focal length (mm), min f-stop at min focal length,
+      min f-stop at max focal length. Unknown f-stops encoded as 0/0.
+
+  - code: 50737
+    hex: "0xC631"
+    name: ChromaBlurRadius
+    types: [RATIONAL]
+    count: "1"
+    default: "Reader default amount"
+    required: no
+    conformance: DNG
+    location: raw-ifd
+    section: "DNG Tags"
+    page: 39
+    supplement_version: "1.0.0.0"
+    description: >
+      Hint for how much chroma blur to apply (in pixels); normally only for non-CFA images.
+
+  - code: 50738
+    hex: "0xC632"
+    name: AntiAliasStrength
+    types: [RATIONAL]
+    count: "1"
+    default: 1.0
+    required: no
+    conformance: DNG
+    location: raw-ifd
+    section: "DNG Tags"
+    page: 40
+    supplement_version: "1.0.0.0"
+    description: >
+      Hint about anti-alias filter strength (0.0 = none, 1.0 = strong); used by the demosaic
+      algorithm.
+    interacts_with: [50732]
+
+  - code: 50739
+    hex: "0xC633"
+    name: ShadowScale
+    types: [RATIONAL]
+    count: "1"
+    default: 1.0
+    required: no
+    conformance: DNG
+    location: ifd0
+    section: "DNG Tags"
+    page: 40
+    supplement_version: "1.0.0.0"
+    description: >
+      Used by older Adobe Camera Raw to control the sensitivity of its "Blacks" slider.
+
+  - code: 50740
+    hex: "0xC634"
+    name: DNGPrivateData
+    types: [BYTE]
+    count: "Length of private data block in bytes"
+    default: null
+    required: no
+    conformance: DNG
+    location: ifd0
+    section: "DNG Tags"
+    page: 41
+    supplement_version: "1.0.0.0"
+    description: >
+      Manufacturer private data. Must start with a null-terminated manufacturer-name string, be
+      self-contained (relative offsets), and byte-order independent.
+    interacts_with: [50741]
+
+  - code: 50741
+    hex: "0xC635"
+    name: MakerNoteSafety
+    types: [SHORT]
+    count: "1"
+    default: 0
+    required: no
+    conformance: DNG
+    location: ifd0
+    section: "DNG Tags"
+    page: 41
+    supplement_version: "1.0.0.0"
+    description: >
+      Whether the Exif MakerNote is safe to preserve.
+    values:
+      0: "Unsafe"
+      1: "Safe (self-contained, byte-order independent)"
+
+  - code: 50781
+    hex: "0xC65D"
+    name: RawDataUniqueID
+    types: [BYTE]
+    count: "16"
+    default: null
+    required: no
+    conformance: DNG
+    location: ifd0
+    section: "DNG Tags"
+    page: 42
+    supplement_version: "1.0.0.0"
+    description: >
+      16-byte unique identifier for the raw image data, stable across renames/metadata changes.
+
+  - code: 50827
+    hex: "0xC68B"
+    name: OriginalRawFileName
+    types: [ASCII, BYTE]
+    count: "Byte count including null"
+    default: null
+    required: no
+    conformance: DNG
+    location: ifd0
+    section: "DNG Tags"
+    page: 42
+    supplement_version: "1.0.0.0"
+    description: >
+      File name of the original non-DNG raw file this DNG was converted from (UTF-8).
+
+  - code: 50828
+    hex: "0xC68C"
+    name: OriginalRawFileData
+    types: [UNDEFINED]
+    count: "Byte count of embedded data"
+    default: null
+    required: no
+    conformance: DNG
+    location: ifd0
+    section: "DNG Tags"
+    page: 42
+    supplement_version: "1.0.0.0"
+    description: >
+      Compressed contents of the original non-DNG raw file, as a sequence of data blocks, always
+      big-endian byte order.
+    interacts_with: [50973]
+
+  - code: 50829
+    hex: "0xC68D"
+    name: ActiveArea
+    types: [SHORT, LONG]
+    count: "4"
+    default: "0, 0, ImageLength, ImageWidth"
+    required: conditional
+    conformance: DNG
+    location: raw-ifd
+    section: "DNG Tags"
+    page: 44
+    supplement_version: "1.1.0.0"
+    description: >
+      Rectangle of active (non-masked) sensor pixels: top, left, bottom, right. Required if
+      masked pixels are not trimmed.
+    interacts_with: [50830, 50714, 50719]
+
+  - code: 50830
+    hex: "0xC68E"
+    name: MaskedAreas
+    types: [SHORT, LONG]
+    count: "4 * number of rectangles"
+    default: null
+    required: no
+    conformance: DNG
+    location: raw-ifd
+    section: "DNG Tags"
+    page: 44
+    supplement_version: "1.1.0.0"
+    description: >
+      List of non-overlapping fully-masked rectangles (top,left,bottom,right) usable to measure
+      black level. Not used if black level already subtracted.
+    interacts_with: [50829, 50714]
+
+  - code: 50831
+    hex: "0xC68F"
+    name: AsShotICCProfile
+    types: [UNDEFINED]
+    count: "Length of ICC profile in bytes"
+    default: null
+    required: no
+    conformance: DNG
+    location: ifd0
+    section: "DNG Tags"
+    page: 45
+    supplement_version: "1.0.0.0"
+    description: >
+      ICC profile (with AsShotPreProfileMatrix) giving a default output-referred rendering from
+      camera color space to the ICC PCS.
+    interacts_with: [50832]
+
+  - code: 50832
+    hex: "0xC690"
+    name: AsShotPreProfileMatrix
+    types: [SRATIONAL]
+    count: "3 * ColorPlanes or ColorPlanes * ColorPlanes"
+    default: "Identity matrix"
+    required: no
+    conformance: DNG
+    location: ifd0
+    section: "DNG Tags"
+    page: 45
+    supplement_version: "1.0.0.0"
+    description: >
+      Matrix applied to camera color space coordinates before the AsShotICCProfile; may reduce
+      dimensionality to 3 if ColorPlanes > 3.
+    interacts_with: [50831]
+
+  - code: 50833
+    hex: "0xC691"
+    name: CurrentICCProfile
+    types: [UNDEFINED]
+    count: "Length of ICC profile in bytes"
+    default: null
+    required: no
+    conformance: DNG
+    location: ifd0
+    section: "DNG Tags"
+    page: 46
+    supplement_version: "1.0.0.0"
+    description: >
+      Same purpose as AsShotICCProfile but for raw file editors rather than camera makers.
+    interacts_with: [50834]
+
+  - code: 50834
+    hex: "0xC692"
+    name: CurrentPreProfileMatrix
+    types: [SRATIONAL]
+    count: "3 * ColorPlanes or ColorPlanes * ColorPlanes"
+    default: "Identity matrix"
+    required: no
+    conformance: DNG
+    location: ifd0
+    section: "DNG Tags"
+    page: 46
+    supplement_version: "1.0.0.0"
+    description: >
+      Companion matrix to CurrentICCProfile, for raw file editors.
+    interacts_with: [50833]
+
+  # ---------- v1.2.0.0 tags ----------
+  - code: 50879
+    hex: "0xC6BF"
+    name: ColorimetricReference
+    types: [SHORT]
+    count: "1"
+    default: 0
+    required: no
+    conformance: DNG
+    location: ifd0
+    section: "Additional Tags for Version 1.2.0.0"
+    page: 47
+    supplement_version: "1.2.0.0"
+    description: >
+      Colorimetric reference for the CIE XYZ values in the DNG color model.
+    values:
+      0: "Scene-referred (DNG 1.2+)"
+      1: "Output-referred, ICC perceptual dynamic range (DNG 1.2+)"
+      2: "Output-referred, may be high dynamic range; XYZ may be <0.0 or >1.0 (DNG 1.7+)"
+
+  - code: 50931
+    hex: "0xC6F3"
+    name: CameraCalibrationSignature
+    types: [ASCII, BYTE]
+    count: "Length of string including null"
+    default: "Empty string"
+    required: no
+    conformance: DNG
+    location: ifd0
+    section: "Additional Tags for Version 1.2.0.0"
+    page: 47
+    supplement_version: "1.2.0.0"
+    description: >
+      UTF-8 string associated with CameraCalibration1/2/3; must match a profile's
+      ProfileCalibrationSignature for the calibration tags to be used.
+    interacts_with: [50932, 50723, 50724, 52530]
+
+  - code: 50932
+    hex: "0xC6F4"
+    name: ProfileCalibrationSignature
+    types: [ASCII, BYTE]
+    count: "Length of string including null"
+    default: "Empty string"
+    required: no
+    conformance: DNG
+    location: ifd0-or-camera-profile-ifd
+    section: "Additional Tags for Version 1.2.0.0"
+    page: 48
+    supplement_version: "1.2.0.0"
+    description: >
+      UTF-8 string associated with camera profile tags; matched against
+      CameraCalibrationSignature.
+    interacts_with: [50931]
+
+  - code: 50933
+    hex: "0xC6F5"
+    name: ExtraCameraProfiles
+    types: [LONG]
+    count: "Number of extra camera profiles"
+    default: "Empty list"
+    required: no
+    conformance: DNG
+    location: ifd0
+    section: "Additional Tags for Version 1.2.0.0"
+    page: 48
+    supplement_version: "1.2.0.0"
+    description: >
+      File offsets to extra Camera Profile IFDs (each begins with BOM, magic 0x4352, IFD offset,
+      then TIFF IFD; offsets relative to the BOM).
+
+  - code: 50934
+    hex: "0xC6F6"
+    name: AsShotProfileName
+    types: [ASCII, BYTE]
+    count: "Length of string including null"
+    default: null
+    required: no
+    conformance: DNG
+    location: ifd0
+    section: "Additional Tags for Version 1.2.0.0"
+    page: 48
+    supplement_version: "1.2.0.0"
+    description: >
+      UTF-8 name of the "as shot" camera profile, if any.
+
+  - code: 50935
+    hex: "0xC6F7"
+    name: NoiseReductionApplied
+    types: [RATIONAL]
+    count: "1"
+    default: "0/0 (unknown)"
+    required: no
+    conformance: DNG
+    location: raw-ifd
+    section: "Additional Tags for Version 1.2.0.0"
+    page: 49
+    supplement_version: "1.2.0.0"
+    description: >
+      Amount of noise reduction already applied to the raw data (0.0 none .. 1.0 ideal); 0/0 =
+      unknown. May also appear in an enhanced IFD.
+    interacts_with: [51041]
+
+  - code: 50936
+    hex: "0xC6F8"
+    name: ProfileName
+    types: [ASCII, BYTE]
+    count: "Length of string including null"
+    default: null
+    required: conditional
+    conformance: DNG
+    location: ifd0-or-camera-profile-ifd
+    section: "Additional Tags for Version 1.2.0.0"
+    page: 49
+    supplement_version: "1.2.0.0"
+    description: >
+      UTF-8 camera profile name. Optional with one profile; required for all profiles when more
+      than one exists.
+
+  - code: 50937
+    hex: "0xC6F9"
+    name: ProfileHueSatMapDims
+    types: [LONG]
+    count: "3"
+    default: null
+    required: conditional
+    conformance: DNG
+    location: ifd0-or-camera-profile-ifd
+    section: "Additional Tags for Version 1.2.0.0"
+    page: 49
+    supplement_version: "1.2.0.0"
+    description: >
+      Dimensions (HueDivisions, SaturationDivisions, ValueDivisions) of the HueSatMap tables.
+      HueDivisions>=1, SaturationDivisions>=2, ValueDivisions>=1.
+    interacts_with: [50938, 50939, 52537]
+
+  - code: 50938
+    hex: "0xC6FA"
+    name: ProfileHueSatMapData1
+    types: [FLOAT]
+    count: "HueDivisions * SaturationDivisions * ValueDivisions * 3"
+    default: null
+    required: no
+    conformance: DNG
+    location: ifd0-or-camera-profile-ifd
+    section: "Additional Tags for Version 1.2.0.0"
+    page: 50
+    supplement_version: "1.2.0.0"
+    description: >
+      First HueSatMap table: entries of (hue shift deg, saturation scale, value scale), nested
+      value/hue/saturation loop order. Zero-saturation entries must have value scale 1.0.
+    interacts_with: [50937, 51107, 50778]
+
+  - code: 50939
+    hex: "0xC6FB"
+    name: ProfileHueSatMapData2
+    types: [FLOAT]
+    count: "HueDivisions * SaturationDivisions * ValueDivisions * 3"
+    default: null
+    required: no
+    conformance: DNG
+    location: ifd0-or-camera-profile-ifd
+    section: "Additional Tags for Version 1.2.0.0"
+    page: 50
+    supplement_version: "1.2.0.0"
+    description: >
+      Second HueSatMap table (same format as ProfileHueSatMapData1).
+    interacts_with: [50937, 51107, 50779]
+
+  - code: 50940
+    hex: "0xC6FC"
+    name: ProfileToneCurve
+    types: [FLOAT]
+    count: "Samples * 2"
+    default: null
+    required: no
+    conformance: DNG
+    location: ifd0-or-camera-profile-ifd
+    section: "Additional Tags for Version 1.2.0.0"
+    page: 51
+    supplement_version: "1.2.0.0"
+    description: >
+      Default tone curve as (x,y) pairs in linear gamma, strictly increasing x. SDR: endpoints
+      (0,0) and (1,1). HDR: first (0,0), applied in encoded space, slope-extended beyond.
+    interacts_with: [52551]
+
+  - code: 50941
+    hex: "0xC6FD"
+    name: ProfileEmbedPolicy
+    types: [LONG]
+    count: "1"
+    default: 0
+    required: no
+    conformance: DNG
+    location: ifd0-or-camera-profile-ifd
+    section: "Additional Tags for Version 1.2.0.0"
+    page: 51
+    supplement_version: "1.2.0.0"
+    description: >
+      Usage rules for the camera profile.
+    values:
+      0: "Allow copying (any DNG); may not process non-DNG files"
+      1: "Embed if used"
+      2: "Embed never (stored profiles only)"
+      3: "No restrictions"
+
+  - code: 50942
+    hex: "0xC6FE"
+    name: ProfileCopyright
+    types: [ASCII, BYTE]
+    count: "Length of string including null"
+    default: null
+    required: no
+    conformance: DNG
+    location: ifd0-or-camera-profile-ifd
+    section: "Additional Tags for Version 1.2.0.0"
+    page: 52
+    supplement_version: "1.2.0.0"
+    description: >
+      UTF-8 copyright information for the camera profile; always preserved with other profile
+      tags.
+
+  - code: 50964
+    hex: "0xC714"
+    name: ForwardMatrix1
+    types: [SRATIONAL]
+    count: "3 * ColorPlanes"
+    default: null
+    required: no
+    conformance: DNG
+    location: ifd0-or-camera-profile-ifd
+    section: "Additional Tags for Version 1.2.0.0"
+    page: 52
+    supplement_version: "1.2.0.0"
+    description: >
+      Matrix mapping white-balanced camera colors to XYZ D50 under illuminant 1.
+    interacts_with: [50965, 52532]
+
+  - code: 50965
+    hex: "0xC715"
+    name: ForwardMatrix2
+    types: [SRATIONAL]
+    count: "3 * ColorPlanes"
+    default: null
+    required: no
+    conformance: DNG
+    location: ifd0-or-camera-profile-ifd
+    section: "Additional Tags for Version 1.2.0.0"
+    page: 53
+    supplement_version: "1.2.0.0"
+    description: >
+      Matrix mapping white-balanced camera colors to XYZ D50 under illuminant 2.
+    interacts_with: [50964, 52532]
+
+  - code: 50966
+    hex: "0xC716"
+    name: PreviewApplicationName
+    types: [ASCII, BYTE]
+    count: "Length of string including null"
+    default: null
+    required: no
+    conformance: DNG
+    location: preview-ifd
+    section: "Additional Tags for Version 1.2.0.0"
+    page: 53
+    supplement_version: "1.2.0.0"
+    description: >
+      UTF-8 name of the application that created the preview in this IFD.
+
+  - code: 50967
+    hex: "0xC717"
+    name: PreviewApplicationVersion
+    types: [ASCII, BYTE]
+    count: "Length of string including null"
+    default: null
+    required: no
+    conformance: DNG
+    location: preview-ifd
+    section: "Additional Tags for Version 1.2.0.0"
+    page: 53
+    supplement_version: "1.2.0.0"
+    description: >
+      UTF-8 version of the application that created the preview.
+
+  - code: 50968
+    hex: "0xC718"
+    name: PreviewSettingsName
+    types: [ASCII, BYTE]
+    count: "Length of string including null"
+    default: null
+    required: no
+    conformance: DNG
+    location: preview-ifd
+    section: "Additional Tags for Version 1.2.0.0"
+    page: 54
+    supplement_version: "1.2.0.0"
+    description: >
+      UTF-8 name of the conversion settings used for the preview.
+
+  - code: 50969
+    hex: "0xC719"
+    name: PreviewSettingsDigest
+    types: [BYTE]
+    count: "16"
+    default: null
+    required: no
+    conformance: DNG
+    location: preview-ifd
+    section: "Additional Tags for Version 1.2.0.0"
+    page: 54
+    supplement_version: "1.2.0.0"
+    description: >
+      Unique ID (e.g. MD5) of the conversion settings used to render the preview.
+
+  - code: 50970
+    hex: "0xC71A"
+    name: PreviewColorSpace
+    types: [LONG]
+    count: "1"
+    default: "sRGB for color previews, Gray Gamma 2.2 for monochrome previews"
+    required: no
+    conformance: DNG
+    location: preview-ifd
+    section: "Additional Tags for Version 1.2.0.0"
+    page: 54
+    supplement_version: "1.2.0.0"
+    description: >
+      Color space in which the rendered preview is stored.
+    values:
+      0: "Unknown"
+      1: "Gray Gamma 2.2"
+      2: "sRGB"
+      3: "Adobe RGB"
+      4: "ProPhoto RGB"
+    interacts_with: [262]
+
+  - code: 50971
+    hex: "0xC71B"
+    name: PreviewDateTime
+    types: [ASCII]
+    count: "Length of string including null"
+    default: null
+    required: no
+    conformance: DNG
+    location: preview-ifd
+    section: "Additional Tags for Version 1.2.0.0"
+    page: 55
+    supplement_version: "1.2.0.0"
+    description: >
+      ISO 8601 date/time at which the preview was rendered.
+
+  - code: 50972
+    hex: "0xC71C"
+    name: RawImageDigest
+    types: [BYTE]
+    count: "16"
+    default: null
+    required: no
+    conformance: DNG
+    location: ifd0
+    section: "Additional Tags for Version 1.2.0.0"
+    page: 55
+    supplement_version: "1.2.0.0"
+    description: >
+      MD5 digest of raw image data (row-scan, zero-padded 16/32-bit pixels, little-endian).
+    interacts_with: [51111]
+
+  - code: 50973
+    hex: "0xC71D"
+    name: OriginalRawFileDigest
+    types: [BYTE]
+    count: "16"
+    default: null
+    required: no
+    conformance: DNG
+    location: ifd0
+    section: "Additional Tags for Version 1.2.0.0"
+    page: 55
+    supplement_version: "1.2.0.0"
+    description: >
+      MD5 digest of the data in the OriginalRawFileData tag.
+    interacts_with: [50828]
+
+  - code: 50974
+    hex: "0xC71E"
+    name: SubTileBlockSize
+    types: [SHORT, LONG]
+    count: "2"
+    default: "1, 1"
+    required: no
+    conformance: DNG
+    location: raw-ifd
+    section: "Additional Tags for Version 1.2.0.0"
+    page: 56
+    supplement_version: "1.2.0.0"
+    description: >
+      Groups pixels within a tile into rectangular blocks (rows, cols) stored in row-scan order.
+      Non-default value requires DNGBackwardVersion >= 1.2.0.0.
+    interacts_with: [50707]
+
+  - code: 50975
+    hex: "0xC71F"
+    name: RowInterleaveFactor
+    types: [SHORT, LONG]
+    count: "1"
+    default: 1
+    required: no
+    conformance: DNG
+    location: raw-ifd
+    section: "Additional Tags for Version 1.2.0.0"
+    page: 56
+    supplement_version: "1.2.0.0"
+    description: >
+      Number of interleaved row fields. Non-default requires DNGBackwardVersion >= 1.2.0.0.
+    interacts_with: [50707, 52547]
+
+  - code: 50981
+    hex: "0xC725"
+    name: ProfileLookTableDims
+    types: [LONG]
+    count: "3"
+    default: null
+    required: no
+    conformance: DNG
+    location: ifd0-or-camera-profile-ifd
+    section: "Additional Tags for Version 1.2.0.0"
+    page: 56
+    supplement_version: "1.2.0.0"
+    description: >
+      Dimensions (HueDivisions, SaturationDivisions, ValueDivisions) of the default look table.
+      HueDivisions>=1, SaturationDivisions>=2, ValueDivisions>=1.
+    interacts_with: [50982]
+
+  - code: 50982
+    hex: "0xC726"
+    name: ProfileLookTableData
+    types: [FLOAT]
+    count: "HueDivisions * SaturationDivisions * ValueDivisions * 3"
+    default: null
+    required: no
+    conformance: DNG
+    location: ifd0-or-camera-profile-ifd
+    section: "Additional Tags for Version 1.2.0.0"
+    page: 57
+    supplement_version: "1.2.0.0"
+    description: >
+      Default "look" table (same format as HueSatMap), applied after exposure/fill but before
+      the tone curve. Zero-saturation entries must have value scale 1.0.
+    interacts_with: [50981, 51108]
+
+  # ---------- v1.3.0.0 tags ----------
+  - code: 51008
+    hex: "0xC740"
+    name: OpcodeList1
+    types: [UNDEFINED]
+    count: "Variable"
+    default: "Empty List"
+    required: no
+    conformance: DNG
+    location: raw-ifd
+    section: "Additional Tags for Version 1.3.0.0"
+    page: 58
+    supplement_version: "1.3.0.0"
+    description: >
+      Opcodes applied to the raw image as read directly from the file (big-endian opcode format).
+
+  - code: 51009
+    hex: "0xC741"
+    name: OpcodeList2
+    types: [UNDEFINED]
+    count: "Variable"
+    default: "Empty List"
+    required: no
+    conformance: DNG
+    location: raw-ifd
+    section: "Additional Tags for Version 1.3.0.0"
+    page: 58
+    supplement_version: "1.3.0.0"
+    description: >
+      Opcodes applied just after the raw image is mapped to linear reference values.
+
+  - code: 51022
+    hex: "0xC74E"
+    name: OpcodeList3
+    types: [UNDEFINED]
+    count: "Variable"
+    default: "Empty List"
+    required: no
+    conformance: DNG
+    location: raw-ifd
+    section: "Additional Tags for Version 1.3.0.0"
+    page: 58
+    supplement_version: "1.3.0.0"
+    description: >
+      Opcodes applied just after the raw image is demosaiced.
+
+  - code: 51041
+    hex: "0xC761"
+    name: NoiseProfile
+    types: [DOUBLE]
+    count: "2 or 2 * ColorPlanes"
+    default: "Estimated from BaselineNoise"
+    required: no
+    conformance: DNG
+    location: raw-ifd
+    section: "Additional Tags for Version 1.3.0.0"
+    page: 59
+    supplement_version: "1.3.0.0"
+    description: >
+      Noise model parameters (S_i, O_i) per plane; N(x)=sqrt(S_i*x+O_i). S_i>0, O_i>=0. May
+      appear in an enhanced IFD. Order follows CFAPlaneColor.
+    interacts_with: [50731, 50710, 50935]
+
+  # ---------- v1.4.0.0 tags ----------
+  - code: 51125
+    hex: "0xC7B5"
+    name: DefaultUserCrop
+    types: [RATIONAL]
+    count: "4"
+    default: "0.0, 0.0, 1.0, 1.0"
+    required: no
+    conformance: DNG
+    location: raw-ifd
+    section: "Additional Tags for Version 1.4.0.0"
+    page: 62
+    supplement_version: "1.4.0.0"
+    description: >
+      Default user crop rectangle (Top,Left,Bottom,Right) in relative coordinates; 0<=Top<Bottom
+      <=1, 0<=Left<Right<=1.
+
+  - code: 51110
+    hex: "0xC7A6"
+    name: DefaultBlackRender
+    types: [LONG]
+    count: "1"
+    default: 0
+    required: no
+    conformance: DNG
+    location: ifd0-or-camera-profile-ifd
+    section: "Additional Tags for Version 1.4.0.0"
+    page: 62
+    supplement_version: "1.4.0.0"
+    description: >
+      Hint for how to handle the black point during rendering.
+    values:
+      0: "Auto (raw converter performs black subtraction)"
+      1: "None (no black subtraction)"
+
+  - code: 51109
+    hex: "0xC7A5"
+    name: BaselineExposureOffset
+    types: [RATIONAL]
+    count: "1"
+    default: 0.0
+    required: no
+    conformance: DNG
+    location: ifd0-or-camera-profile-ifd
+    section: "Additional Tags for Version 1.4.0.0"
+    page: 63
+    supplement_version: "1.4.0.0"
+    description: >
+      EV amount added to BaselineExposure during rendering (can be negative per examples;
+      declared type is RATIONAL in the spec).
+    interacts_with: [50730]
+
+  - code: 51108
+    hex: "0xC7A4"
+    name: ProfileLookTableEncoding
+    types: [LONG]
+    count: "1"
+    default: 0
+    required: no
+    conformance: DNG
+    location: ifd0-or-camera-profile-ifd
+    section: "Additional Tags for Version 1.4.0.0"
+    page: 63
+    supplement_version: "1.4.0.0"
+    description: >
+      Indexing encoding for a 3D LookTable (not applicable to 2.5D where ValueDivisions=1).
+    values:
+      0: "Linear encoding"
+      1: "sRGB encoding"
+    interacts_with: [50982, 52551]
+
+  - code: 51107
+    hex: "0xC7A3"
+    name: ProfileHueSatMapEncoding
+    types: [LONG]
+    count: "1"
+    default: 0
+    required: no
+    conformance: DNG
+    location: ifd0-or-camera-profile-ifd
+    section: "Additional Tags for Version 1.4.0.0"
+    page: 64
+    supplement_version: "1.4.0.0"
+    description: >
+      Indexing encoding for a 3D HueSatMap (not applicable to 2.5D where ValueDivisions=1).
+    values:
+      0: "Linear encoding"
+      1: "sRGB encoding"
+    interacts_with: [50938, 50939, 52537, 52551]
+
+  - code: 51089
+    hex: "0xC791"
+    name: OriginalDefaultFinalSize
+    types: [SHORT, LONG]
+    count: "2"
+    default: "DefaultCropSize * DefaultScale of this file"
+    required: no
+    conformance: DNG
+    location: ifd0
+    section: "Additional Tags for Version 1.4.0.0"
+    page: 65
+    supplement_version: "1.4.0.0"
+    description: >
+      For a proxy DNG, the default final size (width,length) of the larger original DNG.
+
+  - code: 51090
+    hex: "0xC792"
+    name: OriginalBestQualityFinalSize
+    types: [SHORT, LONG]
+    count: "2"
+    default: "OriginalDefaultFinalSize, else DefaultCropSize*DefaultScale*BestQualityScale"
+    required: no
+    conformance: DNG
+    location: ifd0
+    section: "Additional Tags for Version 1.4.0.0"
+    page: 65
+    supplement_version: "1.4.0.0"
+    description: >
+      For a proxy DNG, the best-quality final size (width,length) of the larger original DNG.
+
+  - code: 51091
+    hex: "0xC793"
+    name: OriginalDefaultCropSize
+    types: [SHORT, LONG, RATIONAL]
+    count: "2"
+    default: "OriginalDefaultFinalSize, else this file's DefaultCropSize"
+    required: no
+    conformance: DNG
+    location: ifd0
+    section: "Additional Tags for Version 1.4.0.0"
+    page: 66
+    supplement_version: "1.4.0.0"
+    description: >
+      For a proxy DNG, the DefaultCropSize (width,length) of the larger original DNG.
+
+  - code: 51111
+    hex: "0xC7A7"
+    name: NewRawImageDigest
+    types: [BYTE]
+    count: "16"
+    default: null
+    required: no
+    conformance: DNG
+    location: ifd0
+    section: "Additional Tags for Version 1.4.0.0"
+    page: 66
+    supplement_version: "1.4.0.0"
+    description: >
+      Modified MD5 digest of raw image data; multiprocessor-friendly and supports lossy
+      compression (algorithm in Adobe DNG SDK).
+    interacts_with: [50972]
+
+  - code: 51112
+    hex: "0xC7A8"
+    name: RawToPreviewGain
+    types: [DOUBLE]
+    count: "1"
+    default: 1.0
+    required: no
+    conformance: DNG
+    location: preview-ifd
+    section: "Additional Tags for Version 1.4.0.0"
+    page: 66
+    supplement_version: "1.4.0.0"
+    description: >
+      Gain multiplier between the main raw IFD and the preview IFD containing this tag.
+
+  # ---------- v1.5.0.0 tags ----------
+  - code: 51177
+    hex: "0xC7E9"
+    name: DepthFormat
+    types: [SHORT]
+    count: "1"
+    default: 0
+    required: no
+    conformance: DNG
+    location: ifd0
+    section: "Additional Tags for Version 1.5.0.0"
+    page: 68
+    supplement_version: "1.5.0.0"
+    description: >
+      Encoding of depth data in the file.
+    values:
+      0: "Unknown"
+      1: "Linear (0=near, max=far)"
+      2: "Inverse (stored inverse linearly; 0=near, max=far)"
+    interacts_with: [51178, 51179]
+
+  - code: 51178
+    hex: "0xC7EA"
+    name: DepthNear
+    types: [RATIONAL]
+    count: "1"
+    default: "0/0 (unknown)"
+    required: no
+    conformance: DNG
+    location: ifd0
+    section: "Additional Tags for Version 1.5.0.0"
+    page: 68
+    supplement_version: "1.5.0.0"
+    description: >
+      Distance from camera represented by the zero value in the depth map. 0/0 = unknown.
+    interacts_with: [51180]
+
+  - code: 51179
+    hex: "0xC7EB"
+    name: DepthFar
+    types: [RATIONAL]
+    count: "1"
+    default: "0/0 (unknown)"
+    required: no
+    conformance: DNG
+    location: ifd0
+    section: "Additional Tags for Version 1.5.0.0"
+    page: 69
+    supplement_version: "1.5.0.0"
+    description: >
+      Distance from camera represented by the maximum depth value. 0/0 = unknown; 1/0 =
+      infinity (valid for unknown and inverse formats).
+    interacts_with: [51180]
+
+  - code: 51180
+    hex: "0xC7EC"
+    name: DepthUnits
+    types: [SHORT]
+    count: "1"
+    default: 0
+    required: no
+    conformance: DNG
+    location: ifd0
+    section: "Additional Tags for Version 1.5.0.0"
+    page: 69
+    supplement_version: "1.5.0.0"
+    description: >
+      Measurement units for DepthNear and DepthFar.
+    values:
+      0: "Unknown"
+      1: "Meters"
+
+  - code: 51181
+    hex: "0xC7ED"
+    name: DepthMeasureType
+    types: [SHORT]
+    count: "1"
+    default: 0
+    required: no
+    conformance: DNG
+    location: ifd0
+    section: "Additional Tags for Version 1.5.0.0"
+    page: 69
+    supplement_version: "1.5.0.0"
+    description: >
+      Measurement geometry for the depth map.
+    values:
+      0: "Unknown"
+      1: "Optical Axis"
+      2: "Optical Ray (through each pixel)"
+
+  - code: 51182
+    hex: "0xC7EE"
+    name: EnhanceParams
+    types: [ASCII]
+    count: "String length including null"
+    default: null
+    required: conditional
+    conformance: DNG
+    location: enhanced-ifd
+    section: "Additional Tags for Version 1.5.0.0"
+    page: 70
+    supplement_version: "1.5.0.0"
+    description: >
+      Documents how enhanced image data was processed; required non-null in an enhanced IFD and
+      should begin with the company name.
+
+  # ---------- v1.6.0.0 tags ----------
+  - code: 52525
+    hex: "0xCD2D"
+    name: ProfileGainTableMap
+    types: [UNDEFINED]
+    count: "64 + (4 * MapPointsV * MapPointsH * MapPointsN)"
+    default: null
+    required: no
+    conformance: DNG
+    location: raw-ifd
+    section: "Additional Tags for Version 1.6.0.0"
+    page: 71
+    supplement_version: "1.6.0.0"
+    description: >
+      Spatially varying RGB gain tables (32-bit float) applied in RIMM color space after
+      BaselineExposure. Superseded by ProfileGainTableMap2 if both present. (Spec text says Raw
+      IFD, but errata: meaningful for all scene-referred IFDs.)
+    interacts_with: [52544, 50829, 50940]
+
+  - code: 52526
+    hex: "0xCD2E"
+    name: SemanticName
+    types: [ASCII]
+    count: "String length including null"
+    default: null
+    required: yes
+    conformance: DNG
+    location: semantic-mask-ifd
+    section: "Additional Tags for Version 1.6.0.0"
+    page: 73
+    supplement_version: "1.6.0.0"
+    description: >
+      String identifying the semantic mask; strongly recommended to be unique across masks.
+      Required tag in a semantic mask IFD.
+    interacts_with: [52528, 52543]
+
+  - code: 52528
+    hex: "0xCD30"
+    name: SemanticInstanceID
+    types: [ASCII]
+    count: "String length including null"
+    default: null
+    required: no
+    conformance: DNG
+    location: semantic-mask-ifd
+    section: "Additional Tags for Version 1.6.0.0"
+    page: 73
+    supplement_version: "1.6.0.0"
+    description: >
+      String identifying a specific instance in a semantic mask; relates content across masks
+      within one DNG file (not across files).
+
+  - code: 52536
+    hex: "0xCD38"
+    name: MaskSubArea
+    types: [LONG]
+    count: "4"
+    default: "0, 0, MaskWidth, MaskHeight"
+    required: no
+    conformance: DNG
+    location: semantic-mask-ifd
+    section: "Additional Tags for Version 1.6.0.0"
+    page: 74
+    supplement_version: "1.6.0.0"
+    description: >
+      Crop rectangle of this IFD's mask relative to the main image: T_crop, L_crop, W_full
+      (uncropped width), H_full (uncropped height). Pixels outside are 0.
+
+  - code: 52543
+    hex: "0xCD3F"
+    name: RGBTables
+    types: [UNDEFINED]
+    count: "See structure (NumTables, CompositeMethod, per-table data)"
+    default: null
+    required: no
+    conformance: DNG
+    location: ifd0-or-camera-profile-ifd
+    section: "Additional Tags for Version 1.6.0.0"
+    page: 75
+    supplement_version: "1.6.0.0"
+    description: >
+      RGB-to-RGB color lookup tables associated with Semantic Masks. NumTables 1..20;
+      CompositeMethod 0 (Weighted Sum) or 1 (Sequential); per table Divisions 2..32, PixelType
+      0/1/2, GammaEncoding 0..4, ColorPrimaries 0..4, GamutExtension 0/1. IFD0 in 1.6; IFD0 or
+      profile in 1.7 (profile takes precedence).
+    interacts_with: [52526, 52551, 50940]
+
+  - code: 52529
+    hex: "0xCD31"
+    name: CalibrationIlluminant3
+    types: [SHORT]
+    count: "1"
+    default: "0 (unknown)"
+    required: no
+    conformance: DNG
+    location: ifd0-or-camera-profile-ifd
+    section: "Additional Tags for Version 1.6.0.0"
+    page: 81
+    supplement_version: "1.6.0.0"
+    description: >
+      Illuminant for the third color calibration set (Exif LightSource values; 255=Other needs
+      IlluminantData3).
+    interacts_with: [52531, 52530, 52535, 50778, 50779]
+
+  - code: 52531
+    hex: "0xCD33"
+    name: ColorMatrix3
+    types: [SRATIONAL]
+    count: "ColorPlanes * 3"
+    default: null
+    required: conditional
+    conformance: DNG
+    location: ifd0-or-camera-profile-ifd
+    section: "Additional Tags for Version 1.6.0.0"
+    page: 81
+    supplement_version: "1.6.0.0"
+    description: >
+      Matrix converting XYZ to reference camera native color space under the third illuminant.
+      Required if CalibrationIlluminant3 is included.
+    interacts_with: [52529]
+
+  - code: 52530
+    hex: "0xCD32"
+    name: CameraCalibration3
+    types: [SRATIONAL]
+    count: "ColorPlanes * ColorPlanes"
+    default: "Identity matrix"
+    required: no
+    conformance: DNG
+    location: ifd0
+    section: "Additional Tags for Version 1.6.0.0"
+    page: 82
+    supplement_version: "1.6.0.0"
+    description: >
+      Calibration matrix from reference to individual camera native space under illuminant 3.
+    interacts_with: [50931, 50932, 52529]
+
+  - code: 52538
+    hex: "0xCD3A"
+    name: ReductionMatrix3
+    types: [SRATIONAL]
+    count: "ColorPlanes * 3"
+    default: null
+    required: no
+    conformance: DNG
+    location: ifd0-or-camera-profile-ifd
+    section: "Additional Tags for Version 1.6.0.0"
+    page: 82
+    supplement_version: "1.6.0.0"
+    description: >
+      Dimensionality reduction matrix under illuminant 3. Only usable if ColorPlanes > 3. Note
+      spec Count text reads ColorPlanes*3 (row scan order).
+    interacts_with: [52529]
+
+  - code: 52537
+    hex: "0xCD39"
+    name: ProfileHueSatMapData3
+    types: [FLOAT]
+    count: "HueDivisions * SaturationDivisions * ValueDivisions * 3"
+    default: null
+    required: no
+    conformance: DNG
+    location: ifd0-or-camera-profile-ifd
+    section: "Additional Tags for Version 1.6.0.0"
+    page: 83
+    supplement_version: "1.6.0.0"
+    description: >
+      Third HueSatMap table (same format as ProfileHueSatMapData1).
+    interacts_with: [50937, 52529]
+
+  - code: 52532
+    hex: "0xCD34"
+    name: ForwardMatrix3
+    types: [SRATIONAL]
+    count: "ColorPlanes * 3"
+    default: null
+    required: no
+    conformance: DNG
+    location: ifd0-or-camera-profile-ifd
+    section: "Additional Tags for Version 1.6.0.0"
+    page: 83
+    supplement_version: "1.6.0.0"
+    description: >
+      Matrix mapping white-balanced camera colors to XYZ D50 under illuminant 3.
+    interacts_with: [50964, 50965, 52529]
+
+  - code: 52533
+    hex: "0xCD35"
+    name: IlluminantData1
+    types: [UNDEFINED]
+    count: "See structure (x-y or spectral power distribution)"
+    default: null
+    required: conditional
+    conformance: DNG
+    location: ifd0-or-camera-profile-ifd
+    section: "Additional Tags for Version 1.6.0.0"
+    page: 83
+    supplement_version: "1.6.0.0"
+    description: >
+      Custom illuminant 1 data; required when CalibrationIlluminant1=255. DataType 0 = x-y
+      chromaticity (x,y RATIONAL); DataType 1 = spectral power distribution (NumLambda>=2,
+      MinLambda, LambdaSpacing, values).
+    interacts_with: [50778]
+
+  - code: 52534
+    hex: "0xCD36"
+    name: IlluminantData2
+    types: [UNDEFINED]
+    count: "See structure (same as IlluminantData1)"
+    default: null
+    required: conditional
+    conformance: DNG
+    location: ifd0-or-camera-profile-ifd
+    section: "Additional Tags for Version 1.6.0.0"
+    page: 85
+    supplement_version: "1.6.0.0"
+    description: >
+      Custom illuminant 2 data; required when CalibrationIlluminant2=255.
+    interacts_with: [50779]
+
+  - code: 52535
+    hex: "0xCD37"
+    name: IlluminantData3
+    types: [UNDEFINED]
+    count: "See structure (same as IlluminantData1)"
+    default: null
+    required: conditional
+    conformance: DNG
+    location: ifd0-or-camera-profile-ifd
+    section: "Additional Tags for Version 1.6.0.0"
+    page: 85
+    supplement_version: "1.6.0.0"
+    description: >
+      Custom illuminant 3 data; required when CalibrationIlluminant3=255.
+    interacts_with: [52529]
+
+  # ---------- v1.7.0.0 tags ----------
+  - code: 52544
+    hex: "0xCD40"
+    name: ProfileGainTableMap2
+    types: [UNDEFINED]
+    count: "80 + (B * MapPointsV * MapPointsH * MapPointsN)"
+    default: null
+    required: no
+    conformance: DNG
+    location: ifd0-or-camera-profile-ifd
+    section: "Additional Tags for Version 1.7.0.0"
+    page: 86
+    supplement_version: "1.7.0.0"
+    description: >
+      Extended ProfileGainTableMap adding DataType (0=uint8,1=uint16,2=float16,3=float32),
+      Gamma (0.25..4.0), GainMin, GainMax. Supersedes ProfileGainTableMap when both present.
+    interacts_with: [52525]
+
+  - code: 52548
+    hex: "0xCD44"
+    name: ImageSequenceInfo
+    types: [UNDEFINED]
+    count: "Byte count of data"
+    default: null
+    required: no
+    conformance: DNG
+    location: ifd0
+    section: "Additional Tags for Version 1.7.0.0"
+    page: 88
+    supplement_version: "1.7.0.0"
+    description: >
+      Informative: relates this image to others in a sequence (SequenceID, SequenceType, Frame
+      Info, Index, Count, Final).
+
+  - code: 52550
+    hex: "0xCD46"
+    name: ImageStats
+    types: [UNDEFINED]
+    count: "Byte count of data"
+    default: null
+    required: no
+    conformance: DNG
+    location: raw-ifd
+    section: "Additional Tags for Version 1.7.0.0"
+    page: 90
+    supplement_version: "1.7.0.0"
+    description: >
+      Informative statistical information about pixel values (child-tag table, big-endian,
+      normalized 0.0 black..1.0 white). Values are approximate.
+    interacts_with: [50710]
+
+  - code: 52551
+    hex: "0xCD47"
+    name: ProfileDynamicRange
+    types: [UNDEFINED]
+    count: "8"
+    default: "Optional (Standard Dynamic Range)"
+    required: no
+    conformance: DNG
+    location: ifd0-or-camera-profile-ifd
+    section: "Additional Tags for Version 1.7.0.0"
+    page: 94
+    supplement_version: "1.7.0.0"
+    description: >
+      Intended output dynamic range of a profile: SHORT Version(=1), SHORT DynamicRange (0=SDR,
+      1=HDR), FLOAT HintMaxOutputValue. HDR alters math for several profile tags.
+    interacts_with: [50940, 50938, 50939, 52537, 51107, 50982, 51108, 52543]
+
+  - code: 52552
+    hex: "0xCD48"
+    name: ProfileGroupName
+    types: [ASCII, BYTE]
+    count: "Length of string including null"
+    default: null
+    required: no
+    conformance: DNG
+    location: ifd0-or-camera-profile-ifd
+    section: "Additional Tags for Version 1.7.0.0"
+    page: 96
+    supplement_version: "1.7.0.0"
+    description: >
+      UTF-8 group name associating related camera profiles (e.g. SDR/HDR variants).
+
+  # ---------- v1.7.1.0 tags ----------
+  - code: 52547
+    hex: "0xCD43"
+    name: ColumnInterleaveFactor
+    types: [SHORT, LONG]
+    count: "1"
+    default: 1
+    required: no
+    conformance: DNG
+    location: raw-ifd
+    section: "Additional Tags for Version 1.7.1.0"
+    page: 97
+    supplement_version: "1.7.1.0"
+    description: >
+      Number of interleaved column fields. Non-default requires DNGBackwardVersion >= 1.7.1.0.
+      Usable with RowInterleaveFactor to store CFA data as subimages.
+    interacts_with: [50975, 50707]
+
+  - code: 52553
+    hex: "0xCD49"
+    name: JXLDistance
+    types: [FLOAT]
+    count: "1"
+    default: null
+    required: no
+    conformance: DNG
+    location: jxl-ifd
+    section: "Additional Tags for Version 1.7.1.0"
+    page: 97
+    supplement_version: "1.7.1.0"
+    description: >
+      JPEG XL distance parameter used to encode this IFD. 0.0 = lossless; >0.0 = lossy.
+    interacts_with: [259]
+
+  - code: 52554
+    hex: "0xCD4A"
+    name: JXLEffort
+    types: [LONG]
+    count: "1"
+    default: null
+    required: no
+    conformance: DNG
+    location: jxl-ifd
+    section: "Additional Tags for Version 1.7.1.0"
+    page: 98
+    supplement_version: "1.7.1.0"
+    description: >
+      JPEG XL effort parameter (1 low .. 9 high) used to encode this IFD.
+    interacts_with: [259]
+
+  - code: 52555
+    hex: "0xCD4B"
+    name: JXLDecodeSpeed
+    types: [LONG]
+    count: "1"
+    default: null
+    required: no
+    conformance: DNG
+    location: jxl-ifd
+    section: "Additional Tags for Version 1.7.1.0"
+    page: 98
+    supplement_version: "1.7.1.0"
+    description: >
+      JPEG XL decode speed parameter (1 slow .. 4 fast) used to encode this IFD.
+    interacts_with: [259]
+
+dependencies:
+  - id: DNG-DEP-001
+    requirement: DNG-006
+    when: "masked pixels are stored (not trimmed) in the raw image"
+    then: "ActiveArea(50829) must be present to define the non-masked pixel rectangle"
+    kind: requires
+    tags: [50829]
+
+  - id: DNG-DEP-002
+    requirement: DNG-034
+    when: "PhotometricInterpretation(262) == 32803 (CFA)"
+    then: "CFARepeatPatternDim(33421) and CFAPattern(33422) must be present in the same IFD"
+    kind: requires
+    tags: [262, 33421, 33422]
+
+  - id: DNG-DEP-003
+    requirement: DNG-053
+    when: "the image is a non-RGB CFA image"
+    then: "CFAPlaneColor(50710) is required"
+    kind: requires
+    tags: [50710, 33422]
+
+  - id: DNG-DEP-004
+    requirement: DNG-054
+    when: "the DNG file is non-monochrome"
+    then: "ColorMatrix1(50721) is required"
+    kind: requires
+    tags: [50721]
+
+  - id: DNG-DEP-005
+    requirement: DNG-055
+    when: "AsShotNeutral(50728) is present"
+    then: "AsShotWhiteXY(50729) must not be present"
+    kind: forbids
+    tags: [50728, 50729]
+
+  - id: DNG-DEP-006
+    requirement: DNG-056
+    when: "both CalibrationIlluminant1(50778) and CalibrationIlluminant2(50779) are present"
+    then: "neither may have value 0 (unknown)"
+    kind: constrains-value
+    tags: [50778, 50779]
+
+  - id: DNG-DEP-007
+    requirement: DNG-068
+    when: "CalibrationIlluminant1(50778) == 255 (Other)"
+    then: "IlluminantData1(52533) is required; otherwise it is ignored"
+    kind: requires
+    tags: [50778, 52533]
+
+  - id: DNG-DEP-008
+    requirement: DNG-068
+    when: "CalibrationIlluminant2(50779) == 255 (Other)"
+    then: "IlluminantData2(52534) is required; otherwise it is ignored"
+    kind: requires
+    tags: [50779, 52534]
+
+  - id: DNG-DEP-009
+    requirement: DNG-068
+    when: "CalibrationIlluminant3(52529) == 255 (Other)"
+    then: "IlluminantData3(52535) is required; otherwise it is ignored"
+    kind: requires
+    tags: [52529, 52535]
+
+  - id: DNG-DEP-010
+    requirement: DNG-044
+    when: "CalibrationIlluminant3(52529) is present"
+    then: "CalibrationIlluminant1(50778), CalibrationIlluminant2(50779), and ColorMatrix3(52531) must be present; the three illuminant white points must be distinct"
+    kind: requires
+    tags: [52529, 50778, 50779, 52531]
+
+  - id: DNG-DEP-011
+    requirement: DNG-044
+    when: "CalibrationIlluminant3(52529) is present"
+    then: "either all three ForwardMatrix tags (50964,50965,52532) are present or none are"
+    kind: constrains-value
+    tags: [52529, 50964, 50965, 52532]
+
+  - id: DNG-DEP-012
+    requirement: DNG-044
+    when: "CalibrationIlluminant3(52529) is present"
+    then: "either all three ReductionMatrix tags (50725,50726,52538) are present or none are"
+    kind: constrains-value
+    tags: [52529, 50725, 50726, 52538]
+
+  - id: DNG-DEP-013
+    requirement: DNG-044
+    when: "CalibrationIlluminant3(52529) is present"
+    then: "either all three ProfileHueSatMapData tags (50938,50939,52537) are present or none are"
+    kind: constrains-value
+    tags: [52529, 50938, 50939, 52537]
+
+  - id: DNG-DEP-014
+    requirement: DNG-062
+    when: "BlackLevelRepeatDim(50713) = (rows, cols)"
+    then: "BlackLevel(50714) count == rows * cols * SamplesPerPixel"
+    kind: constrains-value
+    tags: [50713, 50714, 277]
+
+  - id: DNG-DEP-015
+    requirement: DNG-040
+    when: "BlackLevelDeltaH(50715) or BlackLevelDeltaV(50716) is present"
+    then: "their counts are ActiveArea(50829) width and length respectively"
+    kind: constrains-value
+    tags: [50715, 50716, 50829]
+
+  - id: DNG-DEP-016
+    requirement: DNG-042
+    when: "CameraCalibrationSignature(50931) != ProfileCalibrationSignature(50932) of the selected profile"
+    then: "the CameraCalibration1/2/3 tags (50723,50724,52530) must be replaced by identity matrices in the color transform"
+    kind: modifies-meaning
+    tags: [50931, 50932, 50723, 50724, 52530]
+
+  - id: DNG-DEP-017
+    requirement: DNG-061
+    when: "more than one camera profile is stored in the file"
+    then: "ProfileName(50936) is required for all camera profiles"
+    kind: requires
+    tags: [50936]
+
+  - id: DNG-DEP-018
+    requirement: DNG-064
+    when: "more than one camera profile is stored in the file"
+    then: "ExtraCameraProfiles(50933) is used to reference the additional Camera Profile IFDs (primary profile stays in IFD 0)"
+    kind: requires
+    tags: [50933]
+
+  - id: DNG-DEP-019
+    requirement: DNG-011
+    tags: [50725, 50726, 52538]
+    when: "ColorPlanes <= 3"
+    then: "ReductionMatrix1/2/3 (50725,50726,52538) may not be used (only when ColorPlanes > 3)"
+    kind: forbids
+
+  - id: DNG-DEP-020
+    requirement: DNG-041
+    when: "matrix tag is used"
+    then: "ColorMatrix1/2/3 count == ColorPlanes*3; CameraCalibration1/2/3 count == ColorPlanes*ColorPlanes; ForwardMatrix1/2/3 count == 3*ColorPlanes; AnalogBalance count == ColorPlanes; AsShotNeutral count == ColorPlanes"
+    kind: constrains-value
+    tags: [50721, 50723, 50964, 50727, 50728]
+
+  - id: DNG-DEP-021
+    requirement: DNG-025
+    when: "SamplesPerPixel(277) != 1"
+    then: "BitsPerSample(258) must be identical for every sample"
+    kind: constrains-value
+    tags: [258, 277]
+
+  - id: DNG-DEP-022
+    requirement: DNG-026
+    when: "SampleFormat(339) == 3 (IEEE floating point)"
+    then: "BitsPerSample(258) must be 16, 24, or 32"
+    kind: constrains-value
+    tags: [339, 258]
+
+  - id: DNG-DEP-023
+    requirement: DNG-029
+    when: "Compression(259) == 34892 (Lossy JPEG)"
+    then: "BitsPerSample must be 8 (8-bit integer) and PhotometricInterpretation(262) must be 34892 (LinearRaw) or 52527 (PhotometricMask)"
+    kind: constrains-value
+    tags: [259, 262, 258]
+
+  - id: DNG-DEP-024
+    requirement: DNG-030
+    when: "Compression(259) == 52546 (JPEG XL)"
+    then: "8 <= BitsPerSample <= 16 integer or 16-bit float; SamplesPerPixel is 1 or 3; PhotometricInterpretation(262) in [0,1,2,4,32803,34892,51177,52527]"
+    kind: constrains-value
+    tags: [259, 262, 258, 277]
+
+  - id: DNG-DEP-025
+    requirement: DNG-032
+    when: "Compression(259) == 8 (Deflate)"
+    then: "Predictor(317) must be one of 1,2,3,34892,34893,34894,34895"
+    kind: constrains-value
+    tags: [259, 317]
+
+  - id: DNG-DEP-026
+    requirement: DNG-027
+    when: "PhotometricInterpretation(262) == 6 (YCbCr) with BitsPerSample 8/8/8, OR == 1 (BlackIsZero) with BitsPerSample 8, and Compression(259)==7"
+    then: "the JPEG variant must be baseline DCT JPEG; otherwise lossless Huffman JPEG"
+    kind: constrains-value
+    tags: [262, 258, 259]
+
+  - id: DNG-DEP-027
+    requirement: DNG-051
+    when: "non-default SubTileBlockSize(50974) is used"
+    then: "DNGBackwardVersion(50707) must be >= 1.2.0.0"
+    kind: constrains-value
+    tags: [50974, 50707]
+
+  - id: DNG-DEP-028
+    requirement: DNG-051
+    when: "non-default RowInterleaveFactor(50975) is used"
+    then: "DNGBackwardVersion(50707) must be >= 1.2.0.0"
+    kind: constrains-value
+    tags: [50975, 50707]
+
+  - id: DNG-DEP-029
+    requirement: DNG-051
+    when: "non-default ColumnInterleaveFactor(52547) is used"
+    then: "DNGBackwardVersion(50707) must be >= 1.7.1.0"
+    kind: constrains-value
+    tags: [52547, 50707]
+
+  - id: DNG-DEP-030
+    requirement: DNG-051
+    when: "CFALayout(50711) value 6, 7, 8, or 9 is used"
+    then: "DNGBackwardVersion(50707) must be >= 1.3.0.0"
+    kind: constrains-value
+    tags: [50711, 50707]
+
+  - id: DNG-DEP-031
+    requirement: DNG-018
+    when: "an IFD has NewSubFileType(254) == 16 (enhanced image data)"
+    then: "PhotometricInterpretation(262) must be 34892 (LinearRaw); should have EnhanceParams(51182); BlackLevel same for all planes if integer"
+    kind: requires
+    tags: [254, 262, 51182, 50714]
+
+  - id: DNG-DEP-032
+    requirement: DNG-016
+    when: "an IFD has NewSubFileType(254) == 8 or 9 (depth map)"
+    then: "PhotometricInterpretation(262) should be 51177 (Depth)"
+    kind: selects-default
+    tags: [254, 262]
+
+  - id: DNG-DEP-033
+    requirement: DNG-020
+    when: "an IFD has NewSubFileType(254) == 65540 (semantic mask)"
+    then: "PhotometricInterpretation(262) should be 52527 (PhotometricMask) and SemanticName(52526) must be present"
+    kind: requires
+    tags: [254, 262, 52527, 52526]
+
+  - id: DNG-DEP-034
+    requirement: DNG-065
+    when: "NoiseProfile(51041) is present"
+    then: "count must be 2 or 2*ColorPlanes; each S_i > 0 and each O_i >= 0"
+    kind: constrains-value
+    tags: [51041]
+
+  - id: DNG-DEP-035
+    requirement: DNG-071
+    when: "both ProfileGainTableMap2(52544) and ProfileGainTableMap(52525) are present"
+    then: "readers apply only ProfileGainTableMap2 and ignore ProfileGainTableMap"
+    kind: modifies-meaning
+    tags: [52544, 52525]
+
+  - id: DNG-DEP-036
+    requirement: DNG-070
+    when: "a camera profile with RGBTables(52543) is used to render and IFD0 also has RGBTables"
+    then: "the profile's RGBTables takes precedence over the IFD0 RGBTables"
+    kind: modifies-meaning
+    tags: [52543]
+
+  - id: DNG-DEP-037
+    requirement: DNG-049
+    when: "an optional WarpRectilinear2 (opcode 14) is immediately followed by a WarpRectilinear (1) or WarpFisheye (2) opcode in the same list"
+    then: "the reader should skip that following WarpRectilinear/WarpFisheye opcode"
+    kind: modifies-meaning
+    tags: [51022]
+
+  - id: DNG-DEP-038
+    requirement: DNG-069
+    when: "RGBTables(52543) table has LengthTableSemanticName == 0"
+    then: "that table is the background table; at most one table per RGBTables may be a background table"
+    kind: constrains-value
+    tags: [52543]
+
+  - id: DNG-DEP-039
+    requirement: DNG-072
+    when: "ProfileDynamicRange(52551) DynamicRange == 0 (SDR)"
+    then: "HintMaxOutputValue must be <= 1"
+    kind: constrains-value
+    tags: [52551]
+
+  - id: DNG-DEP-040
+    requirement: DNG-033
+    when: "PhotometricInterpretation(262) == 1 (BlackIsZero) or 2 (RGB) in a preview IFD"
+    then: "color space is gamma 2.2 / sRGB respectively unless overridden by PreviewColorSpace(50970)"
+    kind: selects-default
+    tags: [262, 50970]
+
+  - id: DNG-DEP-041
+    requirement: DNG-013
+    when: "SampleFormat(339) == 3 with 32-bit integer/float, or transparency/depth data"
+    then: "Deflate compression (259 == 8) is permitted for these data types"
+    kind: constrains-value
+    tags: [339, 259]
+
+  - id: DNG-DEP-042
+    requirement: DNG-051
+    when: "the main image IFD uses floating point data, or an IFD with NewSubFileType 4, or Compression 8 or 34892"
+    then: "DNGBackwardVersion(50707) must be >= 1.4.0.0"
+    kind: constrains-value
+    tags: [50707, 339, 254, 259]
+
+  - id: DNG-DEP-043
+    requirement: DNG-051
+    when: "the main image IFD uses Compression(259) == 52546 (JPEG XL)"
+    then: "DNGBackwardVersion(50707) must be >= 1.7.0.0"
+    kind: constrains-value
+    tags: [50707, 259]
+
+  - id: DNG-DEP-044
+    requirement: DNG-050
+    when: "a per-row/per-column opcode (DeltaPerRow/Column, ScalePerRow/Column) is applied"
+    then: "the Count parameter must match the number of affected rows/columns in the specified area"
+    kind: constrains-value
+    tags: [51008, 51009, 51022]
+
+  - id: DNG-DEP-045
+    requirement: DNG-018
+    when: "DefaultCropSize(50720)/DefaultCropOrigin(50719) define the final image area"
+    then: "they are expressed in raw coordinates before DefaultScale(50718) is applied, relative to ActiveArea(50829)"
+    kind: modifies-meaning
+    tags: [50720, 50719, 50718, 50829]

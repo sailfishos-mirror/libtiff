@@ -1,0 +1,3867 @@
+document: EXIF
+title: "Exchangeable image file format for digital still cameras: Exif Version 2.3 (CIPA DC-008-2010 / JEITA CP-3451B)"
+date: "April 26, 2010"
+requirements:
+  - id: EXIF-001
+    section: "2.2"
+    heading: "Verbal forms for the expression of provisions"
+    page: 8
+    level: INFO
+    actor: both
+    category: behavior
+    conformance: EXIF
+    statement: >
+      Keyword interpretation per ISO/IEC Directives Part 2: "shall"/"shall not" = mandatory
+      requirement/prohibition; "should"/"should not" = recommendation; "may"/"need not" =
+      permission (optional); "can"/"cannot" = possibility and capability.
+    notes: >
+      Determines how MUST/SHOULD/MAY levels below were inferred from the source wording.
+
+  - id: EXIF-002
+    section: "4.2"
+    heading: "Format Version"
+    page: 13
+    level: MUST
+    actor: file
+    category: structure
+    conformance: EXIF
+    tags: [36864]
+    statement: >
+      The Exif format version is recorded as 4 bytes A1,A2,B1,B2 (lowest address first) in the
+      ExifVersion tag (36864); A1,A2 hold the upper part of the version and B1,B2 the lower part.
+    notes: >
+      Version numbering rule: lower part (B1,B2) changes when old readers can still recognize
+      conventional info and skip newly-added functions; upper part (A1,A2) changes when an old
+      reader may operate incorrectly under the new specification.
+
+  - id: EXIF-003
+    section: "4.2"
+    heading: "Format Version"
+    page: 13
+    level: SHOULD
+    actor: reader
+    category: behavior
+    conformance: EXIF
+    statement: >
+      Players/readers should be able to play back files of versions earlier than the supported
+      standard version.
+
+  - id: EXIF-004
+    section: "4.3"
+    heading: "Definition of Glossary"
+    page: 14
+    level: INFO
+    actor: file
+    category: structure
+    conformance: EXIF
+    statement: >
+      The initial IFD in the file is the "0th IFD" (primary image); the next IFD in the chain is
+      the "1st IFD" (thumbnail image).
+
+  - id: EXIF-005
+    section: "4.4.1"
+    heading: "Number of Pixels"
+    page: 14
+    level: INFO
+    actor: file
+    category: data-layout
+    conformance: EXIF
+    statement: >
+      There is no limit on the number of pixels of the primary image whether recorded uncompressed
+      or JPEG-compressed; the same applies to thumbnails. When JPEG-compressed with ImageLength or
+      ImageWidth not a multiple of 8 or 16, recording follows section 4.8.1 (padding rules).
+
+  - id: EXIF-006
+    section: "4.4.2"
+    heading: "Pixel Aspect"
+    page: 14
+    level: MUST
+    actor: file
+    category: data-layout
+    conformance: EXIF
+    statement: >
+      Image data shall be recorded as square pixels with a pixel aspect ratio of 1:1; this applies
+      equally to thumbnails.
+
+  - id: EXIF-007
+    section: "4.4.3"
+    heading: "Pixel Composition and Sampling"
+    page: 14
+    level: MUST
+    actor: file
+    category: data-layout
+    conformance: EXIF
+    tags: [262, 530]
+    statement: >
+      For uncompressed data the pixel composition/sampling shall be RGB 4:4:4 or YCbCr 4:2:2 or
+      YCbCr 4:2:0. For compressed data it shall be YCbCr 4:2:2 or YCbCr 4:2:0. Each pixel component
+      shall be 8 bits. This applies equally to thumbnails.
+
+  - id: EXIF-008
+    section: "4.4.3"
+    heading: "Pixel Composition and Sampling"
+    page: 14
+    level: SHOULD
+    actor: writer
+    category: data-layout
+    conformance: EXIF
+    tags: [531]
+    statement: >
+      Y and Cb,Cr sampling points may be co-sited or centered. For YCbCr 4:2:2 co-sited is
+      recommended (improved TV image quality); for YCbCr 4:2:0 centered is recommended (TIFF
+      default, common in PC applications).
+
+  - id: EXIF-009
+    section: "4.5.1"
+    heading: "Basic Structure of Primary Image Data"
+    page: 17
+    level: MUST
+    actor: file
+    category: structure
+    conformance: EXIF
+    statement: >
+      Primary image data uses one of these formats by type: RGB uncompressed = Baseline TIFF Rev.
+      6.0 RGB Full Color Images; YCbCr uncompressed = TIFF Rev. 6.0 Extensions YCbCr Images; JPEG
+      compressed = JPEG Baseline ADCT. For compressed data the DSC attribute information shall be
+      recorded in APP1 in a manner compatible with TIFF.
+
+  - id: EXIF-010
+    section: "4.5.2"
+    heading: "Basic Structure of Uncompressed RGB Data"
+    page: 17
+    level: MUST
+    actor: file
+    category: structure
+    conformance: EXIF
+    statement: >
+      Uncompressed RGB data shall be recorded in conformance with Baseline TIFF Rev. 6.0 RGB Full
+      Color Images. Standard attribute info is recorded in TIFF Rev. 6.0 tags; Exif-specific info is
+      recorded via private tags that point to the Exif IFD.
+
+  - id: EXIF-011
+    section: "4.5.2"
+    heading: "Basic Structure of Uncompressed RGB Data"
+    page: 17
+    level: INFO
+    actor: file
+    category: structure
+    conformance: EXIF
+    statement: >
+      An uncompressed Exif file is structured as: File Header; 0th IFD; 0th IFD Value; 1st IFD; 1st
+      IFD Value; 1st (Thumbnail) Image Data; 0th (Primary) Image Data. As in TIFF, the recording
+      location of each IFD's values is not fixed.
+
+  - id: EXIF-012
+    section: "4.5.2"
+    heading: "TIFF Headers"
+    page: 18
+    level: MUST
+    actor: file
+    category: structure
+    conformance: EXIF
+    statement: >
+      The file header is 8 bytes per the TIFF standard (Table 1): Byte Order (2 bytes) = "II"
+      (4949.H, little endian) or "MM" (4D4D.H, big endian); constant 42 (2 bytes) = 002A.H fixed;
+      Offset of IFD (4 bytes) = start address of the 0th IFD (00000008.H if the 0th IFD immediately
+      follows the header).
+
+  - id: EXIF-013
+    section: "4.5.2"
+    heading: "Basic Structure of Uncompressed RGB Data"
+    page: 18
+    level: MUST
+    actor: file
+    category: structure
+    conformance: EXIF
+    statement: >
+      The 0th IFD's "offset of next IFD" indicates the start of the 1st IFD (thumbnail). When no 1st
+      IFD is recorded, that offset shall terminate with 00000000.H.
+
+  - id: EXIF-014
+    section: "4.5.3"
+    heading: "Basic Structure of YCbCr Uncompressed Data"
+    page: 19
+    level: MUST
+    actor: file
+    category: structure
+    conformance: EXIF
+    tags: [529, 530, 531]
+    statement: >
+      YCbCr uncompressed data shall be recorded in conformance with TIFF Rev. 6.0 Extensions YCbCr
+      Images, additionally using YCbCrCoefficients (529), YCbCrSubSampling (530) and YCbCrPositioning
+      (531). Other attribute recording is the same as for uncompressed RGB.
+
+  - id: EXIF-015
+    section: "4.5.8"
+    heading: "Basic Structure of Thumbnail Data"
+    page: 23
+    level: SHOULD
+    actor: writer
+    category: structure
+    conformance: EXIF
+    statement: >
+      Thumbnail data is recorded in the 1st IFD. Recording a thumbnail is optional but recommended
+      when possible (unless precluded by hardware or other restrictions). No limit is placed on
+      thumbnail size (though APP1 <= 64 KB constrains compressed thumbnails).
+
+  - id: EXIF-016
+    section: "4.5.8"
+    heading: "Basic Structure of Thumbnail Data"
+    page: 23
+    level: MUST-NOT
+    actor: file
+    category: structure
+    conformance: EXIF
+    tags: [259]
+    statement: >
+      If the primary image is recorded as uncompressed RGB or uncompressed YCbCr data, the thumbnail
+      shall not be recorded as JPEG-compressed data (Table 3). A compressed primary image may have
+      either an uncompressed or a compressed thumbnail.
+
+  - id: EXIF-017
+    section: "4.5.8"
+    heading: "Basic Structure of Thumbnail Data"
+    page: 23
+    level: MUST
+    actor: file
+    category: structure
+    conformance: EXIF
+    statement: >
+      Uncompressed thumbnails shall be recorded in the 1st IFD in conformance with Baseline TIFF Rev.
+      6.0 RGB Full Color Images or TIFF Rev. 6.0 Extensions YCbCr Images.
+
+  - id: EXIF-018
+    section: "4.5.8"
+    heading: "Basic Structure of Thumbnail Data"
+    page: 24
+    level: MUST
+    actor: file
+    category: structure
+    conformance: EXIF
+    tags: [259, 513, 514]
+    statement: >
+      For a compressed (JPEG) thumbnail, the 1st IFD Compression (259) tag is set to 6 and the
+      location and size are designated by JPEGInterchangeFormat (513) and JPEGInterchangeFormatLength
+      (514); the thumbnail is a continuous JPEG stream from SOI to EOI. No APPn, COM, or restart
+      markers shall be recorded in the thumbnail JPEG stream. To avoid duplication, the 1st IFD shall
+      not record a tag that indicates a TIFF image or info already recorded as a JPEG marker segment.
+
+  - id: EXIF-019
+    section: "4.6.2"
+    heading: "IFD Structure"
+    page: 25
+    level: MUST
+    actor: file
+    category: structure
+    conformance: EXIF
+    statement: >
+      Each IFD consists of a 2-byte count (number of fields), 12-byte field entries, and a 4-byte
+      offset to the next IFD, per TIFF Rev. 6.0. Each 12-byte entry is: bytes 0-1 Tag, bytes 2-3
+      Type, bytes 4-7 Count, bytes 8-11 Value Offset.
+
+  - id: EXIF-020
+    section: "4.6.2"
+    heading: "IFD Structure - Type"
+    page: 25
+    level: MUST
+    actor: file
+    category: structure
+    conformance: EXIF
+    statement: >
+      The field types used in Exif are: 1=BYTE, 2=ASCII (7-bit ASCII, NULL-terminated), 3=SHORT
+      (16-bit unsigned), 4=LONG (32-bit unsigned), 5=RATIONAL (two LONGs, numerator then
+      denominator), 7=UNDEFINED (8-bit byte, any value per field), 9=SLONG (32-bit signed, two's
+      complement), 10=SRATIONAL (two SLONGs, numerator then denominator).
+
+  - id: EXIF-021
+    section: "4.6.2"
+    heading: "IFD Structure - Count"
+    page: 25
+    level: INFO
+    actor: file
+    category: structure
+    conformance: EXIF
+    statement: >
+      Count is the number of values, not the number of bytes (e.g. one SHORT value has count 1 even
+      though it occupies 2 bytes).
+
+  - id: EXIF-022
+    section: "4.6.2"
+    heading: "IFD Structure - Value Offset"
+    page: 25
+    level: MUST
+    actor: file
+    category: structure
+    conformance: EXIF
+    statement: >
+      The Value Offset is the offset from the start of the TIFF header to the value. When the value
+      fits in 4 bytes it is stored inline; if smaller than 4 bytes it is stored left-justified from
+      the low end of the offset field (e.g. big-endian SHORT value 1 is recorded as 00010000.H).
+
+  - id: EXIF-023
+    section: "4.6.2"
+    heading: "IFD Structure"
+    page: 25
+    level: MUST
+    actor: file
+    category: structure
+    conformance: EXIF
+    statement: >
+      Field entries shall be recorded in sequence starting from the smallest tag number (ascending
+      tag order). There is no stipulation on the order or position at which tag values are recorded.
+
+  - id: EXIF-024
+    section: "4.6.2"
+    heading: "IFD Structure"
+    page: 25
+    level: INFO
+    actor: file
+    category: structure
+    conformance: EXIF
+    statement: >
+      Tag numbers in the Exif 0th IFD and 1st IFD are all identical to the corresponding TIFF tag
+      numbers.
+
+  - id: EXIF-025
+    section: "4.6.3.A"
+    heading: "Exif IFD"
+    page: 26
+    level: MUST
+    actor: file
+    category: structure
+    conformance: EXIF
+    tags: [34665]
+    statement: >
+      The Exif IFD holds Exif-specific attribute information and is pointed to by the Value Offset of
+      the Exif IFD Pointer tag (34665, LONG, count 1, no default), an offset from the TIFF header.
+      The Exif IFD has the same structure as a TIFF IFD but ordinarily contains no image data.
+
+  - id: EXIF-026
+    section: "4.6.3.B"
+    heading: "GPS IFD"
+    page: 26
+    level: MUST
+    actor: file
+    category: structure
+    conformance: EXIF
+    tags: [34853]
+    statement: >
+      The GPS Info IFD holds GPS information and is pointed to by the Value Offset of the GPS Info
+      IFD Pointer tag (34853, LONG, count 1, no default), an offset from the TIFF header. Like the
+      Exif IFD it has a TIFF IFD structure with no image data.
+
+  - id: EXIF-027
+    section: "4.6.3.C"
+    heading: "Interoperability IFD"
+    page: 27
+    level: MUST
+    actor: file
+    category: structure
+    conformance: EXIF
+    tags: [40965]
+    statement: >
+      The Interoperability IFD holds interoperability tags and is pointed to by the Interoperability
+      IFD Pointer tag (40965, LONG, count 1, no default), which is located in the Exif IFD. Its
+      structure is the same as a TIFF IFD but contains no image data.
+
+  - id: EXIF-028
+    section: "4.6.4"
+    heading: "TIFF Rev. 6.0 Attribute Information"
+    page: 28
+    level: INFO
+    actor: file
+    category: tag
+    conformance: EXIF
+    statement: >
+      Table 4 lists TIFF Rev. 6.0 attribute tags used in Exif, including those mandatory in Baseline
+      TIFF RGB Full Color and TIFF Extensions YCbCr, plus optional TIFF tags used by DSCs. These are
+      recorded in the 0th and 1st IFDs per the TIFF standard.
+
+  - id: EXIF-029
+    section: "4.6.4.A"
+    heading: "TIFF tags in JPEG compressed data"
+    page: 29
+    level: MUST-NOT
+    actor: file
+    category: tag
+    conformance: EXIF
+    tags: [256, 257, 258, 262, 277, 284, 530]
+    statement: >
+      In JPEG-compressed primary image data, the TIFF structure tags that duplicate JPEG marker
+      information shall not be recorded: ImageWidth (256), ImageLength (257), BitsPerSample (258),
+      PhotometricInterpretation (262), SamplesPerPixel (277), PlanarConfiguration (284) and
+      YCbCrSubSampling (530); the JPEG marker is used instead.
+
+  - id: EXIF-030
+    section: "4.6.4.A"
+    heading: "BitsPerSample"
+    page: 29
+    level: MUST
+    actor: file
+    category: tag
+    conformance: EXIF
+    tags: [258]
+    statement: >
+      Each image component is 8 bits, so BitsPerSample (258) is recorded as "8 8 8" (count 3) for
+      uncompressed data.
+
+  - id: EXIF-031
+    section: "4.6.4.A"
+    heading: "Compression"
+    page: 29
+    level: MUST
+    actor: file
+    category: tag
+    conformance: EXIF
+    tags: [259]
+    statement: >
+      Compression (259) = 1 for uncompressed. When a primary image is JPEG-compressed, Compression
+      shall not be recorded (it is unnecessary). For a JPEG-compressed thumbnail, Compression is set
+      to 6.
+
+  - id: EXIF-032
+    section: "4.6.4.A"
+    heading: "SamplesPerPixel"
+    page: 34
+    level: MUST
+    actor: file
+    category: tag
+    conformance: EXIF
+    tags: [277]
+    statement: >
+      Because Exif applies to RGB and YCbCr images, SamplesPerPixel (277) is set to 3 for
+      uncompressed data.
+
+  - id: EXIF-033
+    section: "4.6.4.A"
+    heading: "YCbCrPositioning"
+    page: 35
+    level: SHOULD
+    actor: both
+    category: tag
+    conformance: EXIF
+    tags: [531]
+    statement: >
+      YCbCrPositioning (531) is used only for JPEG-compressed or uncompressed YCbCr data; TIFF
+      default is 1 (centered). For YCbCr 4:2:2 it is recommended to record 2 (co-sited); for 4:2:0
+      centered is recommended. If the field is absent the reader shall assume the TIFF default. A
+      reader unable to support both positionings shall follow the TIFF default regardless of the
+      recorded value; readers preferably support both.
+
+  - id: EXIF-034
+    section: "4.6.4.A"
+    heading: "XResolution / YResolution / ResolutionUnit"
+    page: 36
+    level: MUST
+    actor: file
+    category: tag
+    conformance: EXIF
+    tags: [282, 283, 296]
+    statement: >
+      When image resolution is unknown, XResolution (282) shall be 72 and ResolutionUnit (296) shall
+      be 2 (inches). YResolution (283) shall be set to the same value as XResolution, and the same
+      ResolutionUnit applies to both.
+
+  - id: EXIF-035
+    section: "4.6.4.B"
+    heading: "StripOffsets"
+    page: 37
+    level: SHOULD
+    actor: writer
+    category: data-layout
+    conformance: EXIF
+    tags: [273, 279]
+    statement: >
+      It is recommended that strips (StripOffsets 273) be chosen so that the number of bytes per
+      strip does not exceed 64 KBytes.
+
+  - id: EXIF-036
+    section: "4.6.4.B"
+    heading: "Strip tags in JPEG compressed data"
+    page: 37
+    level: MUST-NOT
+    actor: file
+    category: tag
+    conformance: EXIF
+    tags: [273, 278, 279]
+    statement: >
+      For JPEG-compressed primary image data, StripOffsets (273), RowsPerStrip (278) and
+      StripByteCounts (279) are unnecessary and shall not be recorded.
+
+  - id: EXIF-037
+    section: "4.6.4.B"
+    heading: "JPEGInterchangeFormat / JPEGInterchangeFormatLength"
+    page: 37
+    level: MUST-NOT
+    actor: file
+    category: tag
+    conformance: EXIF
+    tags: [513, 514]
+    statement: >
+      JPEGInterchangeFormat (513) and JPEGInterchangeFormatLength (514) give the SOI offset and byte
+      length of JPEG-compressed thumbnail data and shall not be used for primary image JPEG data.
+      A compressed thumbnail (with all other APP1 data) shall be recorded in no more than 64 KBytes,
+      and shall contain no APPn or COM markers.
+
+  - id: EXIF-038
+    section: "4.6.4.C"
+    heading: "YCbCrCoefficients default"
+    page: 38
+    level: INFO
+    actor: file
+    category: color
+    conformance: EXIF
+    tags: [529]
+    statement: >
+      TIFF gives no default for YCbCrCoefficients (529); Exif uses the characteristics in Annex D
+      "Color Space Guidelines" as the default.
+
+  - id: EXIF-039
+    section: "4.6.4.C"
+    heading: "ReferenceBlackWhite default"
+    page: 38
+    level: INFO
+    actor: file
+    category: color
+    conformance: EXIF
+    tags: [532, 262]
+    statement: >
+      Exif supplies defaults for ReferenceBlackWhite (532): [0,255,0,255,0,255] when
+      PhotometricInterpretation (262) is RGB, and [0,255,0,128,0,128] when it is YCbCr.
+
+  - id: EXIF-040
+    section: "4.6.4.D"
+    heading: "DateTime"
+    page: 39
+    level: MUST
+    actor: file
+    category: metadata
+    conformance: EXIF
+    tags: [306]
+    statement: >
+      DateTime (306) records file change date/time in the format "YYYY:MM:DD HH:MM:SS" (24-hour, date
+      and time separated by one blank 20.H), 20 bytes including the NULL terminator. Unknown date/time
+      is written as blanks except colons, or the whole field blank (treated as unknown).
+
+  - id: EXIF-041
+    section: "4.6.4.D"
+    heading: "ImageDescription / UserComment"
+    page: 39
+    level: MUST
+    actor: file
+    category: metadata
+    conformance: EXIF
+    tags: [270, 37510]
+    statement: >
+      ImageDescription (270) is an ASCII title; two-byte character codes cannot be used. When a
+      two-byte code is required, the Exif private tag UserComment (37510) shall be used instead.
+
+  - id: EXIF-042
+    section: "4.6.4.D"
+    heading: "Copyright"
+    page: 40
+    level: MUST
+    actor: file
+    category: metadata
+    conformance: EXIF
+    tags: [33432]
+    statement: >
+      Copyright (33432) records both photographer and editor copyright, each in a separate
+      NULL-terminated part in the order photographer then editor. When both are present there are two
+      NULL codes. When only photographer copyright is given it ends with one NULL. When only editor
+      copyright is given, the photographer part is a single space + NULL, then the editor copyright +
+      NULL. A blank field is treated as unknown.
+
+  - id: EXIF-043
+    section: "4.6.5.A"
+    heading: "ExifVersion"
+    page: 44
+    level: MUST
+    actor: file
+    category: tag
+    conformance: EXIF
+    tags: [36864]
+    statement: >
+      ExifVersion (36864) shall be recorded as 4-byte ASCII "0230" for conformance to this standard;
+      because the type is UNDEFINED it shall not be NULL-terminated. Absence of this field means the
+      file is non-conformant to the standard.
+
+  - id: EXIF-044
+    section: "4.6.5.B"
+    heading: "ColorSpace"
+    page: 44
+    level: MUST
+    actor: file
+    category: color
+    conformance: EXIF
+    tags: [40961]
+    statement: >
+      ColorSpace (40961) shall always be recorded as the color space specifier: 1 = sRGB (normal
+      case). If a color space other than sRGB is used, FFFF.H = Uncalibrated shall be set. Uncalibrated
+      image data may be treated as sRGB when converted to Flashpix.
+
+  - id: EXIF-045
+    section: "4.6.5.C"
+    heading: "PixelXDimension / PixelYDimension"
+    page: 45
+    level: MUST
+    actor: file
+    category: tag
+    conformance: EXIF
+    tags: [40962, 40963]
+    statement: >
+      For a compressed file, the valid (meaningful) image width shall be recorded in PixelXDimension
+      (40962) and the valid height in PixelYDimension (40963), regardless of padding data or restart
+      markers. These tags shall not exist in an uncompressed file.
+
+  - id: EXIF-046
+    section: "4.6.5.C"
+    heading: "ComponentsConfiguration"
+    page: 45
+    level: MUST
+    actor: file
+    category: tag
+    conformance: EXIF
+    tags: [37121, 262]
+    statement: >
+      ComponentsConfiguration (37121, UNDEFINED, count 4) lists the channel meaning of each of the 4
+      components (0=none,1=Y,2=Cb,3=Cr,4=R,5=G,6=B). Default is "4 5 6 0" for RGB uncompressed and
+      "1 2 3 0" otherwise. For uncompressed data the arrangement is instead given by
+      PhotometricInterpretation (262); this tag exists mainly for compressed data using non-Y/Cb/Cr
+      component orders.
+
+  - id: EXIF-047
+    section: "4.6.5.D"
+    heading: "MakerNote"
+    page: 46
+    level: MUST-NOT
+    actor: writer
+    category: metadata
+    conformance: EXIF
+    tags: [37500]
+    statement: >
+      MakerNote (37500) is for manufacturers to record arbitrary information; its contents are up to
+      the manufacturer but it shall not be used for any purpose other than its intended one.
+
+  - id: EXIF-048
+    section: "4.6.5.D"
+    heading: "UserComment"
+    page: 46
+    level: MUST
+    actor: file
+    category: metadata
+    conformance: EXIF
+    tags: [37510]
+    statement: >
+      UserComment (37510, UNDEFINED) begins with a fixed 8-byte character-code ID area (ASCII =
+      41,53,43,49,49,00,00,00; JIS = 4A,49,53,00,00,00,00,00; Unicode = 55,4E,49,43,4F,44,45,00;
+      Undefined = all 00.H), followed by the comment. Unused area is padded with NULL. Because the
+      type is UNDEFINED, NULL termination is not required. Count N covers the 8-byte code area plus
+      the comment bytes.
+
+  - id: EXIF-049
+    section: "4.6.5.D"
+    heading: "UserComment"
+    page: 46
+    level: MUST
+    actor: reader
+    category: behavior
+    conformance: EXIF
+    tags: [37510]
+    statement: >
+      An Exif/DCF reader that reads the UserComment tag (37510) shall have a function to determine the
+      character-code ID. This function is not required in readers that do not use UserComment.
+    notes: >
+      Recommended when setting a UserComment area that the ID code be ASCII with the comment padded
+      with blanks (20.H).
+
+  - id: EXIF-050
+    section: "4.6.5.E"
+    heading: "RelatedSoundFile"
+    page: 47
+    level: MUST
+    actor: file
+    category: metadata
+    conformance: EXIF
+    tags: [40964]
+    statement: >
+      RelatedSoundFile (40964) records only the name+extension (8 chars + '.' + 3 chars) of a related
+      Exif audio file, ASCII, count 13, NULL-terminated; no path is recorded. When used, the audio
+      file shall conform to the Exif audio format and the reciprocal relation shall also be indicated
+      on the audio-file side.
+
+  - id: EXIF-051
+    section: "4.6.5.F"
+    heading: "DateTimeOriginal / DateTimeDigitized"
+    page: 48
+    level: MUST
+    actor: file
+    category: metadata
+    conformance: EXIF
+    tags: [36867, 36868]
+    statement: >
+      DateTimeOriginal (36867) and DateTimeDigitized (36868) use format "YYYY:MM:DD HH:MM:SS" (24-hour,
+      one blank separator), 20 bytes including NULL. Unknown handling matches DateTime (blanks except
+      colons, or fully blank). For a DSC these are the capture time and the digital-storage time.
+
+  - id: EXIF-052
+    section: "4.6.5.F"
+    heading: "SubSecTime tags"
+    page: 49
+    level: INFO
+    actor: file
+    category: metadata
+    conformance: EXIF
+    tags: [37520, 37521, 37522]
+    statement: >
+      SubSecTime (37520), SubSecTimeOriginal (37521) and SubSecTimeDigitized (37522) record fractional
+      seconds for DateTime, DateTimeOriginal and DateTimeDigitized respectively as variable-length
+      ASCII (NULL-terminated). These subsecond tags are recorded in the Exif IFD, unlike their parent
+      DateTime tags which are TIFF Rev. 6.0 tags in the 0th IFD.
+
+  - id: EXIF-053
+    section: "4.6.5.G"
+    heading: "PhotographicSensitivity"
+    page: 51
+    level: SHOULD
+    actor: writer
+    category: tag
+    conformance: EXIF
+    supplement_version: "2.3"
+    tags: [34855, 34864]
+    statement: >
+      PhotographicSensitivity (34855) indicates one ISO 12232 parameter (SOS, REI, or ISO speed). If
+      the value is 65535 or higher, the tag shall be set to 65535. When recorded, SensitivityType
+      (34864) should also be recorded; only 1 count should be used despite "Count = Any".
+    notes: >
+      Renamed from "ISOSpeedRatings" used up to Version 2.21.
+
+  - id: EXIF-054
+    section: "4.6.5.G"
+    heading: "Sensitivity tags"
+    page: 52
+    level: MUST
+    actor: file
+    category: tag
+    conformance: EXIF
+    supplement_version: "2.3"
+    tags: [34865, 34866, 34867, 34855, 34864]
+    statement: >
+      When StandardOutputSensitivity (34865), RecommendedExposureIndex (34866) or ISOSpeed (34867) is
+      recorded, the PhotographicSensitivity (34855) and SensitivityType (34864) tags shall also be
+      recorded.
+
+  - id: EXIF-055
+    section: "4.6.5.G"
+    heading: "ISO speed latitude tags"
+    page: 53
+    level: MUST-NOT
+    actor: file
+    category: tag
+    conformance: EXIF
+    supplement_version: "2.3"
+    tags: [34868, 34869, 34867]
+    statement: >
+      ISOSpeedLatitudeyyy (34868) shall not be recorded without ISOSpeed (34867) and
+      ISOSpeedLatitudezzz (34869); ISOSpeedLatitudezzz (34869) shall not be recorded without ISOSpeed
+      (34867) and ISOSpeedLatitudeyyy (34868).
+
+  - id: EXIF-056
+    section: "4.6.5.G"
+    heading: "SubjectArea"
+    page: 57
+    level: INFO
+    actor: file
+    category: tag
+    conformance: EXIF
+    tags: [37396]
+    statement: >
+      SubjectArea (37396) encodes the main subject by count: count 2 = point (X,Y); count 3 = circle
+      (centerX, centerY, diameter); count 4 = rectangle (centerX, centerY, width, height). Coordinates
+      are relative to the upper-left origin, prior to Orientation rotation.
+
+  - id: EXIF-057
+    section: "4.6.5.G"
+    heading: "FileSource"
+    page: 61
+    level: MUST
+    actor: file
+    category: tag
+    conformance: EXIF
+    tags: [41728]
+    statement: >
+      If a DSC recorded the image, FileSource (41728) shall always be set to 3 (DSC).
+
+  - id: EXIF-058
+    section: "4.6.5.G"
+    heading: "SceneType"
+    page: 61
+    level: MUST
+    actor: file
+    category: tag
+    conformance: EXIF
+    tags: [41729]
+    statement: >
+      If a DSC recorded the image, SceneType (41729) shall always be set to 1 (directly photographed
+      image).
+
+  - id: EXIF-059
+    section: "4.6.5.G"
+    heading: "CustomRendered"
+    page: 62
+    level: SHOULD
+    actor: reader
+    category: behavior
+    conformance: EXIF
+    tags: [41985]
+    statement: >
+      When CustomRendered (41985) = 1 (custom process) indicates special output-oriented processing
+      was performed, the Exif/DCF reader is expected to disable or minimize further processing.
+
+  - id: EXIF-060
+    section: "4.6.5.G"
+    heading: "SubjectLocation vs SubjectArea"
+    page: 60
+    level: SHOULD
+    actor: writer
+    category: tag
+    conformance: EXIF
+    tags: [41492, 37396]
+    statement: >
+      When a camera records the main subject location, it is recommended that SubjectArea (37396) be
+      used instead of SubjectLocation (41492).
+
+  - id: EXIF-061
+    section: "4.6.6.A"
+    heading: "GPSVersionID"
+    page: 68
+    level: MUST
+    actor: file
+    category: tag
+    conformance: EXIF
+    tags: [0, 34853]
+    statement: >
+      GPSVersionID (GPS tag 0) is mandatory when the GPS Info IFD (pointed to by 34853) is present;
+      its value for this standard is 2.3.0.0 (BYTE, count 4). It is written as different bytes than
+      the ExifVersion tag.
+
+  - id: EXIF-062
+    section: "4.6.6.A"
+    heading: "GPSLatitude / GPSLongitude format"
+    page: 69
+    level: INFO
+    actor: file
+    category: tag
+    conformance: EXIF
+    tags: [1, 2, 3, 4]
+    statement: >
+      GPSLatitude (GPS tag 2) and GPSLongitude (GPS tag 4) are three RATIONALs giving degrees, minutes,
+      seconds (typical dd/1,mm/1,ss/1 or dd/1,mmmm/100,0/1). GPSLatitudeRef (1) is 'N'/'S';
+      GPSLongitudeRef (3) is 'E'/'W'.
+
+  - id: EXIF-063
+    section: "4.6.6.A"
+    heading: "GPSAltitudeRef"
+    page: 69
+    level: INFO
+    actor: file
+    category: tag
+    conformance: EXIF
+    tags: [5, 6]
+    statement: >
+      GPSAltitudeRef (GPS tag 5) is BYTE (unlike other reference tags): 0 = altitude at/above sea
+      level, 1 = below sea level (GPSAltitude given as absolute value). Reference unit is meters.
+
+  - id: EXIF-064
+    section: "4.6.6.A"
+    heading: "GPSMapDatum"
+    page: 72
+    level: SHOULD
+    actor: writer
+    category: tag
+    conformance: EXIF
+    tags: [18, 34853]
+    statement: >
+      If a GPS Info tag is recorded, it is strongly recommended that GPSMapDatum (GPS tag 18) be
+      recorded (e.g. 'TOKYO' or 'WGS-84').
+
+  - id: EXIF-065
+    section: "4.6.6.A"
+    heading: "GPS ASCII value counts include NULL"
+    page: 77
+    level: MUST
+    actor: file
+    category: tag
+    conformance: EXIF
+    statement: >
+      When a GPS tag Type is ASCII it shall be NULL-terminated, and the value Count includes the NULL
+      terminator (data count + 1). For example GPSLatitudeRef ('N' or 'S') has count 2.
+
+  - id: EXIF-066
+    section: "4.6.7.A"
+    heading: "InteroperabilityIndex"
+    page: 78
+    level: INFO
+    actor: file
+    category: tag
+    conformance: EXIF
+    tags: [1]
+    statement: >
+      The Interoperability IFD defines InteroperabilityIndex (Interop tag 1, ASCII, 4 bytes incl.
+      NULL): "R98" = Exif R98 / DCF basic file; "THM" = DCF thumbnail file; "R03" = DCF Option File.
+      Other Interoperability tags may be defined per each interoperability rule.
+
+  - id: EXIF-067
+    section: "4.6.8"
+    heading: "Tag Support Levels - 0th IFD mandatory TIFF tags (uncompressed)"
+    page: 79
+    level: MUST
+    actor: file
+    category: image-class
+    conformance: EXIF
+    tags: [256, 257, 258, 259, 262, 273, 277, 278, 279, 282, 283, 296, 34665]
+    statement: >
+      For an uncompressed primary image (0th IFD), the mandatory (M) TIFF tags are: ImageWidth (256),
+      ImageLength (257), BitsPerSample (258), Compression (259), PhotometricInterpretation (262),
+      StripOffsets (273), SamplesPerPixel (277), RowsPerStrip (278), StripByteCounts (279),
+      XResolution (282), YResolution (283), ResolutionUnit (296), and Exif IFD Pointer (34665).
+    notes: >
+      Table 17. PlanarConfiguration (284) is Optional for chunky/YCC but Mandatory for planar format.
+
+  - id: EXIF-068
+    section: "4.6.8"
+    heading: "Tag Support Levels - 0th IFD YCbCr uncompressed mandatory tags"
+    page: 79
+    level: MUST
+    actor: file
+    category: image-class
+    conformance: EXIF
+    tags: [530, 531]
+    statement: >
+      For uncompressed YCbCr (YCC) primary image (0th IFD), YCbCrSubSampling (530) and YCbCrPositioning
+      (531) are additionally mandatory. They are not allowed (N) for RGB chunky/planar uncompressed
+      images.
+    notes: >
+      Table 17. YCbCrCoefficients (529): N for RGB chunky/planar, Optional for YCC and compressed.
+
+  - id: EXIF-069
+    section: "4.6.8"
+    heading: "Tag Support Levels - 0th IFD recommended TIFF tags"
+    page: 79
+    level: SHOULD
+    actor: writer
+    category: image-class
+    conformance: EXIF
+    tags: [270, 271, 272, 274, 306]
+    statement: >
+      For the primary image (0th IFD), the recommended (R) TIFF tags are ImageDescription (270), Make
+      (271), Model (272), Orientation (274) and DateTime (306).
+    notes: >
+      Table 17. Same R level for uncompressed and compressed.
+
+  - id: EXIF-070
+    section: "4.6.8"
+    heading: "Tag Support Levels - 0th IFD prohibited/JPEG-marker tags"
+    page: 79
+    level: MUST-NOT
+    actor: file
+    category: image-class
+    conformance: EXIF
+    tags: [513, 514, 256, 257, 258, 262, 273, 277, 278, 279, 284, 529, 530, 531]
+    statement: >
+      In the compressed (JPEG) primary image 0th IFD: JPEGInterchangeFormat (513) and
+      JPEGInterchangeFormatLength (514) are not allowed (N) in all cases. Tags carried in the JPEG
+      marker (J = not allowed): ImageWidth (256), ImageLength (257), BitsPerSample (258),
+      SamplesPerPixel (277), PlanarConfiguration (284), YCbCrSubSampling (530). Not allowed (N) in
+      compressed: PhotometricInterpretation (262), StripOffsets (273), RowsPerStrip (278),
+      StripByteCounts (279).
+    notes: >
+      Table 17. For RGB chunky/planar (uncompressed): YCbCrCoefficients (529), YCbCrSubSampling (530)
+      and YCbCrPositioning (531) are N.
+
+  - id: EXIF-071
+    section: "4.6.8"
+    heading: "Tag Support Levels - 0th IFD Exif Private mandatory tags"
+    page: 80
+    level: MUST
+    actor: file
+    category: image-class
+    conformance: EXIF
+    tags: [36864, 40960, 40961]
+    statement: >
+      In the Exif IFD, ExifVersion (36864), FlashpixVersion (40960) and ColorSpace (40961) are
+      mandatory (M) for both uncompressed and compressed files.
+    notes: >
+      Table 18.
+
+  - id: EXIF-072
+    section: "4.6.8"
+    heading: "Tag Support Levels - Exif Private tags mandatory only for compressed"
+    page: 80
+    level: MUST-NOT
+    actor: file
+    category: image-class
+    conformance: EXIF
+    tags: [37121, 40962, 40963, 37122, 40965]
+    statement: >
+      ComponentsConfiguration (37121), PixelXDimension (40962) and PixelYDimension (40963) are not
+      allowed (N) in uncompressed files but mandatory (M) in compressed files. CompressedBitsPerPixel
+      (37122) and Interoperability IFD Pointer (40965) are not allowed (N) in uncompressed files but
+      optional (O) in compressed files.
+    notes: >
+      Table 18. Interoperability IFD Pointer (40965) resides in the Exif IFD.
+
+  - id: EXIF-073
+    section: "4.6.8"
+    heading: "Tag Support Levels - Exif Private recommended tags"
+    page: 80
+    level: SHOULD
+    actor: writer
+    category: image-class
+    conformance: EXIF
+    tags: [33434, 37385, 41986, 41987, 41990]
+    statement: >
+      In the Exif IFD, the recommended (R) tags for both uncompressed and compressed files are
+      ExposureTime (33434), Flash (37385), ExposureMode (41986), WhiteBalance (41987) and
+      SceneCaptureType (41990). All other Exif private tags not otherwise listed are optional (O).
+    notes: >
+      Table 18.
+
+  - id: EXIF-074
+    section: "4.6.8"
+    heading: "Tag Support Levels - GPS Info tags"
+    page: 81
+    level: MAY
+    actor: file
+    category: image-class
+    conformance: EXIF
+    tags: [0]
+    statement: >
+      All GPS Info IFD tags (GPS tags 0-31) are optional (O) for both uncompressed and compressed
+      files; however GPSVersionID (0) is mandatory whenever the GPS Info IFD is present (see EXIF-061).
+    notes: >
+      Table 19.
+
+  - id: EXIF-075
+    section: "4.6.8"
+    heading: "Tag Support Levels - Interoperability tag"
+    page: 82
+    level: MUST-NOT
+    actor: file
+    category: image-class
+    conformance: EXIF
+    tags: [1]
+    statement: >
+      InteroperabilityIndex (Interop tag 1) is not allowed (N) in uncompressed files and optional (O)
+      in compressed files.
+    notes: >
+      Table 20.
+
+  - id: EXIF-076
+    section: "4.6.8"
+    heading: "Tag Support Levels - 1st IFD (thumbnail) TIFF tags"
+    page: 82
+    level: MUST
+    actor: file
+    category: image-class
+    conformance: EXIF
+    tags: [256, 257, 258, 259, 262, 273, 277, 278, 279, 282, 283, 296]
+    statement: >
+      For an uncompressed thumbnail (1st IFD), mandatory (M) tags are ImageWidth (256), ImageLength
+      (257), BitsPerSample (258), Compression (259), PhotometricInterpretation (262), StripOffsets
+      (273), SamplesPerPixel (277), RowsPerStrip (278), StripByteCounts (279), XResolution (282),
+      YResolution (283) and ResolutionUnit (296). PlanarConfiguration (284) is mandatory for planar.
+    notes: >
+      Table 21. Differences vs 0th IFD: in the 1st IFD, ImageDescription (270), Make (271), Model
+      (272), Orientation (274) and DateTime (306) are Optional (not Recommended); Exif IFD Pointer
+      (34665) is Optional (not Mandatory); YCbCrPositioning (531) for YCC is Optional (not Mandatory).
+
+  - id: EXIF-077
+    section: "4.6.8"
+    heading: "Tag Support Levels - 1st IFD compressed thumbnail tags"
+    page: 82
+    level: MUST
+    actor: file
+    category: image-class
+    conformance: EXIF
+    tags: [259, 513, 514]
+    statement: >
+      For a compressed (JPEG) thumbnail (1st IFD), Compression (259), JPEGInterchangeFormat (513) and
+      JPEGInterchangeFormatLength (514) are mandatory (M). StripOffsets (273), RowsPerStrip (278) and
+      StripByteCounts (279) are not allowed (N) for a compressed thumbnail.
+    notes: >
+      Table 21. This differs from the 0th IFD where 513/514 are always N.
+
+  - id: EXIF-078
+    section: "4.7.1"
+    heading: "JPEG Marker Segments Used in Exif"
+    page: 83
+    level: SHOULD
+    actor: reader
+    category: behavior
+    conformance: EXIF
+    statement: >
+      A compressed Exif file contains one each of APP1, DQT, DHT, SOF, SOS (SOI first, EOI last);
+      APP1 shall be recorded immediately after SOI and any APP2 follows APP1. APPn other than APP1/APP2
+      and COM are not used by Exif, but Exif/DCF readers should skip over unknown APPn and COM.
+    notes: >
+      TIFF-side relevance: the Exif attribute information (0th/1st IFDs, TIFF structure) lives inside
+      APP1.
+
+  - id: EXIF-079
+    section: "4.7.2"
+    heading: "Interoperability Structure of APP1 in Compressed Data"
+    page: 88
+    level: MUST
+    actor: file
+    category: structure
+    conformance: EXIF
+    tags: [34665, 34853, 40965]
+    statement: >
+      In compressed data, APP1 = APP1 marker (FFE1.H) + length + Exif identifier code
+      ("Exif"+00.H+00.H padding, 6 bytes) + TIFF-structured attribute information (8-byte TIFF header
+      + up to two IFDs: 0th IFD for compressed-image attributes, optional 1st IFD for thumbnail). The
+      TIFF header Offset-of-IFD is referenced to the first byte of the Byte Order field. APP1 shall
+      not exceed 64 KBytes.
+
+  - id: EXIF-080
+    section: "4.7.2.F"
+    heading: "APP1 - avoid duplication with JPEG markers"
+    page: 89
+    level: MUST-NOT
+    actor: file
+    category: structure
+    conformance: EXIF
+    statement: >
+      To avoid duplication, attribute information recorded in a JPEG marker segment shall not also be
+      recorded in APP1.
+
+  - id: EXIF-081
+    section: "4.8.4"
+    heading: "Byte Order Stipulations"
+    page: 98
+    level: SHOULD
+    actor: reader
+    category: structure
+    conformance: EXIF
+    statement: >
+      It is recommended that the Exif/DCF reader be able to reproduce Exif files recorded in both
+      little-endian ("II") and big-endian ("MM") byte order.
+
+  - id: EXIF-082
+    section: "4.8.3"
+    heading: "File Name Stipulations"
+    page: 98
+    level: MUST
+    actor: writer
+    category: metadata
+    conformance: EXIF
+    statement: >
+      File names use only ASCII alphanumerics, 8 characters or fewer (excluding extension); extension
+      is ".JPG" for compressed data files and ".TIF" for uncompressed data files.
+
+tags:
+  # ---- 0th/1st IFD TIFF Rev. 6.0 tags (location ifd0) ----
+  - code: 256
+    hex: "0x0100"
+    name: ImageWidth
+    types: [SHORT, LONG]
+    count: "1"
+    default: null
+    required: conditional
+    conformance: EXIF
+    location: ifd0
+    section: "4.6.4.A"
+    page: 29
+    description: >
+      Number of columns (pixels per row). Mandatory for uncompressed images; shall not be recorded
+      for JPEG-compressed data (a JPEG marker is used instead).
+    interacts_with: [259, 273]
+    notes: >
+      0th IFD support (uncompressed): M/M/M; compressed: J (in JPEG marker). 1st IFD same.
+
+  - code: 257
+    hex: "0x0101"
+    name: ImageLength
+    types: [SHORT, LONG]
+    count: "1"
+    default: null
+    required: conditional
+    conformance: EXIF
+    location: ifd0
+    section: "4.6.4.A"
+    page: 29
+    description: >
+      Number of rows. Mandatory for uncompressed; shall not be recorded for JPEG-compressed data.
+    notes: >
+      0th IFD (uncompressed) M/M/M; compressed J. 1st IFD same.
+
+  - code: 258
+    hex: "0x0102"
+    name: BitsPerSample
+    types: [SHORT]
+    count: "3"
+    default: "8 8 8"
+    required: conditional
+    conformance: EXIF
+    location: ifd0
+    section: "4.6.4.A"
+    page: 29
+    description: >
+      Bits per component; 8 per component in Exif so value is "8 8 8". Shall not be recorded for
+      JPEG-compressed data.
+    interacts_with: [277]
+    notes: >
+      0th/1st IFD (uncompressed) M/M/M; compressed J.
+
+  - code: 259
+    hex: "0x0103"
+    name: Compression
+    types: [SHORT]
+    count: "1"
+    default: null
+    required: conditional
+    conformance: EXIF
+    location: ifd0
+    section: "4.6.4.A"
+    page: 29
+    description: >
+      Compression scheme. Not recorded for a JPEG-compressed primary image; set to 6 for a
+      JPEG-compressed thumbnail.
+    values:
+      1: "uncompressed"
+      6: "JPEG compression (thumbnails only)"
+    interacts_with: [513, 514]
+    notes: >
+      0th IFD (uncompressed) M/M/M; compressed primary J. 1st IFD: M for both uncompressed and
+      compressed thumbnail.
+
+  - code: 262
+    hex: "0x0106"
+    name: PhotometricInterpretation
+    types: [SHORT]
+    count: "1"
+    default: null
+    required: conditional
+    conformance: EXIF
+    location: ifd0
+    section: "4.6.4.A"
+    page: 29
+    description: >
+      Pixel composition. Shall not be recorded for JPEG-compressed data.
+    values:
+      2: "RGB"
+      6: "YCbCr"
+    interacts_with: [37121, 532]
+    notes: >
+      0th/1st IFD (uncompressed) M/M/M; compressed N.
+
+  - code: 270
+    hex: "0x010E"
+    name: ImageDescription
+    types: [ASCII]
+    count: "Any"
+    default: null
+    required: no
+    conformance: EXIF
+    location: ifd0
+    section: "4.6.4.D"
+    page: 39
+    description: >
+      Image title/comment. Two-byte character codes cannot be used; use UserComment (37510) instead.
+    interacts_with: [37510]
+    notes: >
+      0th IFD Recommended (R); 1st IFD Optional (O).
+
+  - code: 271
+    hex: "0x010F"
+    name: Make
+    types: [ASCII]
+    count: "Any"
+    default: null
+    required: no
+    conformance: EXIF
+    location: ifd0
+    section: "4.6.4.D"
+    page: 40
+    description: >
+      Manufacturer of the recording (image input) equipment. Blank = unknown.
+    notes: >
+      0th IFD R; 1st IFD O.
+
+  - code: 272
+    hex: "0x0110"
+    name: Model
+    types: [ASCII]
+    count: "Any"
+    default: null
+    required: no
+    conformance: EXIF
+    location: ifd0
+    section: "4.6.4.D"
+    page: 40
+    description: >
+      Model name/number of the recording equipment. Blank = unknown.
+    notes: >
+      0th IFD R; 1st IFD O.
+
+  - code: 273
+    hex: "0x0111"
+    name: StripOffsets
+    types: [SHORT, LONG]
+    count: "StripsPerImage (chunky) or SamplesPerPixel*StripsPerImage (planar)"
+    default: null
+    required: conditional
+    conformance: EXIF
+    location: ifd0
+    section: "4.6.4.B"
+    page: 37
+    description: >
+      Byte offset of each strip. Not recorded for JPEG-compressed data. Recommended so a strip does
+      not exceed 64 KBytes.
+    interacts_with: [278, 279, 284]
+    notes: >
+      StripsPerImage = floor((ImageLength+RowsPerStrip-1)/RowsPerStrip). 0th/1st IFD (uncompressed)
+      M/M/M; compressed N.
+
+  - code: 274
+    hex: "0x0112"
+    name: Orientation
+    types: [SHORT]
+    count: "1"
+    default: 1
+    required: no
+    conformance: EXIF
+    location: ifd0
+    section: "4.6.4.A"
+    page: 30
+    description: >
+      Image orientation in terms of rows and columns for display.
+    values:
+      1: "0th row=visual top, 0th column=visual left"
+      2: "0th row=visual top, 0th column=visual right"
+      3: "0th row=visual bottom, 0th column=visual right"
+      4: "0th row=visual bottom, 0th column=visual left"
+      5: "0th row=visual left, 0th column=visual top"
+      6: "0th row=visual right, 0th column=visual top"
+      7: "0th row=visual right, 0th column=visual bottom"
+      8: "0th row=visual left, 0th column=visual bottom"
+    notes: >
+      0th IFD R; 1st IFD O.
+
+  - code: 277
+    hex: "0x0115"
+    name: SamplesPerPixel
+    types: [SHORT]
+    count: "1"
+    default: 3
+    required: conditional
+    conformance: EXIF
+    location: ifd0
+    section: "4.6.4.A"
+    page: 34
+    description: >
+      Components per pixel; 3 for RGB/YCbCr. Shall not be recorded for JPEG-compressed data.
+    interacts_with: [258, 284]
+    notes: >
+      0th/1st IFD (uncompressed) M/M/M; compressed J.
+
+  - code: 278
+    hex: "0x0116"
+    name: RowsPerStrip
+    types: [SHORT, LONG]
+    count: "1"
+    default: null
+    required: conditional
+    conformance: EXIF
+    location: ifd0
+    section: "4.6.4.B"
+    page: 37
+    description: >
+      Rows per strip. Not recorded for JPEG-compressed data.
+    interacts_with: [273, 279]
+    notes: >
+      0th/1st IFD (uncompressed) M/M/M; compressed N.
+
+  - code: 279
+    hex: "0x0117"
+    name: StripByteCounts
+    types: [SHORT, LONG]
+    count: "StripsPerImage (chunky) or SamplesPerPixel*StripsPerImage (planar)"
+    default: null
+    required: conditional
+    conformance: EXIF
+    location: ifd0
+    section: "4.6.4.B"
+    page: 37
+    description: >
+      Total bytes in each strip. Not recorded for JPEG-compressed data.
+    interacts_with: [273, 278, 284]
+    notes: >
+      0th/1st IFD (uncompressed) M/M/M; compressed N.
+
+  - code: 282
+    hex: "0x011A"
+    name: XResolution
+    types: [RATIONAL]
+    count: "1"
+    default: 72
+    required: yes
+    conformance: EXIF
+    location: ifd0
+    section: "4.6.4.A"
+    page: 36
+    description: >
+      Pixels per ResolutionUnit in the width direction. If resolution unknown, use 72 dpi.
+    interacts_with: [283, 296]
+    notes: >
+      0th/1st IFD M/M/M and M for compressed.
+
+  - code: 283
+    hex: "0x011B"
+    name: YResolution
+    types: [RATIONAL]
+    count: "1"
+    default: 72
+    required: yes
+    conformance: EXIF
+    location: ifd0
+    section: "4.6.4.A"
+    page: 36
+    description: >
+      Pixels per ResolutionUnit in the height direction; shall equal XResolution.
+    interacts_with: [282, 296]
+    notes: >
+      Mandatory (M) all cases.
+
+  - code: 284
+    hex: "0x011C"
+    name: PlanarConfiguration
+    types: [SHORT]
+    count: "1"
+    default: 1
+    required: conditional
+    conformance: EXIF
+    location: ifd0
+    section: "4.6.4.A"
+    page: 35
+    description: >
+      Chunky vs planar component recording. Absent => TIFF default 1 (chunky). Not recorded for
+      JPEG-compressed data.
+    values:
+      1: "chunky format"
+      2: "planar format"
+    interacts_with: [273, 279]
+    notes: >
+      0th/1st IFD: Optional for chunky/YCC, Mandatory (M) for planar; compressed J.
+
+  - code: 296
+    hex: "0x0128"
+    name: ResolutionUnit
+    types: [SHORT]
+    count: "1"
+    default: 2
+    required: yes
+    conformance: EXIF
+    location: ifd0
+    section: "4.6.4.A"
+    page: 37
+    description: >
+      Unit for X/YResolution. If resolution unknown, use 2 (inches).
+    values:
+      2: "inches"
+      3: "centimeters"
+    interacts_with: [282, 283]
+    notes: >
+      Mandatory (M) all cases.
+
+  - code: 301
+    hex: "0x012D"
+    name: TransferFunction
+    types: [SHORT]
+    count: "3 * 256"
+    default: null
+    required: no
+    conformance: EXIF
+    location: ifd0
+    section: "4.6.4.C"
+    page: 38
+    description: >
+      Tabular transfer function. Normally unnecessary because color space is specified by ColorSpace
+      (40961).
+    interacts_with: [40961]
+    notes: >
+      Optional (O) all cases.
+
+  - code: 305
+    hex: "0x0131"
+    name: Software
+    types: [ASCII]
+    count: "Any"
+    default: null
+    required: no
+    conformance: EXIF
+    location: ifd0
+    section: "4.6.4.D"
+    page: 40
+    description: >
+      Name and version of the camera/device software or firmware. Blank = unknown.
+    notes: >
+      Optional (O) all cases.
+
+  - code: 306
+    hex: "0x0132"
+    name: DateTime
+    types: [ASCII]
+    count: "20"
+    default: null
+    required: no
+    conformance: EXIF
+    location: ifd0
+    section: "4.6.4.D"
+    page: 39
+    description: >
+      File change date/time, "YYYY:MM:DD HH:MM:SS", 20 bytes incl. NULL.
+    interacts_with: [37520]
+    notes: >
+      0th IFD R; 1st IFD O.
+
+  - code: 315
+    hex: "0x013B"
+    name: Artist
+    types: [ASCII]
+    count: "Any"
+    default: null
+    required: no
+    conformance: EXIF
+    location: ifd0
+    section: "4.6.4.D"
+    page: 40
+    description: >
+      Name of camera owner, photographer or image creator. Blank = unknown.
+    notes: >
+      Optional (O) all cases.
+
+  - code: 318
+    hex: "0x013E"
+    name: WhitePoint
+    types: [RATIONAL]
+    count: "2"
+    default: null
+    required: no
+    conformance: EXIF
+    location: ifd0
+    section: "4.6.4.C"
+    page: 38
+    description: >
+      Chromaticity of the white point. Normally unnecessary because ColorSpace (40961) is used.
+    interacts_with: [40961]
+    notes: >
+      Optional (O) all cases.
+
+  - code: 319
+    hex: "0x013F"
+    name: PrimaryChromaticities
+    types: [RATIONAL]
+    count: "6"
+    default: null
+    required: no
+    conformance: EXIF
+    location: ifd0
+    section: "4.6.4.C"
+    page: 38
+    description: >
+      Chromaticities of the three primaries. Normally unnecessary because ColorSpace (40961) is used.
+    interacts_with: [40961]
+    notes: >
+      Optional (O) all cases.
+
+  - code: 513
+    hex: "0x0201"
+    name: JPEGInterchangeFormat
+    types: [LONG]
+    count: "1"
+    default: null
+    required: conditional
+    conformance: EXIF
+    location: ifd0
+    section: "4.6.4.B"
+    page: 37
+    description: >
+      Offset to the SOI of JPEG-compressed thumbnail data. Shall not be used for primary image JPEG
+      data.
+    interacts_with: [259, 514]
+    notes: >
+      0th IFD: N (not allowed) all cases. 1st IFD: M for compressed thumbnail, N for uncompressed.
+
+  - code: 514
+    hex: "0x0202"
+    name: JPEGInterchangeFormatLength
+    types: [LONG]
+    count: "1"
+    default: null
+    required: conditional
+    conformance: EXIF
+    location: ifd0
+    section: "4.6.4.B"
+    page: 37
+    description: >
+      Byte length of JPEG-compressed thumbnail data (continuous SOI..EOI stream, no APPn/COM). Whole
+      APP1 incl. thumbnail must be <= 64 KBytes. Not used for primary image JPEG data.
+    interacts_with: [259, 513]
+    notes: >
+      0th IFD: N all cases. 1st IFD: M for compressed thumbnail, N for uncompressed.
+
+  - code: 529
+    hex: "0x0211"
+    name: YCbCrCoefficients
+    types: [RATIONAL]
+    count: "3"
+    default: "See Annex D"
+    required: no
+    conformance: EXIF
+    location: ifd0
+    section: "4.6.4.C"
+    page: 38
+    description: >
+      RGB-to-YCbCr transformation matrix coefficients. No TIFF default; Exif uses Annex D as default.
+    interacts_with: [262]
+    notes: >
+      0th/1st IFD: N for RGB chunky/planar; Optional for YCC and compressed.
+
+  - code: 530
+    hex: "0x0212"
+    name: YCbCrSubSampling
+    types: [SHORT]
+    count: "2"
+    default: null
+    required: conditional
+    conformance: EXIF
+    location: ifd0
+    section: "4.6.4.A"
+    page: 35
+    description: >
+      Chrominance-to-luminance sampling ratio. Not recorded for JPEG-compressed data (JPEG marker
+      used instead).
+    values:
+      "[2,1]": "YCbCr 4:2:2"
+      "[2,2]": "YCbCr 4:2:0"
+    interacts_with: [531]
+    notes: >
+      0th/1st IFD: N for RGB chunky/planar; Mandatory (M) for YCC; compressed J.
+
+  - code: 531
+    hex: "0x0213"
+    name: YCbCrPositioning
+    types: [SHORT]
+    count: "1"
+    default: 1
+    required: conditional
+    conformance: EXIF
+    location: ifd0
+    section: "4.6.4.A"
+    page: 35
+    description: >
+      Chrominance position relative to luminance; used for JPEG-compressed or uncompressed YCbCr.
+      Absent => TIFF default 1 (centered). 4:2:2 recommends 2 (co-sited); 4:2:0 recommends centered.
+    values:
+      1: "centered"
+      2: "co-sited"
+    interacts_with: [530]
+    notes: >
+      0th IFD: N for RGB chunky/planar; M for YCC; M for compressed. 1st IFD: O for YCC and compressed.
+
+  - code: 532
+    hex: "0x0214"
+    name: ReferenceBlackWhite
+    types: [RATIONAL]
+    count: "6"
+    default: "[0,255,0,255,0,255] (RGB) or [0,255,0,128,0,128] (YCbCr)"
+    required: no
+    conformance: EXIF
+    location: ifd0
+    section: "4.6.4.C"
+    page: 38
+    description: >
+      Reference black/white point pairs. No TIFF default; Exif defaults depend on
+      PhotometricInterpretation.
+    interacts_with: [262]
+    notes: >
+      Optional (O) all cases.
+
+  - code: 33432
+    hex: "0x8298"
+    name: Copyright
+    types: [ASCII]
+    count: "Any"
+    default: null
+    required: no
+    conformance: EXIF
+    location: ifd0
+    section: "4.6.4.D"
+    page: 40
+    description: >
+      Copyright notice; holds both photographer and editor copyright, NULL-separated (photographer
+      then editor). Blank = unknown.
+    notes: >
+      Optional (O) all cases.
+
+  # ---- Pointer tags ----
+  - code: 34665
+    hex: "0x8769"
+    name: ExifIFDPointer
+    types: [LONG]
+    count: "1"
+    default: null
+    required: yes
+    conformance: EXIF
+    location: ifd0
+    section: "4.6.3.A"
+    page: 26
+    description: >
+      Offset (from TIFF header) to the Exif IFD, which holds Exif-specific private tags and has TIFF
+      IFD structure but no image data.
+    notes: >
+      0th IFD: Mandatory (M) all cases. 1st IFD: Optional (O).
+
+  - code: 34853
+    hex: "0x8825"
+    name: GPSInfoIFDPointer
+    types: [LONG]
+    count: "1"
+    default: null
+    required: no
+    conformance: EXIF
+    location: ifd0
+    section: "4.6.3.B"
+    page: 26
+    description: >
+      Offset (from TIFF header) to the GPS Info IFD (TIFF IFD structure, no image data).
+    interacts_with: [0]
+    notes: >
+      0th IFD: Optional (O). 1st IFD: Optional (O). GPSVersionID (0) mandatory when present.
+
+  - code: 40965
+    hex: "0xA005"
+    name: InteroperabilityIFDPointer
+    types: [LONG]
+    count: "1"
+    default: null
+    required: conditional
+    conformance: EXIF
+    location: exif-ifd
+    section: "4.6.3.C"
+    page: 27
+    description: >
+      Offset (from TIFF header) to the Interoperability IFD; this pointer tag is located in the Exif
+      IFD. The Interoperability IFD has TIFF IFD structure but no image data.
+    notes: >
+      In Exif IFD: N (not allowed) for uncompressed, Optional (O) for compressed.
+
+  # ---- Exif IFD private tags (location exif-ifd) ----
+  - code: 36864
+    hex: "0x9000"
+    name: ExifVersion
+    types: [UNDEFINED]
+    count: "4"
+    default: "0230"
+    required: yes
+    conformance: EXIF
+    location: exif-ifd
+    section: "4.6.5.A"
+    page: 44
+    description: >
+      Exif standard version supported; 4-byte ASCII "0230", not NULL-terminated. Absence means the
+      file is non-conformant.
+    notes: >
+      Mandatory (M) all cases.
+
+  - code: 40960
+    hex: "0xA000"
+    name: FlashpixVersion
+    types: [UNDEFINED]
+    count: "4"
+    default: "0100"
+    required: yes
+    conformance: EXIF
+    location: exif-ifd
+    section: "4.6.5.A"
+    page: 44
+    description: >
+      Flashpix format version supported; 4-byte ASCII, not NULL-terminated.
+    values:
+      "0100": "Flashpix Format Version 1.0"
+    notes: >
+      Mandatory (M) all cases.
+
+  - code: 40961
+    hex: "0xA001"
+    name: ColorSpace
+    types: [SHORT]
+    count: "1"
+    default: null
+    required: yes
+    conformance: EXIF
+    location: exif-ifd
+    section: "4.6.5.B"
+    page: 44
+    description: >
+      Color space specifier; always recorded. sRGB normally used; Uncalibrated when a non-sRGB space
+      is used.
+    values:
+      1: "sRGB"
+      65535: "Uncalibrated (FFFF.H)"
+    notes: >
+      Mandatory (M) all cases.
+
+  - code: 42240
+    hex: "0xA500"
+    name: Gamma
+    types: [RATIONAL]
+    count: "1"
+    default: null
+    required: no
+    conformance: EXIF
+    location: exif-ifd
+    section: "4.6.5.B"
+    page: 44
+    supplement_version: "2.3"
+    description: >
+      Gamma coefficient of the transfer function (reproduced = input^gamma, values normalized 0..1).
+    notes: >
+      Optional (O) all cases.
+
+  - code: 37121
+    hex: "0x9101"
+    name: ComponentsConfiguration
+    types: [UNDEFINED]
+    count: "4"
+    default: "4 5 6 0 (RGB uncompressed) or 1 2 3 0 (other)"
+    required: conditional
+    conformance: EXIF
+    location: exif-ifd
+    section: "4.6.5.C"
+    page: 45
+    description: >
+      Meaning/order of each of the 4 components. Mainly for compressed data.
+    values:
+      0: "does not exist"
+      1: "Y"
+      2: "Cb"
+      3: "Cr"
+      4: "R"
+      5: "G"
+      6: "B"
+    interacts_with: [262]
+    notes: >
+      Uncompressed: N (not allowed); Compressed: Mandatory (M).
+
+  - code: 37122
+    hex: "0x9102"
+    name: CompressedBitsPerPixel
+    types: [RATIONAL]
+    count: "1"
+    default: null
+    required: conditional
+    conformance: EXIF
+    location: exif-ifd
+    section: "4.6.5.C"
+    page: 45
+    description: >
+      Compression mode in bits per pixel.
+    notes: >
+      Uncompressed: N; Compressed: Optional (O).
+
+  - code: 40962
+    hex: "0xA002"
+    name: PixelXDimension
+    types: [SHORT, LONG]
+    count: "1"
+    default: null
+    required: conditional
+    conformance: EXIF
+    location: exif-ifd
+    section: "4.6.5.C"
+    page: 45
+    description: >
+      Valid (meaningful) image width for compressed data, regardless of padding/restart markers.
+      Shall not exist in an uncompressed file.
+    interacts_with: [40963]
+    notes: >
+      Uncompressed: N; Compressed: Mandatory (M).
+
+  - code: 40963
+    hex: "0xA003"
+    name: PixelYDimension
+    types: [SHORT, LONG]
+    count: "1"
+    default: null
+    required: conditional
+    conformance: EXIF
+    location: exif-ifd
+    section: "4.6.5.C"
+    page: 45
+    description: >
+      Valid (meaningful) image height for compressed data. Equals the line count in the SOF (no
+      vertical padding). Shall not exist in an uncompressed file.
+    interacts_with: [40962]
+    notes: >
+      Uncompressed: N; Compressed: Mandatory (M).
+
+  - code: 37500
+    hex: "0x927C"
+    name: MakerNote
+    types: [UNDEFINED]
+    count: "Any"
+    default: null
+    required: no
+    conformance: EXIF
+    location: exif-ifd
+    section: "4.6.5.D"
+    page: 46
+    description: >
+      Manufacturer-defined information; shall not be used for any other than its intended purpose.
+    notes: >
+      Optional (O) all cases.
+
+  - code: 37510
+    hex: "0x9286"
+    name: UserComment
+    types: [UNDEFINED]
+    count: "Any"
+    default: null
+    required: no
+    conformance: EXIF
+    location: exif-ifd
+    section: "4.6.5.D"
+    page: 46
+    description: >
+      Keywords/comments with an 8-byte leading character-code ID (ASCII/JIS/Unicode/Undefined),
+      allowing non-ASCII text. Not NULL-terminated (UNDEFINED type).
+    interacts_with: [270]
+    notes: >
+      Optional (O) all cases. Reader must be able to determine the ID code if it uses this tag.
+
+  - code: 40964
+    hex: "0xA004"
+    name: RelatedSoundFile
+    types: [ASCII]
+    count: "13"
+    default: null
+    required: no
+    conformance: EXIF
+    location: exif-ifd
+    section: "4.6.5.E"
+    page: 47
+    description: >
+      Name+extension (8.3) of a related Exif audio file, NULL-terminated; no path.
+    notes: >
+      Optional (O) all cases.
+
+  - code: 36867
+    hex: "0x9003"
+    name: DateTimeOriginal
+    types: [ASCII]
+    count: "20"
+    default: null
+    required: no
+    conformance: EXIF
+    location: exif-ifd
+    section: "4.6.5.F"
+    page: 48
+    description: >
+      Date/time original image data was generated (capture time for a DSC),
+      "YYYY:MM:DD HH:MM:SS", 20 bytes incl. NULL.
+    interacts_with: [37521]
+    notes: >
+      Optional (O) all cases.
+
+  - code: 36868
+    hex: "0x9004"
+    name: DateTimeDigitized
+    types: [ASCII]
+    count: "20"
+    default: null
+    required: no
+    conformance: EXIF
+    location: exif-ifd
+    section: "4.6.5.F"
+    page: 49
+    description: >
+      Date/time the image was stored as digital data, "YYYY:MM:DD HH:MM:SS", 20 bytes incl. NULL.
+    interacts_with: [37522]
+    notes: >
+      Optional (O) all cases.
+
+  - code: 37520
+    hex: "0x9290"
+    name: SubSecTime
+    types: [ASCII]
+    count: "Any"
+    default: null
+    required: no
+    conformance: EXIF
+    location: exif-ifd
+    section: "4.6.5.F"
+    page: 49
+    description: >
+      Fractional seconds for DateTime (306).
+    interacts_with: [306]
+    notes: >
+      Optional (O) all cases. Recorded in Exif IFD though DateTime is in 0th IFD.
+
+  - code: 37521
+    hex: "0x9291"
+    name: SubSecTimeOriginal
+    types: [ASCII]
+    count: "Any"
+    default: null
+    required: no
+    conformance: EXIF
+    location: exif-ifd
+    section: "4.6.5.F"
+    page: 49
+    description: >
+      Fractional seconds for DateTimeOriginal (36867).
+    interacts_with: [36867]
+    notes: >
+      Optional (O) all cases.
+
+  - code: 37522
+    hex: "0x9292"
+    name: SubSecTimeDigitized
+    types: [ASCII]
+    count: "Any"
+    default: null
+    required: no
+    conformance: EXIF
+    location: exif-ifd
+    section: "4.6.5.F"
+    page: 49
+    description: >
+      Fractional seconds for DateTimeDigitized (36868).
+    interacts_with: [36868]
+    notes: >
+      Optional (O) all cases.
+
+  - code: 33434
+    hex: "0x829A"
+    name: ExposureTime
+    types: [RATIONAL]
+    count: "1"
+    default: null
+    required: no
+    conformance: EXIF
+    location: exif-ifd
+    section: "4.6.5.G"
+    page: 50
+    description: >
+      Exposure time in seconds.
+    notes: >
+      Recommended (R) all cases.
+
+  - code: 33437
+    hex: "0x829D"
+    name: FNumber
+    types: [RATIONAL]
+    count: "1"
+    default: null
+    required: no
+    conformance: EXIF
+    location: exif-ifd
+    section: "4.6.5.G"
+    page: 50
+    description: >
+      F number.
+    notes: >
+      Optional (O) all cases.
+
+  - code: 34850
+    hex: "0x8822"
+    name: ExposureProgram
+    types: [SHORT]
+    count: "1"
+    default: 0
+    required: no
+    conformance: EXIF
+    location: exif-ifd
+    section: "4.6.5.G"
+    page: 50
+    description: >
+      Exposure program class used to set exposure.
+    values:
+      0: "Not defined"
+      1: "Manual"
+      2: "Normal program"
+      3: "Aperture priority"
+      4: "Shutter priority"
+      5: "Creative program (biased toward depth of field)"
+      6: "Action program (biased toward fast shutter speed)"
+      7: "Portrait mode"
+      8: "Landscape mode"
+    notes: >
+      Optional (O) all cases.
+
+  - code: 34852
+    hex: "0x8824"
+    name: SpectralSensitivity
+    types: [ASCII]
+    count: "Any"
+    default: null
+    required: no
+    conformance: EXIF
+    location: exif-ifd
+    section: "4.6.5.G"
+    page: 51
+    description: >
+      Spectral sensitivity of each channel (ASTM-compatible ASCII string).
+    notes: >
+      Optional (O) all cases.
+
+  - code: 34855
+    hex: "0x8827"
+    name: PhotographicSensitivity
+    types: [SHORT]
+    count: "Any"
+    default: null
+    required: no
+    conformance: EXIF
+    location: exif-ifd
+    section: "4.6.5.G"
+    page: 51
+    description: >
+      Camera/input-device sensitivity per ISO 12232 (SOS, REI, or ISO speed). Clamped to 65535 max;
+      recommended to use only 1 count and to also record SensitivityType (34864).
+    interacts_with: [34864]
+    notes: >
+      Optional (O) all cases. Renamed from ISOSpeedRatings (used up to v2.21).
+
+  - code: 34856
+    hex: "0x8828"
+    name: OECF
+    types: [UNDEFINED]
+    count: "Any"
+    default: null
+    required: no
+    conformance: EXIF
+    location: exif-ifd
+    section: "4.6.5.G"
+    page: 51
+    description: >
+      Opto-Electric Conversion Function per ISO 14524 (structured: n cols, m rows, column names,
+      SRATIONAL values).
+    notes: >
+      Optional (O) all cases.
+
+  - code: 34864
+    hex: "0x8830"
+    name: SensitivityType
+    types: [SHORT]
+    count: "1"
+    default: null
+    required: no
+    conformance: EXIF
+    location: exif-ifd
+    section: "4.6.5.G"
+    page: 52
+    supplement_version: "2.3"
+    description: >
+      Which ISO 12232 parameter the PhotographicSensitivity tag represents. Should be recorded when
+      PhotographicSensitivity is recorded.
+    values:
+      0: "Unknown"
+      1: "Standard output sensitivity (SOS)"
+      2: "Recommended exposure index (REI)"
+      3: "ISO speed"
+      4: "SOS and REI"
+      5: "SOS and ISO speed"
+      6: "REI and ISO speed"
+      7: "SOS and REI and ISO speed"
+    interacts_with: [34855, 34865, 34866, 34867]
+    notes: >
+      Optional (O) all cases.
+
+  - code: 34865
+    hex: "0x8831"
+    name: StandardOutputSensitivity
+    types: [LONG]
+    count: "1"
+    default: null
+    required: no
+    conformance: EXIF
+    location: exif-ifd
+    section: "4.6.5.G"
+    page: 52
+    supplement_version: "2.3"
+    description: >
+      Standard output sensitivity (SOS) per ISO 12232. Requires PhotographicSensitivity and
+      SensitivityType also recorded.
+    interacts_with: [34855, 34864]
+    notes: >
+      Optional (O) all cases.
+
+  - code: 34866
+    hex: "0x8832"
+    name: RecommendedExposureIndex
+    types: [LONG]
+    count: "1"
+    default: null
+    required: no
+    conformance: EXIF
+    location: exif-ifd
+    section: "4.6.5.G"
+    page: 53
+    supplement_version: "2.3"
+    description: >
+      Recommended exposure index (REI) per ISO 12232. Requires PhotographicSensitivity and
+      SensitivityType also recorded.
+    interacts_with: [34855, 34864]
+    notes: >
+      Optional (O) all cases.
+
+  - code: 34867
+    hex: "0x8833"
+    name: ISOSpeed
+    types: [LONG]
+    count: "1"
+    default: null
+    required: no
+    conformance: EXIF
+    location: exif-ifd
+    section: "4.6.5.G"
+    page: 53
+    supplement_version: "2.3"
+    description: >
+      ISO speed per ISO 12232. Requires PhotographicSensitivity and SensitivityType also recorded.
+    interacts_with: [34855, 34864, 34868, 34869]
+    notes: >
+      Optional (O) all cases.
+
+  - code: 34868
+    hex: "0x8834"
+    name: ISOSpeedLatitudeyyy
+    types: [LONG]
+    count: "1"
+    default: null
+    required: conditional
+    conformance: EXIF
+    location: exif-ifd
+    section: "4.6.5.G"
+    page: 53
+    supplement_version: "2.3"
+    description: >
+      ISO speed latitude yyy per ISO 12232. Shall not be recorded without ISOSpeed and
+      ISOSpeedLatitudezzz.
+    interacts_with: [34867, 34869]
+    notes: >
+      Optional (O) all cases.
+
+  - code: 34869
+    hex: "0x8835"
+    name: ISOSpeedLatitudezzz
+    types: [LONG]
+    count: "1"
+    default: null
+    required: conditional
+    conformance: EXIF
+    location: exif-ifd
+    section: "4.6.5.G"
+    page: 53
+    supplement_version: "2.3"
+    description: >
+      ISO speed latitude zzz per ISO 12232. Shall not be recorded without ISOSpeed and
+      ISOSpeedLatitudeyyy.
+    interacts_with: [34867, 34868]
+    notes: >
+      Optional (O) all cases.
+
+  - code: 37377
+    hex: "0x9201"
+    name: ShutterSpeedValue
+    types: [SRATIONAL]
+    count: "1"
+    default: null
+    required: no
+    conformance: EXIF
+    location: exif-ifd
+    section: "4.6.5.G"
+    page: 53
+    description: >
+      Shutter speed in APEX units.
+    notes: >
+      Optional (O) all cases.
+
+  - code: 37378
+    hex: "0x9202"
+    name: ApertureValue
+    types: [RATIONAL]
+    count: "1"
+    default: null
+    required: no
+    conformance: EXIF
+    location: exif-ifd
+    section: "4.6.5.G"
+    page: 54
+    description: >
+      Lens aperture in APEX units.
+    notes: >
+      Optional (O) all cases.
+
+  - code: 37379
+    hex: "0x9203"
+    name: BrightnessValue
+    types: [SRATIONAL]
+    count: "1"
+    default: null
+    required: no
+    conformance: EXIF
+    location: exif-ifd
+    section: "4.6.5.G"
+    page: 54
+    description: >
+      Brightness in APEX units (typ. -99.99..99.99). Numerator FFFFFFFF.H => Unknown.
+    notes: >
+      Optional (O) all cases.
+
+  - code: 37380
+    hex: "0x9204"
+    name: ExposureBiasValue
+    types: [SRATIONAL]
+    count: "1"
+    default: null
+    required: no
+    conformance: EXIF
+    location: exif-ifd
+    section: "4.6.5.G"
+    page: 54
+    description: >
+      Exposure bias in APEX units (typ. -99.99..99.99).
+    notes: >
+      Optional (O) all cases.
+
+  - code: 37381
+    hex: "0x9205"
+    name: MaxApertureValue
+    types: [RATIONAL]
+    count: "1"
+    default: null
+    required: no
+    conformance: EXIF
+    location: exif-ifd
+    section: "4.6.5.G"
+    page: 54
+    description: >
+      Smallest F number of the lens in APEX units.
+    notes: >
+      Optional (O) all cases.
+
+  - code: 37382
+    hex: "0x9206"
+    name: SubjectDistance
+    types: [RATIONAL]
+    count: "1"
+    default: null
+    required: no
+    conformance: EXIF
+    location: exif-ifd
+    section: "4.6.5.G"
+    page: 54
+    description: >
+      Distance to subject in meters. Numerator FFFFFFFF.H => Infinity; numerator 0 => unknown.
+    notes: >
+      Optional (O) all cases.
+
+  - code: 37383
+    hex: "0x9207"
+    name: MeteringMode
+    types: [SHORT]
+    count: "1"
+    default: 0
+    required: no
+    conformance: EXIF
+    location: exif-ifd
+    section: "4.6.5.G"
+    page: 54
+    description: >
+      Metering mode.
+    values:
+      0: "unknown"
+      1: "Average"
+      2: "CenterWeightedAverage"
+      3: "Spot"
+      4: "MultiSpot"
+      5: "Pattern"
+      6: "Partial"
+      255: "other"
+    notes: >
+      Optional (O) all cases.
+
+  - code: 37384
+    hex: "0x9208"
+    name: LightSource
+    types: [SHORT]
+    count: "1"
+    default: 0
+    required: no
+    conformance: EXIF
+    location: exif-ifd
+    section: "4.6.5.G"
+    page: 55
+    description: >
+      Kind of light source.
+    values:
+      0: "unknown"
+      1: "Daylight"
+      2: "Fluorescent"
+      3: "Tungsten (incandescent)"
+      4: "Flash"
+      9: "Fine weather"
+      10: "Cloudy weather"
+      11: "Shade"
+      12: "Daylight fluorescent (D 5700-7100K)"
+      13: "Day white fluorescent (N 4600-5500K)"
+      14: "Cool white fluorescent (W 3800-4500K)"
+      15: "White fluorescent (WW 3250-3800K)"
+      16: "Warm white fluorescent (L 2600-3250K)"
+      17: "Standard light A"
+      18: "Standard light B"
+      19: "Standard light C"
+      20: "D55"
+      21: "D65"
+      22: "D75"
+      23: "D50"
+      24: "ISO studio tungsten"
+      255: "other light source"
+    notes: >
+      Optional (O) all cases. Values 12-16 (fluorescent variants) added/changed in v2.3.
+
+  - code: 37385
+    hex: "0x9209"
+    name: Flash
+    types: [SHORT]
+    count: "1"
+    default: null
+    required: no
+    conformance: EXIF
+    location: exif-ifd
+    section: "4.6.5.G"
+    page: 56
+    description: >
+      Flash status bit field: bit0 fired; bits1-2 return; bits3-4 mode; bit5 function present; bit6
+      red-eye.
+    values:
+      0: "bit0=0 Flash did not fire; bit0=1 Flash fired"
+      1: "bits1-2: 00=no return-detection, 10=return not detected, 11=return detected (01 reserved)"
+      2: "bits3-4: 00=unknown, 01=compulsory firing, 10=compulsory suppression, 11=auto"
+      3: "bit5: 0=flash function present, 1=no flash function"
+      4: "bit6: 0=no red-eye mode/unknown, 1=red-eye reduction supported"
+    notes: >
+      Recommended (R) all cases. Values field summarizes bit semantics, not enumerated integers.
+
+  - code: 37386
+    hex: "0x920A"
+    name: FocalLength
+    types: [RATIONAL]
+    count: "1"
+    default: null
+    required: no
+    conformance: EXIF
+    location: exif-ifd
+    section: "4.6.5.G"
+    page: 59
+    description: >
+      Actual lens focal length in mm (not converted to 35mm equivalent).
+    interacts_with: [41989]
+    notes: >
+      Optional (O) all cases.
+
+  - code: 37396
+    hex: "0x9214"
+    name: SubjectArea
+    types: [SHORT]
+    count: "2 or 3 or 4"
+    default: null
+    required: no
+    conformance: EXIF
+    location: exif-ifd
+    section: "4.6.5.G"
+    page: 57
+    description: >
+      Location/area of main subject; count determines point(2)/circle(3)/rectangle(4). Coordinates
+      relative to upper-left origin, before Orientation rotation.
+    interacts_with: [274, 41492]
+    notes: >
+      Optional (O) all cases.
+
+  - code: 41483
+    hex: "0xA20B"
+    name: FlashEnergy
+    types: [RATIONAL]
+    count: "1"
+    default: null
+    required: no
+    conformance: EXIF
+    location: exif-ifd
+    section: "4.6.5.G"
+    page: 59
+    description: >
+      Strobe energy in Beam Candle Power Seconds (BCPS).
+    notes: >
+      Optional (O) all cases.
+
+  - code: 41484
+    hex: "0xA20C"
+    name: SpatialFrequencyResponse
+    types: [UNDEFINED]
+    count: "Any"
+    default: null
+    required: no
+    conformance: EXIF
+    location: exif-ifd
+    section: "4.6.5.G"
+    page: 59
+    description: >
+      Spatial frequency response table per ISO 12233 (structured: n cols, m rows, names, RATIONAL
+      values).
+    notes: >
+      Optional (O) all cases.
+
+  - code: 41486
+    hex: "0xA20E"
+    name: FocalPlaneXResolution
+    types: [RATIONAL]
+    count: "1"
+    default: null
+    required: no
+    conformance: EXIF
+    location: exif-ifd
+    section: "4.6.5.G"
+    page: 60
+    description: >
+      Pixels per FocalPlaneResolutionUnit in the image-width direction on the focal plane.
+    interacts_with: [41488]
+    notes: >
+      Optional (O) all cases.
+
+  - code: 41487
+    hex: "0xA20F"
+    name: FocalPlaneYResolution
+    types: [RATIONAL]
+    count: "1"
+    default: null
+    required: no
+    conformance: EXIF
+    location: exif-ifd
+    section: "4.6.5.G"
+    page: 60
+    description: >
+      Pixels per FocalPlaneResolutionUnit in the image-height direction on the focal plane.
+    interacts_with: [41488]
+    notes: >
+      Optional (O) all cases.
+
+  - code: 41488
+    hex: "0xA210"
+    name: FocalPlaneResolutionUnit
+    types: [SHORT]
+    count: "1"
+    default: 2
+    required: no
+    conformance: EXIF
+    location: exif-ifd
+    section: "4.6.5.G"
+    page: 60
+    description: >
+      Unit for FocalPlaneX/YResolution; same value semantics as ResolutionUnit (296).
+    values:
+      2: "inches"
+      3: "centimeters"
+    interacts_with: [41486, 41487]
+    notes: >
+      Optional (O) all cases. Default 2 (inch).
+
+  - code: 41492
+    hex: "0xA214"
+    name: SubjectLocation
+    types: [SHORT]
+    count: "2"
+    default: null
+    required: no
+    conformance: EXIF
+    location: exif-ifd
+    section: "4.6.5.G"
+    page: 60
+    description: >
+      Pixel at center of main subject (X column, Y row), before Orientation rotation. SubjectArea
+      (37396) is recommended instead.
+    interacts_with: [37396]
+    notes: >
+      Optional (O) all cases.
+
+  - code: 41493
+    hex: "0xA215"
+    name: ExposureIndex
+    types: [RATIONAL]
+    count: "1"
+    default: null
+    required: no
+    conformance: EXIF
+    location: exif-ifd
+    section: "4.6.5.G"
+    page: 61
+    description: >
+      Exposure index selected on the device at capture.
+    notes: >
+      Optional (O) all cases.
+
+  - code: 41495
+    hex: "0xA217"
+    name: SensingMethod
+    types: [SHORT]
+    count: "1"
+    default: null
+    required: no
+    conformance: EXIF
+    location: exif-ifd
+    section: "4.6.5.G"
+    page: 61
+    description: >
+      Image sensor type.
+    values:
+      1: "Not defined"
+      2: "One-chip color area sensor"
+      3: "Two-chip color area sensor"
+      4: "Three-chip color area sensor"
+      5: "Color sequential area sensor"
+      7: "Trilinear sensor"
+      8: "Color sequential linear sensor"
+    notes: >
+      Optional (O) all cases.
+
+  - code: 41728
+    hex: "0xA300"
+    name: FileSource
+    types: [UNDEFINED]
+    count: "1"
+    default: 3
+    required: no
+    conformance: EXIF
+    location: exif-ifd
+    section: "4.6.5.G"
+    page: 61
+    description: >
+      Image source; a DSC shall set this to 3.
+    values:
+      0: "others"
+      1: "scanner of transparent type"
+      2: "scanner of reflex type"
+      3: "DSC"
+    notes: >
+      Optional (O) all cases.
+
+  - code: 41729
+    hex: "0xA301"
+    name: SceneType
+    types: [UNDEFINED]
+    count: "1"
+    default: 1
+    required: no
+    conformance: EXIF
+    location: exif-ifd
+    section: "4.6.5.G"
+    page: 61
+    description: >
+      Scene type; a DSC shall set this to 1 (directly photographed).
+    values:
+      1: "A directly photographed image"
+    notes: >
+      Optional (O) all cases.
+
+  - code: 41730
+    hex: "0xA302"
+    name: CFAPattern
+    types: [UNDEFINED]
+    count: "Any"
+    default: null
+    required: no
+    conformance: EXIF
+    location: exif-ifd
+    section: "4.6.5.G"
+    page: 62
+    description: >
+      Color filter array geometric pattern (structured: n, m, then BYTE CFA values;
+      0=Red,1=Green,2=Blue,3=Cyan,4=Magenta,5=Yellow,6=White).
+    notes: >
+      Optional (O) all cases.
+
+  - code: 41985
+    hex: "0xA401"
+    name: CustomRendered
+    types: [SHORT]
+    count: "1"
+    default: 0
+    required: no
+    conformance: EXIF
+    location: exif-ifd
+    section: "4.6.5.G"
+    page: 62
+    description: >
+      Whether special output-oriented processing was applied.
+    values:
+      0: "Normal process"
+      1: "Custom process"
+    notes: >
+      Optional (O) all cases.
+
+  - code: 41986
+    hex: "0xA402"
+    name: ExposureMode
+    types: [SHORT]
+    count: "1"
+    default: null
+    required: no
+    conformance: EXIF
+    location: exif-ifd
+    section: "4.6.5.G"
+    page: 63
+    description: >
+      Exposure mode set at capture.
+    values:
+      0: "Auto exposure"
+      1: "Manual exposure"
+      2: "Auto bracket"
+    notes: >
+      Recommended (R) all cases.
+
+  - code: 41987
+    hex: "0xA403"
+    name: WhiteBalance
+    types: [SHORT]
+    count: "1"
+    default: null
+    required: no
+    conformance: EXIF
+    location: exif-ifd
+    section: "4.6.5.G"
+    page: 63
+    description: >
+      White balance mode set at capture.
+    values:
+      0: "Auto white balance"
+      1: "Manual white balance"
+    notes: >
+      Recommended (R) all cases.
+
+  - code: 41988
+    hex: "0xA404"
+    name: DigitalZoomRatio
+    types: [RATIONAL]
+    count: "1"
+    default: null
+    required: no
+    conformance: EXIF
+    location: exif-ifd
+    section: "4.6.5.G"
+    page: 63
+    description: >
+      Digital zoom ratio; numerator 0 => digital zoom not used.
+    notes: >
+      Optional (O) all cases.
+
+  - code: 41989
+    hex: "0xA405"
+    name: FocalLengthIn35mmFilm
+    types: [SHORT]
+    count: "1"
+    default: null
+    required: no
+    conformance: EXIF
+    location: exif-ifd
+    section: "4.6.5.G"
+    page: 63
+    description: >
+      35mm-equivalent focal length in mm; 0 => unknown. Differs from FocalLength (37386).
+    interacts_with: [37386]
+    notes: >
+      Optional (O) all cases.
+
+  - code: 41990
+    hex: "0xA406"
+    name: SceneCaptureType
+    types: [SHORT]
+    count: "1"
+    default: 0
+    required: no
+    conformance: EXIF
+    location: exif-ifd
+    section: "4.6.5.G"
+    page: 64
+    description: >
+      Type of scene shot. Differs from SceneType (41729).
+    values:
+      0: "Standard"
+      1: "Landscape"
+      2: "Portrait"
+      3: "Night scene"
+    interacts_with: [41729]
+    notes: >
+      Recommended (R) all cases.
+
+  - code: 41991
+    hex: "0xA407"
+    name: GainControl
+    types: [RATIONAL]
+    count: "1"
+    default: null
+    required: no
+    conformance: EXIF
+    location: exif-ifd
+    section: "4.6.5.G"
+    page: 64
+    description: >
+      Overall image gain adjustment.
+    values:
+      0: "None"
+      1: "Low gain up"
+      2: "High gain up"
+      3: "Low gain down"
+      4: "High gain down"
+    notes: >
+      Optional (O) all cases. Type listed as RATIONAL in Table 8; enumerated values 0-4 given in
+      section 4.6.5.G text (which lists Type SHORT). Ambiguity: Table 8 says RATIONAL, per-tag detail
+      says SHORT.
+
+  - code: 41992
+    hex: "0xA408"
+    name: Contrast
+    types: [SHORT]
+    count: "1"
+    default: 0
+    required: no
+    conformance: EXIF
+    location: exif-ifd
+    section: "4.6.5.G"
+    page: 64
+    description: >
+      Direction of contrast processing applied.
+    values:
+      0: "Normal"
+      1: "Soft"
+      2: "Hard"
+    notes: >
+      Optional (O) all cases.
+
+  - code: 41993
+    hex: "0xA409"
+    name: Saturation
+    types: [SHORT]
+    count: "1"
+    default: 0
+    required: no
+    conformance: EXIF
+    location: exif-ifd
+    section: "4.6.5.G"
+    page: 64
+    description: >
+      Direction of saturation processing applied.
+    values:
+      0: "Normal"
+      1: "Low saturation"
+      2: "High saturation"
+    notes: >
+      Optional (O) all cases.
+
+  - code: 41994
+    hex: "0xA40A"
+    name: Sharpness
+    types: [SHORT]
+    count: "1"
+    default: 0
+    required: no
+    conformance: EXIF
+    location: exif-ifd
+    section: "4.6.5.G"
+    page: 64
+    description: >
+      Direction of sharpness processing applied.
+    values:
+      0: "Normal"
+      1: "Soft"
+      2: "Hard"
+    notes: >
+      Optional (O) all cases.
+
+  - code: 41995
+    hex: "0xA40B"
+    name: DeviceSettingDescription
+    types: [UNDEFINED]
+    count: "Any"
+    default: null
+    required: no
+    conformance: EXIF
+    location: exif-ifd
+    section: "4.6.5.G"
+    page: 65
+    description: >
+      Picture-taking conditions for a particular camera model (structured: SHORT display columns/rows,
+      then UNDEFINED camera settings in NULL-terminated Unicode UCS-2 per ISO/IEC 10646-1).
+    notes: >
+      Optional (O) all cases.
+
+  - code: 41996
+    hex: "0xA40C"
+    name: SubjectDistanceRange
+    types: [SHORT]
+    count: "1"
+    default: null
+    required: no
+    conformance: EXIF
+    location: exif-ifd
+    section: "4.6.5.G"
+    page: 65
+    description: >
+      Distance range to the subject.
+    values:
+      0: "unknown"
+      1: "Macro"
+      2: "Close view"
+      3: "Distant view"
+    notes: >
+      Optional (O) all cases.
+
+  - code: 42016
+    hex: "0xA420"
+    name: ImageUniqueID
+    types: [ASCII]
+    count: "33"
+    default: null
+    required: no
+    conformance: EXIF
+    location: exif-ifd
+    section: "4.6.5.H"
+    page: 66
+    description: >
+      Unique image identifier, 128-bit fixed-length value as a hexadecimal ASCII string (32 chars +
+      NULL = 33).
+    notes: >
+      Optional (O) all cases.
+
+  - code: 42032
+    hex: "0xA430"
+    name: CameraOwnerName
+    types: [ASCII]
+    count: "Any"
+    default: null
+    required: no
+    conformance: EXIF
+    location: exif-ifd
+    section: "4.6.5.H"
+    page: 67
+    supplement_version: "2.3"
+    description: >
+      Owner of the camera as an ASCII string.
+    notes: >
+      Optional (O) all cases.
+
+  - code: 42033
+    hex: "0xA431"
+    name: BodySerialNumber
+    types: [ASCII]
+    count: "Any"
+    default: null
+    required: no
+    conformance: EXIF
+    location: exif-ifd
+    section: "4.6.5.H"
+    page: 67
+    supplement_version: "2.3"
+    description: >
+      Serial number of the camera body as an ASCII string.
+    notes: >
+      Optional (O) all cases.
+
+  - code: 42034
+    hex: "0xA432"
+    name: LensSpecification
+    types: [RATIONAL]
+    count: "4"
+    default: null
+    required: no
+    conformance: EXIF
+    location: exif-ifd
+    section: "4.6.5.H"
+    page: 67
+    supplement_version: "2.3"
+    description: >
+      Lens specification: [1] min focal length (mm), [2] max focal length (mm), [3] min F number at
+      min focal length, [4] min F number at max focal length. Unknown min F number noted as 0/0.
+    notes: >
+      Optional (O) all cases.
+
+  - code: 42035
+    hex: "0xA433"
+    name: LensMake
+    types: [ASCII]
+    count: "Any"
+    default: null
+    required: no
+    conformance: EXIF
+    location: exif-ifd
+    section: "4.6.5.H"
+    page: 67
+    supplement_version: "2.3"
+    description: >
+      Lens manufacturer as an ASCII string.
+    notes: >
+      Optional (O) all cases.
+
+  - code: 42036
+    hex: "0xA434"
+    name: LensModel
+    types: [ASCII]
+    count: "Any"
+    default: null
+    required: no
+    conformance: EXIF
+    location: exif-ifd
+    section: "4.6.5.H"
+    page: 67
+    supplement_version: "2.3"
+    description: >
+      Lens model name/number as an ASCII string.
+    notes: >
+      Optional (O) all cases.
+
+  - code: 42037
+    hex: "0xA435"
+    name: LensSerialNumber
+    types: [ASCII]
+    count: "Any"
+    default: null
+    required: no
+    conformance: EXIF
+    location: exif-ifd
+    section: "4.6.5.H"
+    page: 67
+    supplement_version: "2.3"
+    description: >
+      Serial number of the interchangeable lens as an ASCII string.
+    notes: >
+      Optional (O) all cases.
+
+  # ---- GPS Info IFD tags (location gps-ifd) ----
+  - code: 0
+    hex: "0x0000"
+    name: GPSVersionID
+    types: [BYTE]
+    count: "4"
+    default: "2.3.0.0"
+    required: conditional
+    conformance: EXIF
+    location: gps-ifd
+    section: "4.6.6.A"
+    page: 68
+    description: >
+      Version of the GPS Info IFD; 2.3.0.0 for this standard. Mandatory when the GPS Info IFD is
+      present.
+    values:
+      "2.3.0.0": "Version 2.3"
+    notes: >
+      Table 19 lists O, but text says mandatory when GPS Info tag present.
+
+  - code: 1
+    hex: "0x0001"
+    name: GPSLatitudeRef
+    types: [ASCII]
+    count: "2"
+    default: null
+    required: no
+    conformance: EXIF
+    location: gps-ifd
+    section: "4.6.6.A"
+    page: 69
+    description: >
+      Whether latitude is north or south.
+    values:
+      N: "North latitude"
+      S: "South latitude"
+    interacts_with: [2]
+    notes: >
+      Optional (O) all cases.
+
+  - code: 2
+    hex: "0x0002"
+    name: GPSLatitude
+    types: [RATIONAL]
+    count: "3"
+    default: null
+    required: no
+    conformance: EXIF
+    location: gps-ifd
+    section: "4.6.6.A"
+    page: 69
+    description: >
+      Latitude as degrees, minutes, seconds (3 RATIONALs).
+    interacts_with: [1]
+    notes: >
+      Optional (O) all cases.
+
+  - code: 3
+    hex: "0x0003"
+    name: GPSLongitudeRef
+    types: [ASCII]
+    count: "2"
+    default: null
+    required: no
+    conformance: EXIF
+    location: gps-ifd
+    section: "4.6.6.A"
+    page: 69
+    description: >
+      Whether longitude is east or west.
+    values:
+      E: "East longitude"
+      W: "West longitude"
+    interacts_with: [4]
+    notes: >
+      Optional (O) all cases.
+
+  - code: 4
+    hex: "0x0004"
+    name: GPSLongitude
+    types: [RATIONAL]
+    count: "3"
+    default: null
+    required: no
+    conformance: EXIF
+    location: gps-ifd
+    section: "4.6.6.A"
+    page: 70
+    description: >
+      Longitude as degrees, minutes, seconds (3 RATIONALs).
+    interacts_with: [3]
+    notes: >
+      Optional (O) all cases.
+
+  - code: 5
+    hex: "0x0005"
+    name: GPSAltitudeRef
+    types: [BYTE]
+    count: "1"
+    default: 0
+    required: no
+    conformance: EXIF
+    location: gps-ifd
+    section: "4.6.6.A"
+    page: 70
+    description: >
+      Reference altitude (unit meters). BYTE type unlike other reference tags.
+    values:
+      0: "Sea level (at/above)"
+      1: "Below sea level (GPSAltitude is absolute value)"
+    interacts_with: [6]
+    notes: >
+      Optional (O) all cases.
+
+  - code: 6
+    hex: "0x0006"
+    name: GPSAltitude
+    types: [RATIONAL]
+    count: "1"
+    default: null
+    required: no
+    conformance: EXIF
+    location: gps-ifd
+    section: "4.6.6.A"
+    page: 70
+    description: >
+      Altitude based on GPSAltitudeRef, in meters.
+    interacts_with: [5]
+    notes: >
+      Optional (O) all cases.
+
+  - code: 7
+    hex: "0x0007"
+    name: GPSTimeStamp
+    types: [RATIONAL]
+    count: "3"
+    default: null
+    required: no
+    conformance: EXIF
+    location: gps-ifd
+    section: "4.6.6.A"
+    page: 70
+    description: >
+      UTC time as hour, minute, second (3 RATIONALs).
+    interacts_with: [29]
+    notes: >
+      Optional (O) all cases.
+
+  - code: 8
+    hex: "0x0008"
+    name: GPSSatellites
+    types: [ASCII]
+    count: "Any"
+    default: null
+    required: no
+    conformance: EXIF
+    location: gps-ifd
+    section: "4.6.6.A"
+    page: 71
+    description: >
+      GPS satellites used (free ASCII format). If receiver cannot measure, set to NULL.
+    notes: >
+      Optional (O) all cases.
+
+  - code: 9
+    hex: "0x0009"
+    name: GPSStatus
+    types: [ASCII]
+    count: "2"
+    default: null
+    required: no
+    conformance: EXIF
+    location: gps-ifd
+    section: "4.6.6.A"
+    page: 71
+    description: >
+      GPS receiver status at capture.
+    values:
+      A: "Measurement in progress"
+      V: "Measurement interoperability (in-progress/void)"
+    notes: >
+      Optional (O) all cases. 'V' text garbled in source as "Interoperability".
+
+  - code: 10
+    hex: "0x000A"
+    name: GPSMeasureMode
+    types: [ASCII]
+    count: "2"
+    default: null
+    required: no
+    conformance: EXIF
+    location: gps-ifd
+    section: "4.6.6.A"
+    page: 71
+    description: >
+      GPS measurement mode.
+    values:
+      "2": "2-dimensional measurement"
+      "3": "3-dimensional measurement"
+    interacts_with: [27]
+    notes: >
+      Optional (O) all cases.
+
+  - code: 11
+    hex: "0x000B"
+    name: GPSDOP
+    types: [RATIONAL]
+    count: "1"
+    default: null
+    required: no
+    conformance: EXIF
+    location: gps-ifd
+    section: "4.6.6.A"
+    page: 71
+    description: >
+      GPS degree of precision (HDOP for 2D, PDOP for 3D).
+    notes: >
+      Optional (O) all cases.
+
+  - code: 12
+    hex: "0x000C"
+    name: GPSSpeedRef
+    types: [ASCII]
+    count: "2"
+    default: "K"
+    required: no
+    conformance: EXIF
+    location: gps-ifd
+    section: "4.6.6.A"
+    page: 72
+    description: >
+      Unit for GPSSpeed.
+    values:
+      K: "Kilometers per hour"
+      M: "Miles per hour"
+      N: "Knots"
+    interacts_with: [13]
+    notes: >
+      Optional (O) all cases.
+
+  - code: 13
+    hex: "0x000D"
+    name: GPSSpeed
+    types: [RATIONAL]
+    count: "1"
+    default: null
+    required: no
+    conformance: EXIF
+    location: gps-ifd
+    section: "4.6.6.A"
+    page: 72
+    description: >
+      Speed of GPS receiver movement.
+    interacts_with: [12]
+    notes: >
+      Optional (O) all cases.
+
+  - code: 14
+    hex: "0x000E"
+    name: GPSTrackRef
+    types: [ASCII]
+    count: "2"
+    default: "T"
+    required: no
+    conformance: EXIF
+    location: gps-ifd
+    section: "4.6.6.A"
+    page: 72
+    description: >
+      Reference for direction of movement.
+    values:
+      T: "True direction"
+      M: "Magnetic direction"
+    interacts_with: [15]
+    notes: >
+      Optional (O) all cases.
+
+  - code: 15
+    hex: "0x000F"
+    name: GPSTrack
+    types: [RATIONAL]
+    count: "1"
+    default: null
+    required: no
+    conformance: EXIF
+    location: gps-ifd
+    section: "4.6.6.A"
+    page: 72
+    description: >
+      Direction of movement, 0.00-359.99.
+    interacts_with: [14]
+    notes: >
+      Optional (O) all cases.
+
+  - code: 16
+    hex: "0x0010"
+    name: GPSImgDirectionRef
+    types: [ASCII]
+    count: "2"
+    default: "T"
+    required: no
+    conformance: EXIF
+    location: gps-ifd
+    section: "4.6.6.A"
+    page: 72
+    description: >
+      Reference for direction of the image.
+    values:
+      T: "True direction"
+      M: "Magnetic direction"
+    interacts_with: [17]
+    notes: >
+      Optional (O) all cases.
+
+  - code: 17
+    hex: "0x0011"
+    name: GPSImgDirection
+    types: [RATIONAL]
+    count: "1"
+    default: null
+    required: no
+    conformance: EXIF
+    location: gps-ifd
+    section: "4.6.6.A"
+    page: 72
+    description: >
+      Direction of the image when captured, 0.00-359.99.
+    interacts_with: [16]
+    notes: >
+      Optional (O) all cases.
+
+  - code: 18
+    hex: "0x0012"
+    name: GPSMapDatum
+    types: [ASCII]
+    count: "Any"
+    default: null
+    required: no
+    conformance: EXIF
+    location: gps-ifd
+    section: "4.6.6.A"
+    page: 72
+    description: >
+      Geodetic survey data used (e.g. 'TOKYO', 'WGS-84'). Strongly recommended when GPS Info recorded.
+    notes: >
+      Optional (O) all cases; strongly recommended per text.
+
+  - code: 19
+    hex: "0x0013"
+    name: GPSDestLatitudeRef
+    types: [ASCII]
+    count: "2"
+    default: null
+    required: no
+    conformance: EXIF
+    location: gps-ifd
+    section: "4.6.6.A"
+    page: 73
+    description: >
+      Whether destination latitude is north or south.
+    values:
+      N: "North latitude"
+      S: "South latitude"
+    interacts_with: [20]
+    notes: >
+      Optional (O) all cases.
+
+  - code: 20
+    hex: "0x0014"
+    name: GPSDestLatitude
+    types: [RATIONAL]
+    count: "3"
+    default: null
+    required: no
+    conformance: EXIF
+    location: gps-ifd
+    section: "4.6.6.A"
+    page: 73
+    description: >
+      Destination latitude as degrees, minutes, seconds.
+    interacts_with: [19]
+    notes: >
+      Optional (O) all cases.
+
+  - code: 21
+    hex: "0x0015"
+    name: GPSDestLongitudeRef
+    types: [ASCII]
+    count: "2"
+    default: null
+    required: no
+    conformance: EXIF
+    location: gps-ifd
+    section: "4.6.6.A"
+    page: 74
+    description: >
+      Whether destination longitude is east or west.
+    values:
+      E: "East longitude"
+      W: "West longitude"
+    interacts_with: [22]
+    notes: >
+      Optional (O) all cases.
+
+  - code: 22
+    hex: "0x0016"
+    name: GPSDestLongitude
+    types: [RATIONAL]
+    count: "3"
+    default: null
+    required: no
+    conformance: EXIF
+    location: gps-ifd
+    section: "4.6.6.A"
+    page: 74
+    description: >
+      Destination longitude as degrees, minutes, seconds.
+    interacts_with: [21]
+    notes: >
+      Optional (O) all cases.
+
+  - code: 23
+    hex: "0x0017"
+    name: GPSDestBearingRef
+    types: [ASCII]
+    count: "2"
+    default: "T"
+    required: no
+    conformance: EXIF
+    location: gps-ifd
+    section: "4.6.6.A"
+    page: 74
+    description: >
+      Reference for bearing to destination.
+    values:
+      T: "True direction"
+      M: "Magnetic direction"
+    interacts_with: [24]
+    notes: >
+      Optional (O) all cases.
+
+  - code: 24
+    hex: "0x0018"
+    name: GPSDestBearing
+    types: [RATIONAL]
+    count: "1"
+    default: null
+    required: no
+    conformance: EXIF
+    location: gps-ifd
+    section: "4.6.6.A"
+    page: 74
+    description: >
+      Bearing to destination, 0.00-359.99.
+    interacts_with: [23]
+    notes: >
+      Optional (O) all cases.
+
+  - code: 25
+    hex: "0x0019"
+    name: GPSDestDistanceRef
+    types: [ASCII]
+    count: "2"
+    default: "K"
+    required: no
+    conformance: EXIF
+    location: gps-ifd
+    section: "4.6.6.A"
+    page: 74
+    description: >
+      Unit for distance to destination.
+    values:
+      K: "Kilometers"
+      M: "Miles"
+      N: "Nautical miles"
+    interacts_with: [26]
+    notes: >
+      Optional (O) all cases.
+
+  - code: 26
+    hex: "0x001A"
+    name: GPSDestDistance
+    types: [RATIONAL]
+    count: "1"
+    default: null
+    required: no
+    conformance: EXIF
+    location: gps-ifd
+    section: "4.6.6.A"
+    page: 74
+    description: >
+      Distance to destination.
+    interacts_with: [25]
+    notes: >
+      Optional (O) all cases.
+
+  - code: 27
+    hex: "0x001B"
+    name: GPSProcessingMethod
+    types: [UNDEFINED]
+    count: "Any"
+    default: null
+    required: no
+    conformance: EXIF
+    location: gps-ifd
+    section: "4.6.6.A"
+    page: 75
+    description: >
+      Name of location-finding method; first byte is the character-code ID (Table 9/10), then the
+      name. Not NULL-terminated. May record 'GPS','CELLID','WLAN','MANUAL' etc.
+    interacts_with: [10]
+    notes: >
+      Optional (O) all cases.
+
+  - code: 28
+    hex: "0x001C"
+    name: GPSAreaInformation
+    types: [UNDEFINED]
+    count: "Any"
+    default: null
+    required: no
+    conformance: EXIF
+    location: gps-ifd
+    section: "4.6.6.A"
+    page: 76
+    description: >
+      Name of the GPS area; first byte is character-code ID (Table 9/10), then the name. Not
+      NULL-terminated.
+    notes: >
+      Optional (O) all cases.
+
+  - code: 29
+    hex: "0x001D"
+    name: GPSDateStamp
+    types: [ASCII]
+    count: "11"
+    default: null
+    required: no
+    conformance: EXIF
+    location: gps-ifd
+    section: "4.6.6.A"
+    page: 76
+    description: >
+      UTC date "YYYY:MM:DD", 11 bytes incl. NULL.
+    interacts_with: [7]
+    notes: >
+      Optional (O) all cases.
+
+  - code: 30
+    hex: "0x001E"
+    name: GPSDifferential
+    types: [SHORT]
+    count: "1"
+    default: null
+    required: no
+    conformance: EXIF
+    location: gps-ifd
+    section: "4.6.6.A"
+    page: 76
+    description: >
+      Whether differential correction was applied.
+    values:
+      0: "Measurement without differential correction"
+      1: "Differential correction applied"
+    notes: >
+      Optional (O) all cases.
+
+  - code: 31
+    hex: "0x001F"
+    name: GPSHPositioningError
+    types: [RATIONAL]
+    count: "1"
+    default: null
+    required: no
+    conformance: EXIF
+    location: gps-ifd
+    section: "4.6.6.A"
+    page: 76
+    supplement_version: "2.3"
+    description: >
+      Horizontal positioning error in meters.
+    notes: >
+      Optional (O) all cases.
+
+  # ---- Interoperability IFD tag ----
+  - code: 1
+    hex: "0x0001"
+    name: InteroperabilityIndex
+    types: [ASCII]
+    count: "Any"
+    default: null
+    required: conditional
+    conformance: EXIF
+    location: interop-ifd
+    section: "4.6.7.A"
+    page: 78
+    description: >
+      Identification of the interoperability rule (4 bytes incl. NULL). Note: tag code 1 collides
+      with GPSLatitudeRef but resides in a different IFD (Interoperability IFD).
+    values:
+      R98: "Exif R98 file / DCF basic file"
+      THM: "DCF thumbnail file"
+      R03: "DCF Option File"
+    notes: >
+      In Exif IFD's Interoperability IFD: N for uncompressed, Optional (O) for compressed.
+
+dependencies:
+  - id: EXIF-DEP-001
+    requirement: EXIF-025
+    when: "ExifIFDPointer(34665) present"
+    then: "The offset points from the TIFF header start to an Exif IFD with valid TIFF IFD structure and no image data"
+    kind: requires
+    tags: [34665]
+
+  - id: EXIF-DEP-002
+    requirement: EXIF-026
+    when: "GPSInfoIFDPointer(34853) present"
+    then: "The offset points to a GPS Info IFD with valid TIFF IFD structure and no image data; GPSVersionID(0) must be present"
+    kind: requires
+    tags: [34853, 0]
+
+  - id: EXIF-DEP-003
+    requirement: EXIF-027
+    when: "InteroperabilityIFDPointer(40965) present"
+    then: "It is located in the Exif IFD and points to an Interoperability IFD with valid TIFF IFD structure and no image data"
+    kind: requires
+    tags: [40965]
+
+  - id: EXIF-DEP-004
+    requirement: EXIF-029
+    when: "primary image is JPEG compressed"
+    then: "ImageWidth(256), ImageLength(257), BitsPerSample(258), PhotometricInterpretation(262), SamplesPerPixel(277), PlanarConfiguration(284), YCbCrSubSampling(530), Compression(259), StripOffsets(273), RowsPerStrip(278), StripByteCounts(279) must NOT be recorded in the 0th IFD"
+    kind: forbids
+    tags: [256, 257, 258, 259, 262, 273, 277, 278, 279, 284, 530]
+
+  - id: EXIF-DEP-005
+    requirement: EXIF-045
+    when: "file is compressed"
+    then: "PixelXDimension(40962) and PixelYDimension(40963) must be present; must NOT be present when file is uncompressed"
+    kind: requires
+    tags: [40962, 40963]
+
+  - id: EXIF-DEP-006
+    requirement: EXIF-072
+    when: "file is compressed"
+    then: "ComponentsConfiguration(37121) is mandatory; it is forbidden (N) when file is uncompressed"
+    kind: requires
+    tags: [37121]
+
+  - id: EXIF-DEP-007
+    requirement: EXIF-068
+    when: "PhotometricInterpretation(262) == 6 (YCbCr) and uncompressed"
+    then: "YCbCrSubSampling(530) and YCbCrPositioning(531) are mandatory in the 0th IFD"
+    kind: requires
+    tags: [262, 530, 531]
+
+  - id: EXIF-DEP-008
+    requirement: EXIF-070
+    when: "PhotometricInterpretation(262) == 2 (RGB), chunky or planar uncompressed"
+    then: "YCbCrCoefficients(529), YCbCrSubSampling(530), YCbCrPositioning(531) are forbidden (N)"
+    kind: forbids
+    tags: [262, 529, 530, 531]
+
+  - id: EXIF-DEP-009
+    requirement: EXIF-034
+    when: "image resolution is unknown"
+    then: "XResolution(282)=72, YResolution(283)=72, ResolutionUnit(296)=2 (inches)"
+    kind: selects-default
+    tags: [282, 283, 296]
+
+  - id: EXIF-DEP-010
+    requirement: EXIF-034
+    when: "always"
+    then: "YResolution(283) must equal XResolution(282) and share the same ResolutionUnit(296)"
+    kind: constrains-value
+    tags: [282, 283, 296]
+
+  - id: EXIF-DEP-011
+    requirement: EXIF-039
+    when: "PhotometricInterpretation(262) == 2 (RGB)"
+    then: "ReferenceBlackWhite(532) default = [0,255,0,255,0,255]"
+    kind: selects-default
+    tags: [262, 532]
+
+  - id: EXIF-DEP-012
+    requirement: EXIF-039
+    when: "PhotometricInterpretation(262) == 6 (YCbCr)"
+    then: "ReferenceBlackWhite(532) default = [0,255,0,128,0,128]"
+    kind: selects-default
+    tags: [262, 532]
+
+  - id: EXIF-DEP-013
+    requirement: EXIF-046
+    when: "RGB uncompressed"
+    then: "ComponentsConfiguration(37121) default = 4 5 6 0; otherwise default = 1 2 3 0"
+    kind: selects-default
+    tags: [37121, 262]
+
+  - id: EXIF-DEP-014
+    requirement: EXIF-018
+    when: "thumbnail is JPEG compressed"
+    then: "1st IFD Compression(259)=6 and JPEGInterchangeFormat(513) and JPEGInterchangeFormatLength(514) must be present; StripOffsets(273)/RowsPerStrip(278)/StripByteCounts(279) forbidden"
+    kind: requires
+    tags: [259, 513, 514, 273, 278, 279]
+
+  - id: EXIF-DEP-015
+    requirement: EXIF-016
+    when: "primary image is uncompressed (RGB or YCbCr)"
+    then: "thumbnail must NOT be JPEG compressed"
+    kind: forbids
+    tags: [259]
+
+  - id: EXIF-DEP-016
+    requirement: EXIF-037
+    when: "primary image is JPEG"
+    then: "JPEGInterchangeFormat(513) and JPEGInterchangeFormatLength(514) must NOT be used for the primary image"
+    kind: forbids
+    tags: [513, 514]
+
+  - id: EXIF-DEP-017
+    requirement: EXIF-054
+    when: "StandardOutputSensitivity(34865) or RecommendedExposureIndex(34866) or ISOSpeed(34867) is recorded"
+    then: "PhotographicSensitivity(34855) and SensitivityType(34864) must also be recorded"
+    kind: requires
+    tags: [34855, 34864, 34865, 34866, 34867]
+
+  - id: EXIF-DEP-018
+    requirement: EXIF-055
+    when: "ISOSpeedLatitudeyyy(34868) is recorded"
+    then: "ISOSpeed(34867) and ISOSpeedLatitudezzz(34869) must also be recorded"
+    kind: requires
+    tags: [34867, 34868, 34869]
+
+  - id: EXIF-DEP-019
+    requirement: EXIF-055
+    when: "ISOSpeedLatitudezzz(34869) is recorded"
+    then: "ISOSpeed(34867) and ISOSpeedLatitudeyyy(34868) must also be recorded"
+    kind: requires
+    tags: [34867, 34868, 34869]
+
+  - id: EXIF-DEP-020
+    requirement: EXIF-053
+    when: "PhotographicSensitivity(34855) is recorded"
+    then: "SensitivityType(34864) should also be recorded; PhotographicSensitivity clamped to 65535 if value >= 65535; use count 1"
+    kind: constrains-value
+    tags: [34855, 34864]
+
+  - id: EXIF-DEP-021
+    requirement: EXIF-061
+    when: "GPS Info IFD present (GPSInfoIFDPointer 34853)"
+    then: "GPSVersionID(0) is mandatory with value 2.3.0.0"
+    kind: requires
+    tags: [0, 34853]
+
+  - id: EXIF-DEP-022
+    requirement: EXIF-062
+    when: "GPSLatitude(2) is recorded"
+    then: "GPSLatitudeRef(1) is needed to interpret it (N/S); likewise GPSLongitude(4) needs GPSLongitudeRef(3)"
+    kind: requires
+    tags: [1, 2, 3, 4]
+
+  - id: EXIF-DEP-023
+    requirement: EXIF-063
+    when: "GPSAltitudeRef(5) == 1"
+    then: "GPSAltitude(6) is expressed as an absolute value (below sea level)"
+    kind: modifies-meaning
+    tags: [5, 6]
+
+  - id: EXIF-DEP-024
+    requirement: EXIF-033
+    when: "YCbCrPositioning(531) absent"
+    then: "reader assumes TIFF default 1 (centered); reader unable to support both must follow TIFF default regardless of recorded value"
+    kind: selects-default
+    tags: [531]
+
+  - id: EXIF-DEP-025
+    requirement: EXIF-043
+    when: "ExifVersion(36864) absent"
+    then: "file is treated as non-conformant to the Exif standard"
+    kind: constrains-value
+    tags: [36864]
+
+  - id: EXIF-DEP-026
+    requirement: EXIF-041
+    when: "a two-byte (non-ASCII) character code is needed for a comment"
+    then: "UserComment(37510) must be used instead of ImageDescription(270)"
+    kind: requires
+    tags: [270, 37510]
+
+  - id: EXIF-DEP-027
+    requirement: EXIF-013
+    when: "no 1st IFD (thumbnail) is recorded"
+    then: "the 0th IFD next-IFD offset must terminate with 00000000.H"
+    kind: constrains-value
+    tags: []
+
+  - id: EXIF-DEP-028
+    requirement: EXIF-046
+    when: "uncompressed data"
+    then: "ComponentsConfiguration(37121) is forbidden (N); component arrangement is given by PhotometricInterpretation(262) instead"
+    kind: forbids
+    tags: [37121, 262]
+
+  - id: EXIF-DEP-029
+    requirement: EXIF-072
+    when: "uncompressed data"
+    then: "CompressedBitsPerPixel(37122) and InteroperabilityIFDPointer(40965) are forbidden (N)"
+    kind: forbids
+    tags: [37122, 40965]
+
+  - id: EXIF-DEP-030
+    requirement: EXIF-075
+    when: "uncompressed data"
+    then: "InteroperabilityIndex(1) in the Interoperability IFD is forbidden (N)"
+    kind: forbids
+    tags: [1]

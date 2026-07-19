@@ -1,0 +1,1876 @@
+# =============================================================================
+# TIFF cross-tag validation model (DEP-* requirements)
+# =============================================================================
+#
+# This file is the canonical machine-readable form of every cross-tag /
+# conditional rule in the requirements database. dependencies.md is the
+# human-readable rendering. Each rule consolidates the equivalent statements
+# from all source documents; `sources` lists the per-document extraction IDs
+# (see sources/<DOC>.yaml) that trace back to document sections and pages.
+#
+# --- Expression grammar (fields `when` and `assert`) ------------------------
+#
+#   TagName              effective value of the tag (default applied when the
+#                        tag is absent and a default exists)
+#   defined(TagName)     tag is physically present in the IFD
+#   count(TagName)       value count of the tag as stored
+#   TagName[i]           i-th value (0-based)
+#   type(TagName)        stored TIFF field type
+#   Operators:           == != < <= > >= + - * / && || !  a in {v1, v2}
+#   Functions:           ceil_div(a, b)  = (a + b - 1) / b in integer math
+#                        pow2(n)         = 2**n
+#                        bit(TagName, n) = 1 if bit n of the value is set
+#   Context variables:
+#     container          'classic' | 'bigtiff'
+#     organization       'strips' | 'tiles'  (tiles iff TileWidth is defined)
+#     StripsPerImage     ceil_div(ImageLength, RowsPerStrip)
+#     TilesAcross        ceil_div(ImageWidth, TileWidth)
+#     TilesDown          ceil_div(ImageLength, TileLength)
+#     TilesPerImage      TilesAcross * TilesDown
+#     ChromaSubsampleHoriz / ChromaSubsampleVert = YCbCrSubSampling[0] / [1]
+#
+# `when` omitted means the rule applies unconditionally (to every IFD).
+# `assert` is the condition that must hold; a rule is VIOLATED when `when`
+# holds and `assert` does not. `kind` classifies the rule as in the source
+# extractions: requires | forbids | constrains-value | selects-default |
+# modifies-meaning. `modifies-meaning` and `selects-default` rules are not
+# violations to check but semantics a reader must apply; their `assert` is
+# descriptive (field `semantics` is used instead where no check is possible).
+#
+# --- Versioning --------------------------------------------------------------
+#
+# versions: "A-"   valid from core revision A onward (current)
+#           "A-B"  valid from A through B, retired afterwards (readers must
+#                  still apply it when reading files of that era; writers
+#                  must not rely on it)
+# conformance: baseline | extension | TN2 | PM6 | PS | TN3 | BIGTIFF
+#              | EXIF | DNG | TFX | PSFF | ICC | IPTC | LLV | XMP  (wave-2
+#              related standards; their rules bind only files opting in to
+#              the standard, e.g. via DNGVersion, FaxProfile or tag presence)
+#
+# --- Enforcement model --------------------------------------------------------
+#
+# severity: error   file is malformed / undecodable or ambiguous
+#           warning specification violation with an unambiguous reading
+#           info    advisory (SHOULD-level)
+#
+# Validators run in a strictness mode:
+#   strict      every rule at its listed severity; no repairs applied
+#   permissive  rules whose `relax` entry names a flag are downgraded to the
+#               given severity when that flag is enabled; `repair` actions
+#               may be applied (each gated by its own flag)
+#
+# repair: describes a recovery for a known vendor deviation. `flag` is the
+# feature-flag name an implementation should expose; repairs must never be
+# applied in strict mode, and should be reported when applied.
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Baseline image-class profiles (CLS-*). A profile lists what a conforming
+# writer must emit; readers use them only to classify files. See
+# image-classes.md for the requirement text.
+# -----------------------------------------------------------------------------
+profiles:
+  - id: CLS-BILEVEL-6
+    title: TIFF 6.0 baseline bilevel (Class B successor)
+    versions: "6.0-"
+    required_tags: [256, 257, 259, 262, 273, 278, 279, 282, 283, 296]
+    constraints:
+      - "Compression in {1, 2, 32773}"
+      - "PhotometricInterpretation in {0, 1}"
+    sources: [T6B-044, T6B-DEP-003]
+  - id: CLS-GRAY-6
+    title: TIFF 6.0 baseline grayscale
+    versions: "6.0-"
+    required_tags: [256, 257, 258, 259, 262, 273, 278, 279, 282, 283, 296]
+    constraints:
+      - "Compression in {1, 32773}"
+      - "PhotometricInterpretation in {0, 1}"
+      - "BitsPerSample in {4, 8}"
+    sources: [T6B-047, T6B-DEP-004]
+  - id: CLS-PALETTE-6
+    title: TIFF 6.0 baseline palette-color
+    versions: "6.0-"
+    required_tags: [256, 257, 258, 259, 262, 273, 278, 279, 282, 283, 296, 320]
+    constraints:
+      - "Compression in {1, 32773}"
+      - "PhotometricInterpretation == 3"
+      - "BitsPerSample in {4, 8}"
+      - "SamplesPerPixel == 1"
+    sources: [T6B-050, T6B-DEP-005]
+  - id: CLS-RGB-6
+    title: TIFF 6.0 baseline RGB
+    versions: "6.0-"
+    required_tags: [256, 257, 258, 259, 262, 273, 277, 278, 279, 282, 283, 296]
+    constraints:
+      - "Compression in {1, 32773}"
+      - "PhotometricInterpretation == 2"
+      - "SamplesPerPixel >= 3"
+      - "BitsPerSample[0] == 8 && BitsPerSample[1] == 8 && BitsPerSample[2] == 8"
+    sources: [T6B-053, T6B-DEP-006]
+  - id: CLS-B-5
+    title: TIFF 5.0 Class B (bilevel)
+    versions: "5.0-5.0"
+    required_tags: [256, 257, 259, 262, 273, 278, 279, 282, 283, 296]
+    constraints:
+      - "SamplesPerPixel == 1 && BitsPerSample == 1"
+      - "Compression in {1, 2, 32773}"
+      - "PhotometricInterpretation in {0, 1}"
+    sources: [T5-115, T5-DEP-023]
+  - id: CLS-G-5
+    title: TIFF 5.0 Class G (grayscale)
+    versions: "5.0-5.0"
+    required_tags: [256, 257, 258, 259, 262, 273, 278, 279, 282, 283, 296]
+    constraints:
+      - "SamplesPerPixel == 1 && BitsPerSample in {4, 8}"
+      - "Compression in {1, 5}"
+      - "PhotometricInterpretation in {0, 1}"
+    sources: [T5-116, T5-DEP-024]
+  - id: CLS-P-5
+    title: TIFF 5.0 Class P (palette color)
+    versions: "5.0-5.0"
+    required_tags: [256, 257, 258, 259, 262, 273, 278, 279, 282, 283, 296, 320]
+    constraints:
+      - "SamplesPerPixel == 1 && BitsPerSample in {1, 2, 3, 4, 5, 6, 7, 8}"
+      - "Compression in {1, 5}"
+      - "PhotometricInterpretation == 3"
+    sources: [T5-117, T5-DEP-025]
+  - id: CLS-R-5
+    title: TIFF 5.0 Class R (RGB)
+    versions: "5.0-5.0"
+    required_tags: [256, 257, 258, 259, 262, 273, 277, 278, 279, 282, 283, 296]
+    constraints:
+      - "SamplesPerPixel == 3 && BitsPerSample[0] == 8 && BitsPerSample[1] == 8 && BitsPerSample[2] == 8"
+      - "PlanarConfiguration in {1, 2}"
+      - "Compression in {1, 5}"
+      - "PhotometricInterpretation == 2"
+    sources: [T5-118, T5-DEP-026]
+
+  # ---------------------------------------------------------------------------
+  # TIFF/FX fax profiles (RFC 3949). A TIFF/FX file declares its profile via
+  # FaxProfile (402) in the GlobalParametersIFD; the profile tree is
+  # S ⊂ F/J ⊂ C/L ⊂ M (Profile M implementations must implement S and C).
+  # Constraints listed per page IFD unless noted. See tags-fx.yaml.
+  # ---------------------------------------------------------------------------
+  - id: CLS-FAX-S
+    title: TIFF/FX Profile S (minimal black-and-white)
+    versions: "6.0-"
+    required_tags: [254, 256, 257, 258, 259, 262, 266, 273, 277, 278, 279, 282, 283, 292, 296, 297]
+    constraints:
+      - "BitsPerSample == 1 && SamplesPerPixel == 1"
+      - "Compression == 3 && (T4Options == 0 || T4Options == 4)"
+      - "PhotometricInterpretation == 0"
+      - "ImageWidth == 1728"
+      - "one strip per page (RowsPerStrip >= ImageLength)"
+      - "PageNumber starts at 0 and increments per page"
+    sources: [TFX-049, TFX-050, TFX-051, TFX-053, TFX-060, TFX-069]
+  - id: CLS-FAX-F
+    title: TIFF/FX Profile F (extended black-and-white)
+    versions: "6.0-"
+    required_tags: [254, 256, 257, 258, 259, 262, 266, 273, 277, 278, 279, 282, 283, 296, 297]
+    constraints:
+      - "BitsPerSample == 1"
+      - "Compression in {3, 4}; T4Options in {0, 1, 4, 5} when 3; T6Options == 0 when 4"
+      - "PhotometricInterpretation in {0, 1}"
+      - "ImageWidth in {1728, 2048, 2432, 2592, 3072, 3456, 3648, 4096, 4864}"
+      - "XResolution/YResolution/ImageWidth combinations per T.30 (see TFX-081)"
+    sources: [TFX-071, TFX-072, TFX-073, TFX-074, TFX-081, TFX-082, TFX-083]
+  - id: CLS-FAX-J
+    title: TIFF/FX Profile J (lossless JBIG black-and-white)
+    versions: "6.0-"
+    required_tags: [254, 256, 257, 258, 259, 262, 266, 273, 277, 278, 279, 282, 283, 296, 297]
+    constraints:
+      - "BitsPerSample == 1"
+      - "Compression == 9 (T.85 profile of T.82); T82Options default 0 may be omitted"
+      - "PhotometricInterpretation in {0, 1}"
+    sources: [TFX-102, TFX-103, TFX-104]
+  - id: CLS-FAX-C
+    title: TIFF/FX Profile C (lossy color and grayscale)
+    versions: "6.0-"
+    required_tags: [254, 256, 257, 258, 259, 262, 266, 273, 277, 278, 279, 282, 283, 296, 297, 433]
+    constraints:
+      - "BitsPerSample == 8 per sample"
+      - "Compression == 7 (baseline JPEG per TN2)"
+      - "PhotometricInterpretation == 10 (ITULAB); Decode (433) count = 2*SamplesPerPixel"
+      - "ResolutionUnit == 2; XResolution in {100, 200, 300, 400}; YResolution == XResolution"
+      - "ImageWidth in {864, 1024, 1216, 1728, 2048, 2432, 2592, 3072, 3456, 3648, 4096, 4864}; resolution/width combinations per T.30 (see TFX-115)"
+    sources: [TFX-106, TFX-108, TFX-109, TFX-111, TFX-112, TFX-114, TFX-115, TFX-118]
+  - id: CLS-FAX-L
+    title: TIFF/FX Profile L (lossless color and grayscale)
+    versions: "6.0-"
+    required_tags: [254, 256, 257, 258, 259, 262, 266, 273, 277, 278, 279, 282, 283, 296, 297]
+    constraints:
+      - "Compression == 10 (T.43 via T.82 JBIG)"
+      - "PhotometricInterpretation/SamplesPerPixel/BitsPerSample/Indexed combinations per T.43 image type (see TFX-122)"
+      - "ImageWidth as Profile C; NewSubfileType bit 1 set"
+      - "XResolution in {100, 200, 300, 400}; YResolution == XResolution"
+    sources: [TFX-122, TFX-123, TFX-124, TFX-125, TFX-130]
+  - id: CLS-FAX-M
+    title: TIFF/FX Profile M (Mixed Raster Content)
+    versions: "6.0-"
+    required_tags: [254, 256, 257, 258, 259, 262, 266, 273, 277, 278, 279, 282, 283, 296, 297, 330]
+    constraints:
+      - "3-layer MRC model per T.44; primary (Mask) IFD has NewSubfileType 18, child IFDs 16"
+      - "Compression per layer: Mask in {3, 4, 9}; Foreground/Background in {7, 9, 10}; 1 only for ImageBaseColor-only IFDs"
+      - "StripRowCounts (559) supported; excludes RowsPerStrip in the same IFD"
+      - "child IFDs via SubIFDs (330) require XPosition/YPosition; primary IFD must not use them"
+      - "layer resolutions integer factors of the Mask resolution"
+    sources: [TFX-133, TFX-141, TFX-142, TFX-144, TFX-146, TFX-148, TFX-150, TFX-151, TFX-155, TFX-158, TFX-171]
+
+rules:
+  # ---------------------------------------------------------------------------
+  # Strip and tile data layout
+  # ---------------------------------------------------------------------------
+  - id: DEP-001
+    title: StripsPerImage arithmetic
+    kind: constrains-value
+    versions: "4.0-"
+    conformance: baseline
+    tags: [257, 278]
+    when: "organization == 'strips'"
+    assert: "StripsPerImage == ceil_div(ImageLength, RowsPerStrip)"
+    severity: error
+    sources: [T4-DEP-003, T5-DEP-015, T6B-DEP-014]
+
+  - id: DEP-002
+    title: StripOffsets count matches strip organization
+    kind: constrains-value
+    versions: "4.0-"
+    conformance: baseline
+    tags: [273, 284, 277]
+    when: "organization == 'strips'"
+    assert: >
+      (PlanarConfiguration == 1 && count(StripOffsets) == StripsPerImage) ||
+      (PlanarConfiguration == 2 && count(StripOffsets) == SamplesPerPixel * StripsPerImage)
+    severity: error
+    repair:
+      flag: repair.strip-count
+      action: >
+        If count(StripOffsets) is exactly 1 and the data is uncompressed,
+        treat the image as a single strip (RowsPerStrip = ImageLength).
+        If more offsets are present than required, ignore the excess.
+    sources: [T4-DEP-004, T4-DEP-005, T5-DEP-010, T6B-DEP-014]
+
+  - id: DEP-003
+    title: StripByteCounts count matches strip organization
+    kind: constrains-value
+    versions: "4.0-"
+    conformance: baseline
+    tags: [279, 284, 277]
+    when: "organization == 'strips'"
+    assert: "count(StripByteCounts) == count(StripOffsets)"
+    severity: error
+    repair:
+      flag: repair.missing-stripbytecounts
+      action: >
+        When StripByteCounts is absent or short: for Compression = 1 compute
+        counts from the row-size formula (DEP-007); for a single-strip image
+        assume the strip extends to end-of-file; otherwise unrecoverable.
+    sources: [T4-DEP-006, T4-DEP-007, T5-DEP-011, T6B-DEP-015]
+
+  - id: DEP-004
+    title: Strip and tile organization are mutually exclusive
+    kind: forbids
+    versions: "6.0-"
+    conformance: extension
+    tags: [273, 278, 279, 322, 323, 324, 325]
+    when: "defined(TileWidth) || defined(TileLength) || defined(TileOffsets) || defined(TileByteCounts)"
+    assert: "!defined(StripOffsets) && !defined(StripByteCounts) && !defined(RowsPerStrip)"
+    severity: warning
+    relax: {flag: tolerate.mixed-strip-tile, severity: info}
+    repair:
+      flag: repair.mixed-strip-tile
+      action: When both are present, use the tile fields and ignore the strip fields.
+    sources: [T6X-DEP-008]
+
+  - id: DEP-005
+    title: Every image needs exactly one data-location mechanism
+    kind: requires
+    versions: "4.0-"
+    conformance: baseline
+    tags: [273, 279, 324, 325]
+    assert: >
+      (defined(StripOffsets) && defined(StripByteCounts)) ||
+      (defined(TileOffsets) && defined(TileByteCounts)) ||
+      (defined(JPEGInterchangeFormat) && JPEGInterchangeFormat != 0)
+    severity: error
+    sources: [PM6-DEP-012, PM6-DEP-013, T6B-066, T4-030]
+    notes: >
+      The old-style JPEG interchange stream (513) is accepted as a data
+      location only for Compression = 6 legacy files.
+
+  - id: DEP-006
+    title: Planar data plane ordering
+    kind: modifies-meaning
+    versions: "4.0-"
+    conformance: baseline
+    tags: [284, 273, 279, 262]
+    when: "PlanarConfiguration == 2"
+    semantics: >
+      StripOffsets/StripByteCounts (or TileOffsets/TileByteCounts) form a 2D
+      array of SamplesPerPixel rows by StripsPerImage (TilesPerImage)
+      columns, plane-major; for RGB the planes are ordered R, G, B, and for
+      chunky data the components within a pixel are ordered per
+      PhotometricInterpretation (R,G,B for RGB).
+    sources: [T4-DEP-009, T4-DEP-021, T4-DEP-022, T6B-DEP-025]
+
+  - id: DEP-007
+    title: Uncompressed row size and container type
+    kind: constrains-value
+    versions: "4.0-"
+    conformance: baseline
+    tags: [259, 256, 277, 258, 284]
+    when: "Compression == 1"
+    semantics: >
+      Bytes per row = ceil_div(ImageWidth * SamplesPerPixel * BitsPerSample, 8)
+      for chunky data, ceil_div(ImageWidth * BitsPerSample, 8) per plane for
+      planar data; rows begin on byte boundaries. Data is stored as an array
+      of SHORT when all BitsPerSample = 16, LONG when all = 32, BYTE
+      otherwise, with rows padded to a multiple of that type's size.
+    sources: [T4-DEP-014, T4-DEP-015, T4-DEP-016, T5-DEP-022, T6B-DEP-011]
+    notes: Compression 32771 (4.0 only) pads each row to a 2-byte word boundary instead.
+
+  - id: DEP-008
+    title: PlanarConfiguration irrelevant for single-sample images
+    kind: modifies-meaning
+    versions: "4.0-"
+    conformance: baseline
+    tags: [277, 284]
+    when: "SamplesPerPixel == 1"
+    semantics: >
+      PlanarConfiguration 1 and 2 are equivalent; writers should omit the
+      tag; readers must accept either value without effect.
+    sources: [T4-DEP-008, T5-DEP-014, T6B-DEP-021]
+
+  # ---------------------------------------------------------------------------
+  # Pixel structure
+  # ---------------------------------------------------------------------------
+  - id: DEP-010
+    title: BitsPerSample count equals SamplesPerPixel
+    kind: constrains-value
+    versions: "4.0-"
+    conformance: baseline
+    tags: [258, 277]
+    when: "defined(BitsPerSample)"
+    assert: "count(BitsPerSample) == SamplesPerPixel"
+    severity: error
+    repair:
+      flag: repair.bitspersample-count
+      action: >
+        If count(BitsPerSample) == 1 and SamplesPerPixel > 1, replicate the
+        single value across all samples (very common vendor deviation).
+    sources: [T5-DEP-009, T6B-DEP-012]
+    notes: Writers must write all values even when identical (6.0).
+
+  - id: DEP-011
+    title: Min/MaxSampleValue count equals SamplesPerPixel
+    kind: constrains-value
+    versions: "4.0-"
+    conformance: baseline
+    tags: [280, 281, 277]
+    when: "defined(MinSampleValue) || defined(MaxSampleValue)"
+    assert: "count(MinSampleValue) == SamplesPerPixel && count(MaxSampleValue) == SamplesPerPixel"
+    severity: warning
+    relax: {flag: tolerate.minmax-count, severity: info}
+    sources: [T5-DEP-013, T6B-DEP-019]
+
+  - id: DEP-012
+    title: MaxSampleValue default derives from BitsPerSample
+    kind: selects-default
+    versions: "4.0-"
+    conformance: baseline
+    tags: [281, 258]
+    when: "!defined(MaxSampleValue)"
+    semantics: "Effective MaxSampleValue = pow2(BitsPerSample) - 1 per sample."
+    sources: [T4-DEP-018, T5-DEP-012, T6B-DEP-018]
+
+  - id: DEP-013
+    title: Padded BitsPerSample must not distort the stated sample range
+    kind: requires
+    versions: "4.0-4.0"
+    conformance: baseline
+    tags: [258, 280, 281]
+    when: "writer pads BitsPerSample up to a power of 2"
+    semantics: >
+      MinSampleValue/MaxSampleValue must state the true data range, not the
+      padded range. Retired with the 5.0 redefinition of 280/281 as
+      statistical-only.
+    sources: [T4-DEP-017]
+
+  # ---------------------------------------------------------------------------
+  # Photometric interpretation and color
+  # ---------------------------------------------------------------------------
+  - id: DEP-020
+    title: Palette-color images require ColorMap and one sample
+    kind: requires
+    versions: "5.0-"
+    conformance: baseline
+    tags: [262, 320, 277]
+    when: "PhotometricInterpretation == 3"
+    assert: "defined(ColorMap) && SamplesPerPixel == 1"
+    severity: error
+    repair:
+      flag: repair.missing-colormap
+      action: >
+        Treat as grayscale (PhotometricInterpretation = 1) when ColorMap is
+        absent; report the file as non-conformant.
+    sources: [T5-DEP-002, T6B-DEP-007, PM6-DEP-017]
+
+  - id: DEP-021
+    title: ColorMap count is 3 * 2**BitsPerSample
+    kind: constrains-value
+    versions: "5.0-"
+    conformance: baseline
+    tags: [320, 258]
+    when: "defined(ColorMap) && Indexed == 0"
+    assert: "count(ColorMap) == 3 * pow2(BitsPerSample)"
+    severity: error
+    repair:
+      flag: repair.colormap-count
+      action: >
+        If the map is shorter, pad with zeros; if longer, ignore the excess.
+    sources: [T5-DEP-006, T6B-DEP-013]
+    notes: >
+      Vendor deviation handled separately: 8-bit-scaled ColorMap values
+      (all values <= 255 in a nominally 16-bit map) should be detected and
+      multiplied by 257 under flag repair.colormap-8bit.
+
+  - id: DEP-022
+    title: Generalized indexed ColorMap entry width (PM6)
+    kind: constrains-value
+    versions: "6.0-"
+    conformance: PM6
+    tags: [320, 346, 334, 262]
+    when: "Indexed == 1"
+    semantics: >
+      Components per ColorMap entry = 3 for RGB and CIELab base color
+      spaces, 4 for CMYK, NumberOfInks for other separated spaces; total
+      count = components * pow2(BitsPerSample).
+    sources: [PM6-DEP-008]
+
+  - id: DEP-023
+    title: Transparency mask constraints
+    kind: requires
+    versions: "5.0-"
+    conformance: baseline
+    tags: [262, 277, 258, 256, 257]
+    when: "PhotometricInterpretation == 4"
+    assert: "SamplesPerPixel == 1 && BitsPerSample == 1"
+    severity: error
+    sources: [T5-DEP-003, T6B-DEP-008]
+    notes: >
+      ImageWidth/ImageLength must additionally equal those of the image
+      being masked (not checkable within a single IFD). PackBits
+      compression is recommended for masks.
+
+  - id: DEP-024
+    title: NewSubfileType mask bit implies transparency-mask photometric
+    kind: requires
+    versions: "5.0-"
+    conformance: baseline
+    tags: [254, 262]
+    when: "bit(NewSubfileType, 2) == 1"
+    assert: "PhotometricInterpretation == 4"
+    severity: error
+    sources: [T5-DEP-004, T6B-DEP-009]
+
+  - id: DEP-025
+    title: GrayResponseCurve count is 2**BitsPerSample
+    kind: constrains-value
+    versions: "4.0-"
+    conformance: baseline
+    tags: [291, 258]
+    when: "defined(GrayResponseCurve)"
+    assert: "count(GrayResponseCurve) == pow2(BitsPerSample)"
+    severity: error
+    sources: [T4-DEP-019, T5-DEP-008]
+
+  - id: DEP-026
+    title: GrayResponseCurve values are in GrayResponseUnit units
+    kind: modifies-meaning
+    versions: "4.0-"
+    conformance: baseline
+    tags: [291, 290]
+    when: "defined(GrayResponseCurve)"
+    semantics: >
+      Curve values are optical densities in units of GrayResponseUnit
+      (default hundredths). In 5.0 a present curve overrides
+      PhotometricInterpretation for interpretation purposes.
+    sources: [T4-DEP-025, T5-DEP-005]
+
+  - id: DEP-027
+    title: TransferFunction count and table sharing
+    kind: constrains-value
+    versions: "4.0-"
+    conformance: extension
+    tags: [301, 258]
+    when: "defined(TransferFunction)"
+    assert: "count(TransferFunction) == pow2(BitsPerSample) || count(TransferFunction) == 3 * pow2(BitsPerSample)"
+    severity: error
+    sources: [T6X-DEP-020, T4-DEP-020, T5-DEP-007]
+    notes: >
+      The single-table (shared) form requires equal BitsPerSample across
+      channels and is valid from 6.0 only; 4.0/5.0 always used three
+      concatenated R,G,B curves (in 4.0 scaled by ColorResponseUnit 300).
+
+  - id: DEP-028
+    title: TransferFunction photometric applicability
+    kind: forbids
+    versions: "6.0-"
+    conformance: extension
+    tags: [301, 262]
+    when: "defined(TransferFunction)"
+    assert: "PhotometricInterpretation in {0, 1, 2, 3, 6}"
+    severity: warning
+    sources: [T6X-DEP-021]
+
+  - id: DEP-029
+    title: TransferRange only for RGB and YCbCr
+    kind: forbids
+    versions: "6.0-"
+    conformance: extension
+    tags: [342, 262]
+    when: "defined(TransferRange)"
+    assert: "PhotometricInterpretation in {2, 6}"
+    severity: warning
+    sources: [T6X-DEP-022]
+
+  - id: DEP-030
+    title: ReferenceBlackWhite only for RGB and YCbCr
+    kind: forbids
+    versions: "6.0-"
+    conformance: extension
+    tags: [532, 262]
+    when: "defined(ReferenceBlackWhite)"
+    assert: "PhotometricInterpretation in {2, 6}"
+    severity: warning
+    sources: [T6X-DEP-023]
+
+  - id: DEP-031
+    title: Colorimetric interpretation requires WhitePoint and primaries
+    kind: modifies-meaning
+    versions: "6.0-"
+    conformance: extension
+    tags: [318, 319]
+    when: "defined(WhitePoint) && defined(PrimaryChromaticities)"
+    semantics: >
+      Only with both fields present does the image have a full colorimetric
+      interpretation; otherwise rendering is application/hardware dependent.
+    sources: [T6X-DEP-024]
+
+  - id: DEP-032
+    title: CCITT compression implies photometric interpretation (4.0)
+    kind: modifies-meaning
+    versions: "4.0-4.0"
+    conformance: baseline
+    tags: [259, 262]
+    when: "Compression in {2, 3, 4}"
+    semantics: >
+      In 4.0-era files readers should ignore PhotometricInterpretation for
+      CCITT-compressed images (the scheme implies WhiteIsZero). From 5.0,
+      PhotometricInterpretation is authoritative; see DEP-033.
+    sources: [T4-DEP-023]
+
+  - id: DEP-033
+    title: BlackIsZero reverses CCITT run colors
+    kind: modifies-meaning
+    versions: "5.0-"
+    conformance: baseline
+    tags: [259, 262]
+    when: "Compression in {2, 3, 4} && PhotometricInterpretation == 1"
+    semantics: >
+      The reader must reverse the meaning of the CCITT white/black runs
+      when decoding for display or print.
+    sources: [T6B-DEP-022, T6X-DEP-001]
+
+  - id: DEP-034
+    title: Non-default gamma must be declared
+    kind: requires
+    versions: "6.0-"
+    conformance: extension
+    tags: [262, 291, 301]
+    when: "image data deviates from the photometric's implied transfer characteristic"
+    semantics: >
+      Data other than the implied linear (bilevel/gray) or NTSC gamma-2.2
+      (RGB) characteristic requires GrayResponseCurve or TransferFunction
+      to describe the deviation.
+    sources: [T6X-DEP-040]
+
+  # ---------------------------------------------------------------------------
+  # Halftoning hints
+  # ---------------------------------------------------------------------------
+  - id: DEP-035
+    title: Bilevel Threshholding values require 1-bit data (4.0)
+    kind: requires
+    versions: "4.0-4.0"
+    conformance: baseline
+    tags: [263, 258]
+    when: "Threshholding in {1, 2}"
+    assert: "BitsPerSample == 1"
+    severity: warning
+    sources: [T4-DEP-012]
+
+  - id: DEP-036
+    title: Cell dimensions only meaningful for ordered dither
+    kind: forbids
+    versions: "4.0-"
+    conformance: baseline
+    tags: [263, 264, 265]
+    when: "defined(CellWidth) || defined(CellLength)"
+    assert: "Threshholding == 2"
+    severity: info
+    sources: [T4-DEP-013, T5-DEP-017, T6B-DEP-020]
+
+  # ---------------------------------------------------------------------------
+  # Compression: CCITT family
+  # ---------------------------------------------------------------------------
+  - id: DEP-040
+    title: Modified Huffman requires bilevel data
+    kind: requires
+    versions: "4.0-"
+    conformance: baseline
+    tags: [259, 258]
+    when: "Compression == 2"
+    assert: "BitsPerSample == 1 && SamplesPerPixel == 1"
+    severity: error
+    sources: [T4-DEP-011, T5-DEP-001, T6B-DEP-010]
+
+  - id: DEP-041
+    title: Decoded run lengths must sum to ImageWidth
+    kind: constrains-value
+    versions: "4.0-"
+    conformance: baseline
+    tags: [259, 256]
+    when: "Compression == 2"
+    semantics: >
+      In each decoded row the run lengths must total exactly ImageWidth;
+      any other total is an unrecoverable decode error. Rows begin with a
+      white run (possibly of length 0); each row decodes independently and
+      begins on a byte boundary; no EOL/RTC codes are used.
+    sources: [T4-DEP-027, T6B-117]
+
+  - id: DEP-042
+    title: T4Options governs Group 3 coding
+    kind: constrains-value
+    versions: "4.0-"
+    conformance: extension
+    tags: [259, 292, 278]
+    when: "Compression == 3"
+    semantics: >
+      T4Options (292) selects 1-D vs 2-D coding, uncompressed mode, and EOL
+      byte alignment. With 2-D coding (bit 0 set) each strip must begin
+      with a 1-D coded line and RowsPerStrip should be a multiple of the K
+      parameter. T4Options is meaningless for other compressions.
+    sources: [T5-DEP-018, T6X-DEP-002]
+
+  - id: DEP-043
+    title: T6Options governs Group 4 coding
+    kind: constrains-value
+    versions: "4.0-"
+    conformance: extension
+    tags: [259, 293]
+    when: "Compression == 4"
+    semantics: >
+      T6Options (293) is the only option field readers should honour for
+      T.6; writers unable to guarantee absence of uncompressed-mode
+      material must set bit 1.
+    sources: [T5-DEP-019, T6X-DEP-003, T6X-DEP-004]
+
+  - id: DEP-044
+    title: T.6 encoding requires exact line width
+    kind: requires
+    versions: "6.0-"
+    conformance: extension
+    tags: [259, 256, 322]
+    when: "Compression == 4"
+    assert: "ImageWidth states the exact pixel count per line (TileWidth when tiled)"
+    severity: error
+    sources: [T6X-DEP-005]
+
+  # ---------------------------------------------------------------------------
+  # Compression: LZW, Predictor, PackBits, Deflate
+  # ---------------------------------------------------------------------------
+  - id: DEP-045
+    title: LZW strips are independent bitstreams
+    kind: constrains-value
+    versions: "5.0-"
+    conformance: extension
+    tags: [259, 266]
+    when: "Compression == 5"
+    semantics: >
+      Each strip/tile is compressed independently, begins on a byte
+      boundary with a ClearCode, ends with an EndOfInformation code, and is
+      interpreted with FillOrder = 1 regardless of the FillOrder tag.
+    sources: [T6X-DEP-041, T5-102]
+
+  - id: DEP-046
+    title: Readers must honour Predictor before LZW/Deflate data
+    kind: requires
+    versions: "5.0-"
+    conformance: extension
+    tags: [259, 317]
+    when: "Compression in {5, 8}"
+    semantics: >
+      The reader must inspect Predictor (317); an unrecognized value is
+      fatal for the image.
+    sources: [T5-DEP-020]
+
+  - id: DEP-047
+    title: Predictor 2 preconditions
+    kind: constrains-value
+    versions: "5.0-"
+    conformance: extension
+    tags: [317, 259, 258, 284, 277]
+    when: "Predictor == 2"
+    assert: "Compression in {5, 8} && BitsPerSample uniform across samples"
+    severity: warning
+    relax: {flag: tolerate.predictor-any-compression, severity: info}
+    sources: [T5-DEP-021, T6X-DEP-006, T6X-DEP-007, PM6-DEP-016, PS-DEP-001]
+    notes: >
+      6.0 defines Predictor 2 for LZW only; the PS technote extends it to
+      Deflate (8). For chunky data differencing runs per-channel with an
+      offset of SamplesPerPixel. Vendors also combine Predictor 2 with
+      other compressions; readers may accept under the relax flag.
+
+  - id: DEP-048
+    title: Predictor 3 (floating point) preconditions and semantics
+    kind: constrains-value
+    versions: "6.0-"
+    conformance: TN3
+    tags: [317, 258, 259, 339]
+    when: "Predictor == 3"
+    assert: "BitsPerSample % 8 == 0"
+    severity: warning
+    semantics: >
+      Sample bytes are reordered into big-endian byte-significance planes
+      per row, then differenced horizontally per channel, independent of
+      the file byte order; readers reverse both steps. Intended for use
+      with LZW (5) and Deflate (8) and floating point data (SampleFormat 3).
+    sources: [TN3-DEP-003, TN3-DEP-004, TN3-DEP-005]
+
+  - id: DEP-049
+    title: PackBits output is interpreted as uncompressed
+    kind: modifies-meaning
+    versions: "4.0-"
+    conformance: baseline
+    tags: [259, 277, 258, 284]
+    when: "Compression == 32773"
+    semantics: >
+      After decompression the data is laid out exactly as Compression = 1
+      (DEP-007). Each row is coded separately: the expected decoded byte
+      count per row is the DEP-007 row size, and encoding state must not
+      cross row boundaries.
+    sources: [T4-DEP-028, T6B-113]
+
+  # ---------------------------------------------------------------------------
+  # Compression 6: old-style JPEG (deprecated by TN2; read-only legacy)
+  # ---------------------------------------------------------------------------
+  - id: DEP-050
+    title: Old-style JPEG requires JPEGProc
+    kind: requires
+    versions: "6.0-"
+    conformance: extension
+    tags: [259, 512]
+    when: "Compression == 6"
+    assert: "defined(JPEGProc)"
+    severity: error
+    relax: {flag: tolerate.ojpeg-missing-fields, severity: warning}
+    repair:
+      flag: repair.ojpeg
+      action: >
+        Many vendors wrote broken Compression=6 files. When JPEGProc or the
+        table tags are missing but a JPEGInterchangeFormat stream exists,
+        decode that stream directly; assume JPEGProc=1.
+    sources: [T6X-DEP-031]
+
+  - id: DEP-051
+    title: Old-style JPEG mandatory table fields
+    kind: requires
+    versions: "6.0-"
+    conformance: extension
+    tags: [512, 519, 520, 521]
+    when: "Compression == 6"
+    assert: >
+      defined(JPEGDCTables) &&
+      (JPEGProc == 14 || (defined(JPEGQTables) && defined(JPEGACTables)))
+    severity: error
+    relax: {flag: tolerate.ojpeg-missing-fields, severity: warning}
+    sources: [T6X-DEP-034, T6X-DEP-035, T6X-DEP-032]
+
+  - id: DEP-052
+    title: Lossless old-style JPEG requires predictors
+    kind: requires
+    versions: "6.0-"
+    conformance: extension
+    tags: [512, 517, 518]
+    when: "Compression == 6 && JPEGProc == 14"
+    assert: "defined(JPEGLosslessPredictors)"
+    severity: error
+    sources: [T6X-DEP-033]
+    notes: JPEGACTables and JPEGQTables do not apply to lossless; JPEGPointTransforms defaults to 0.
+
+  - id: DEP-053
+    title: Old-style JPEG restart interval alignment
+    kind: constrains-value
+    versions: "6.0-"
+    conformance: extension
+    tags: [259, 273, 324, 515]
+    when: "Compression == 6 && multiple strips or tiles"
+    semantics: >
+      Each strip/tile offset must point to the start of a restart interval
+      and contain an integral number of restart intervals.
+    sources: [T6X-DEP-037]
+
+  - id: DEP-054
+    title: Old-style JPEG interchange-format tile height
+    kind: constrains-value
+    versions: "6.0-"
+    conformance: extension
+    tags: [259, 513, 322, 323, 256]
+    when: "Compression == 6 && defined(JPEGInterchangeFormat) && JPEGInterchangeFormat != 0 && TileWidth < ImageWidth"
+    assert: "TileLength == height of one JPEG MCU"
+    severity: error
+    sources: [T6X-DEP-036]
+
+  - id: DEP-055
+    title: Compression 6 and tags 512-521 are deprecated
+    kind: modifies-meaning
+    versions: "6.0-"
+    conformance: TN2
+    tags: [259, 512, 513, 514, 515, 517, 518, 519, 520, 521]
+    semantics: >
+      Writers must not produce new Compression = 6 files (use 7 with
+      JPEGTables 347). Readers may continue to interpret them per TIFF 6.0
+      Section 22. The tag numbers remain reserved indefinitely.
+    sources: [TN2-DEP-018, TN2-002]
+
+  # ---------------------------------------------------------------------------
+  # Compression 7: TechNote 2 JPEG
+  # ---------------------------------------------------------------------------
+  - id: DEP-060
+    title: JPEG 7 forbids palette and mask photometrics
+    kind: forbids
+    versions: "6.0-"
+    conformance: TN2
+    tags: [259, 262]
+    when: "Compression == 7"
+    assert: "PhotometricInterpretation != 3 && PhotometricInterpretation != 4"
+    severity: error
+    sources: [TN2-DEP-001, PS-DEP-003]
+
+  - id: DEP-061
+    title: JPEG 7 segment structure
+    kind: constrains-value
+    versions: "6.0-"
+    conformance: TN2
+    tags: [259, 284, 277]
+    when: "Compression == 7"
+    assert: >
+      Each strip/tile is a complete ISO/IEC 10918-1 datastream whose
+      component count equals SamplesPerPixel for PlanarConfiguration 1 and
+      equals 1 for PlanarConfiguration 2
+    severity: error
+    sources: [TN2-DEP-002, TN2-DEP-003, PS-DEP-008, PS-DEP-009]
+
+  - id: DEP-062
+    title: JPEG 7 chunky data requires uniform BitsPerSample
+    kind: constrains-value
+    versions: "6.0-"
+    conformance: TN2
+    tags: [284, 258]
+    when: "Compression == 7 && PlanarConfiguration == 1"
+    assert: "BitsPerSample uniform across all samples"
+    severity: error
+    sources: [TN2-DEP-004, PS-DEP-007]
+    notes: Planar components may differ in depth (each has its own SOFn).
+
+  - id: DEP-063
+    title: JPEG 7 SOFn precision must match BitsPerSample
+    kind: constrains-value
+    versions: "6.0-"
+    conformance: TN2
+    tags: [259, 258]
+    when: "Compression == 7"
+    assert: >
+      SOFn precision == BitsPerSample, and: SOF0 implies precision 8;
+      SOF1 implies precision in {8, 12}; SOF3 implies 2 <= precision <= 16
+    severity: error
+    sources: [TN2-DEP-006, TN2-DEP-007, TN2-DEP-008, PS-DEP-006]
+
+  - id: DEP-064
+    title: JPEG 7 strip height must cover whole MCUs
+    kind: constrains-value
+    versions: "6.0-"
+    conformance: TN2
+    tags: [259, 278, 257, 530]
+    when: "Compression == 7 && organization == 'strips' && RowsPerStrip < ImageLength && SOFn is DCT-based"
+    assert: "RowsPerStrip % (8 * max vertical sampling factor) == 0"
+    severity: error
+    relax: {flag: tolerate.jpeg-strip-height, severity: warning}
+    sources: [TN2-DEP-009, TN2-DEP-010, PS-DEP-012]
+    notes: >
+      Single-strip images (RowsPerStrip >= ImageLength) are exempt. For
+      YCbCrSubSampling [2,2] this means a multiple of 16. Lossless SOF3
+      files are exempt (DEP-066).
+
+  - id: DEP-065
+    title: JPEG 7 tile dimensions must cover whole MCUs
+    kind: constrains-value
+    versions: "6.0-"
+    conformance: TN2
+    tags: [259, 322, 323, 530]
+    when: "Compression == 7 && organization == 'tiles' && SOFn is DCT-based"
+    assert: >
+      TileWidth % (8 * max horizontal sampling factor) == 0 &&
+      TileLength % (8 * max vertical sampling factor) == 0
+    severity: error
+    sources: [TN2-DEP-024, PS-DEP-013]
+
+  - id: DEP-066
+    title: Lossless JPEG exempts size multiples
+    kind: modifies-meaning
+    versions: "6.0-"
+    conformance: TN2
+    tags: [259, 278, 322, 323]
+    when: "Compression == 7 && SOFn == SOF3"
+    semantics: "The MCU-multiple constraints DEP-064/DEP-065 do not apply."
+    sources: [TN2-DEP-011, PS-DEP-014]
+
+  - id: DEP-067
+    title: JPEGTables presence semantics
+    kind: constrains-value
+    versions: "6.0-"
+    conformance: TN2
+    tags: [347, 259]
+    when: "Compression == 7"
+    assert: >
+      defined(JPEGTables) implies (JPEGTables is a valid abbreviated
+      table-specification datastream; segments may omit tables it defines,
+      must not redefine them, and must not reference tables defined
+      nowhere). !defined(JPEGTables) implies every segment defines every
+      table it references.
+    severity: error
+    sources: [TN2-DEP-012, TN2-DEP-013, TN2-DEP-019, PS-DEP-004, PS-DEP-005]
+    notes: Readers must load JPEGTables before processing any segment.
+
+  - id: DEP-068
+    title: JPEG subsampling only for YCbCr
+    kind: constrains-value
+    versions: "6.0-"
+    conformance: TN2
+    tags: [262, 530]
+    when: "Compression == 7 && PhotometricInterpretation != 6"
+    assert: "all JPEG sampling factors == 1"
+    severity: error
+    sources: [TN2-DEP-016]
+
+  - id: DEP-069
+    title: JPEG 7 interleave limits
+    kind: requires
+    versions: "6.0-"
+    conformance: TN2
+    tags: [277]
+    when: "Compression == 7 && (SamplesPerPixel > 4 || MCU would exceed 10 blocks)"
+    assert: "one scan per component instead of a single interleaved scan"
+    severity: error
+    sources: [TN2-DEP-017]
+
+  - id: DEP-070
+    title: JPEG 7 stored color description must match the datastream
+    kind: requires
+    versions: "6.0-"
+    conformance: PS
+    tags: [259, 262, 530]
+    when: "Compression == 7 && color conversion or downsampling applied before compression"
+    assert: >
+      PhotometricInterpretation and YCbCrSubSampling describe the data as
+      stored in the file, not the pre-conversion source
+    severity: error
+    sources: [PS-DEP-002]
+
+  # ---------------------------------------------------------------------------
+  # YCbCr images
+  # ---------------------------------------------------------------------------
+  - id: DEP-071
+    title: YCbCr pixel structure and compression set
+    kind: constrains-value
+    versions: "6.0-"
+    conformance: extension
+    tags: [262, 277, 258, 259]
+    when: "PhotometricInterpretation == 6"
+    assert: >
+      SamplesPerPixel == 3 && BitsPerSample == [8, 8, 8] &&
+      Compression in {1, 5, 6, 7}
+    severity: error
+    sources: [T6X-DEP-026]
+    notes: 6.0 lists {1, 5, 6}; Compression 7 added by TN2/PS.
+
+  - id: DEP-072
+    title: Subsampling factor ordering
+    kind: constrains-value
+    versions: "6.0-"
+    conformance: extension
+    tags: [530]
+    when: "defined(YCbCrSubSampling)"
+    assert: "YCbCrSubSampling[0] in {1, 2, 4} && YCbCrSubSampling[1] in {1, 2, 4} && YCbCrSubSampling[1] <= YCbCrSubSampling[0]"
+    severity: error
+    sources: [T6X-DEP-028]
+
+  - id: DEP-073
+    title: Image and segment dimensions must be subsampling multiples
+    kind: constrains-value
+    versions: "6.0-"
+    conformance: extension
+    tags: [530, 256, 257, 278, 322, 323]
+    when: "PhotometricInterpretation == 6"
+    assert: >
+      ImageWidth % ChromaSubsampleHoriz == 0 &&
+      ImageLength % ChromaSubsampleVert == 0 &&
+      (organization == 'tiles' ?
+        (TileWidth % ChromaSubsampleHoriz == 0 && TileLength % ChromaSubsampleVert == 0) :
+        (RowsPerStrip >= ImageLength || RowsPerStrip % ChromaSubsampleVert == 0))
+    severity: error
+    relax: {flag: tolerate.ycbcr-dims, severity: warning}
+    repair:
+      flag: repair.ycbcr-dims
+      action: >
+        Round the affected dimension up to the next multiple when decoding
+        (writers were told to pad; the last samples are padding).
+    sources: [T6X-DEP-029, TN2-DEP-023, TN2-DEP-024, TN2-DEP-025]
+    notes: >
+      TN2 exempts single-strip images from the RowsPerStrip multiple.
+      Dimensions are always measured in luma samples (TN2).
+
+  - id: DEP-074
+    title: YCbCr requires explicit ReferenceBlackWhite
+    kind: requires
+    versions: "6.0-"
+    conformance: extension
+    tags: [262, 532]
+    when: "PhotometricInterpretation == 6"
+    assert: "defined(ReferenceBlackWhite)"
+    severity: warning
+    relax: {flag: tolerate.missing-refblackwhite, severity: info}
+    repair:
+      flag: repair.missing-refblackwhite
+      action: >
+        Assume CCIR 601-1 video range [15, 235, 128, 240, 128, 240] or
+        full range [0, 255, 128, 255, 128, 255] per a caller-selected
+        policy; full range matches JFIF-style data.
+    sources: [T6X-DEP-025, TN2-DEP-014]
+    notes: The generic default (DEP-030 family) is inappropriate for YCbCr.
+
+  - id: DEP-075
+    title: Non-601 conversion requires explicit coefficients
+    kind: requires
+    versions: "6.0-"
+    conformance: extension
+    tags: [262, 529]
+    when: "PhotometricInterpretation == 6 && conversion differs from CCIR 601-1"
+    assert: "defined(YCbCrCoefficients)"
+    severity: warning
+    sources: [T6X-DEP-027]
+
+  - id: DEP-076
+    title: Chunky YCbCr data unit ordering
+    kind: modifies-meaning
+    versions: "6.0-"
+    conformance: extension
+    tags: [262, 284, 530]
+    when: "PhotometricInterpretation == 6 && PlanarConfiguration == 1"
+    semantics: >
+      Samples are stored as data units of ChromaSubsampleVert x
+      ChromaSubsampleHoriz Y samples followed by one Cb and one Cr sample;
+      rows of data units are traversed left-to-right, top-to-bottom.
+    sources: [T6X-DEP-030]
+
+  - id: DEP-077
+    title: Planar subsampled YCbCr strip/tile geometry
+    kind: modifies-meaning
+    versions: "6.0-"
+    conformance: TN2
+    tags: [284, 530, 338]
+    when: "PhotometricInterpretation == 6 && PlanarConfiguration == 2"
+    semantics: >
+      All components have the same strip/tile count, but chroma segments
+      contain fewer samples per the subsampling factors. Extra sample
+      channels are never subsampled (they match the luma sample count).
+    sources: [TN2-DEP-021, TN2-DEP-022, TN2-DEP-015]
+
+  # ---------------------------------------------------------------------------
+  # CMYK / separated images
+  # ---------------------------------------------------------------------------
+  - id: DEP-080
+    title: Separated pixel structure
+    kind: constrains-value
+    versions: "6.0-"
+    conformance: extension
+    tags: [262, 277, 258, 334, 338]
+    when: "PhotometricInterpretation == 5"
+    assert: "SamplesPerPixel - count(ExtraSamples) == NumberOfInks && BitsPerSample == 8 per ink"
+    severity: error
+    relax: {flag: tolerate.separated-depth, severity: warning}
+    sources: [T6X-DEP-014, T6X-DEP-042]
+    notes: 6.0 defines only 8-bit separated data; 16-bit exists in the wild.
+
+  - id: DEP-081
+    title: CMYK ink set forbids InkNames
+    kind: forbids
+    versions: "6.0-"
+    conformance: extension
+    tags: [332, 333]
+    when: "InkSet == 1"
+    assert: "!defined(InkNames)"
+    severity: info
+    sources: [T6X-DEP-015]
+
+  - id: DEP-082
+    title: Non-CMYK ink sets require names and count
+    kind: requires
+    versions: "6.0-"
+    conformance: extension
+    tags: [332, 333, 334]
+    when: "InkSet == 2"
+    assert: "defined(InkNames) && defined(NumberOfInks)"
+    severity: warning
+    sources: [PM6-DEP-010]
+
+  - id: DEP-083
+    title: InkNames string count equals NumberOfInks
+    kind: constrains-value
+    versions: "6.0-"
+    conformance: extension
+    tags: [333, 334]
+    when: "defined(InkNames)"
+    assert: "number of NUL-terminated strings in InkNames == NumberOfInks"
+    severity: error
+    sources: [T6X-DEP-016]
+
+  - id: DEP-084
+    title: DotRange bounds
+    kind: constrains-value
+    versions: "6.0-"
+    conformance: extension
+    tags: [336, 258]
+    when: "defined(DotRange)"
+    assert: >
+      DotRange[0] >= 0 && DotRange[1] <= pow2(BitsPerSample) - 1 &&
+      DotRange[0] < DotRange[1]
+    severity: warning
+    sources: [T6X-DEP-017]
+
+  # ---------------------------------------------------------------------------
+  # Extra samples and alpha
+  # ---------------------------------------------------------------------------
+  - id: DEP-090
+    title: Extra components require ExtraSamples
+    kind: requires
+    versions: "6.0-"
+    conformance: baseline
+    tags: [338, 277, 262]
+    when: "SamplesPerPixel > components implied by PhotometricInterpretation"
+    assert: "count(ExtraSamples) == SamplesPerPixel - implied components"
+    severity: error
+    repair:
+      flag: repair.missing-extrasamples
+      action: >
+        Treat surplus channels as ExtraSamples value 0 (unspecified); for
+        the common RGBA case (PhotometricInterpretation 2, SamplesPerPixel
+        4, no ExtraSamples) optionally assume unassociated alpha.
+    sources: [T6B-DEP-016, PM6-DEP-015]
+
+  - id: DEP-091
+    title: Readers must not infer SamplesPerPixel from photometric
+    kind: modifies-meaning
+    versions: "6.0-"
+    conformance: baseline
+    tags: [338, 277, 262]
+    semantics: >
+      SamplesPerPixel is authoritative; extra components are stored last
+      within each pixel and sized by their BitsPerSample entries.
+    sources: [T6X-DEP-019, T6B-DEP-016, T6B-DEP-024]
+
+  - id: DEP-092
+    title: Associated alpha is premultiplied and unique
+    kind: constrains-value
+    versions: "6.0-"
+    conformance: extension
+    tags: [338, 262, 277]
+    when: "1 in ExtraSamples"
+    assert: "2 not in ExtraSamples && color components are stored premultiplied by the alpha in component SamplesPerPixel-1"
+    severity: error
+    sources: [T6X-DEP-018, T6B-DEP-017]
+    notes: Mixing associated (1) and unassociated (2) alpha in one image is undefined.
+
+  # ---------------------------------------------------------------------------
+  # Tiled images
+  # ---------------------------------------------------------------------------
+  - id: DEP-100
+    title: Tiled images require the full tile tag set
+    kind: requires
+    versions: "6.0-"
+    conformance: extension
+    tags: [322, 323, 324, 325]
+    when: "organization == 'tiles'"
+    assert: >
+      defined(TileWidth) && defined(TileLength) && defined(TileOffsets) &&
+      defined(TileByteCounts)
+    severity: error
+    sources: [T6X-DEP-009, PM6-DEP-014]
+
+  - id: DEP-101
+    title: Tile dimensions are multiples of 16
+    kind: constrains-value
+    versions: "6.0-"
+    conformance: extension
+    tags: [322, 323]
+    when: "organization == 'tiles'"
+    assert: "TileWidth % 16 == 0 && TileLength % 16 == 0"
+    severity: warning
+    relax: {flag: tolerate.tile-size, severity: info}
+    sources: [T6X-DEP-010, T6X-DEP-011]
+    notes: >
+      TIFF 6.0 internal inconsistency: the Section 22 JPEG minimum
+      requirements table says "multiple of 8". Validate multiples of 16;
+      accept multiples of 8 for legacy Compression 6 files.
+
+  - id: DEP-102
+    title: Tile offset/count array sizes
+    kind: constrains-value
+    versions: "6.0-"
+    conformance: extension
+    tags: [324, 325, 284, 277]
+    when: "organization == 'tiles'"
+    assert: >
+      (PlanarConfiguration == 1 && count(TileOffsets) == TilesPerImage &&
+       count(TileByteCounts) == TilesPerImage) ||
+      (PlanarConfiguration == 2 && count(TileOffsets) == SamplesPerPixel * TilesPerImage &&
+       count(TileByteCounts) == SamplesPerPixel * TilesPerImage)
+    severity: error
+    sources: [T6X-DEP-012, T6X-DEP-013]
+
+  # ---------------------------------------------------------------------------
+  # Sample format (including TN3 floating point)
+  # ---------------------------------------------------------------------------
+  - id: DEP-110
+    title: Unhandled SampleFormat must terminate gracefully
+    kind: modifies-meaning
+    versions: "6.0-"
+    conformance: baseline
+    tags: [339]
+    when: "SampleFormat != 1"
+    semantics: >
+      A reader that cannot process the sample format must fail the image
+      gracefully rather than misinterpret the data.
+    sources: [T6B-DEP-023]
+
+  - id: DEP-111
+    title: Reduced-precision floating point layouts (TN3)
+    kind: modifies-meaning
+    versions: "6.0-"
+    conformance: TN3
+    tags: [339, 258]
+    when: "SampleFormat == 3 && BitsPerSample in {16, 24}"
+    semantics: >
+      BitsPerSample 16: 1 sign bit, 5 exponent bits (bias 15), 10 mantissa
+      bits (IEEE 754 half / OpenEXR HALF). BitsPerSample 24: 1 sign bit, 7
+      exponent bits (bias 63), 16 mantissa bits. Draft 1 of TN3 printed
+      incorrect biases (16 and 64); draft 2 corrected them.
+    sources: [TN3-DEP-001, TN3-DEP-002]
+
+  # ---------------------------------------------------------------------------
+  # CIE L*a*b* family
+  # ---------------------------------------------------------------------------
+  - id: DEP-115
+    title: L*a*b* pixel structure
+    kind: constrains-value
+    versions: "6.0-"
+    conformance: extension
+    tags: [262, 258, 277, 338]
+    when: "PhotometricInterpretation in {8, 9}"
+    assert: >
+      SamplesPerPixel - count(ExtraSamples) in {1, 3} &&
+      BitsPerSample in {8, 16} per component
+    severity: error
+    sources: [T6X-DEP-038, PS-DEP-017, PS-DEP-016]
+    notes: >
+      6.0 defines 8-bit; the PS technote adds 16-bit encodings. Difference
+      of 1 = monochrome L*-only, 3 = full L*a*b*.
+
+  - id: DEP-116
+    title: L*a*b* excludes colorimetry tags
+    kind: forbids
+    versions: "6.0-"
+    conformance: extension
+    tags: [262, 318, 319, 301]
+    when: "PhotometricInterpretation == 8"
+    assert: "!defined(WhitePoint) && !defined(PrimaryChromaticities) && !defined(TransferFunction)"
+    severity: warning
+    sources: [T6X-DEP-039]
+    notes: >
+      PS technote later re-purposes WhitePoint for Lab images with default
+      D50 (DEP-117); apply this rule only to strict 6.0 validation.
+
+  - id: DEP-117
+    title: Lab white point defaults to D50
+    kind: selects-default
+    versions: "6.0-"
+    conformance: PS
+    tags: [318, 262]
+    when: "PhotometricInterpretation in {8, 9} && !defined(WhitePoint)"
+    semantics: "The effective white point is CIE D50."
+    sources: [PS-DEP-018]
+
+  - id: DEP-118
+    title: ICCLab encoding offset
+    kind: modifies-meaning
+    versions: "6.0-"
+    conformance: PM6
+    tags: [262]
+    when: "PhotometricInterpretation == 9"
+    semantics: >
+      a*/b* are stored offset by +128 relative to PhotometricInterpretation
+      8 (range 0..255 for 8-bit); L* is unchanged. For 16-bit data see the
+      PS technote value ranges.
+    sources: [PM6-DEP-009, PS-DEP-016]
+
+  # ---------------------------------------------------------------------------
+  # PM6 structures: SubIFDs, clip paths, indexed, OPI
+  # ---------------------------------------------------------------------------
+  - id: DEP-120
+    title: SubIFD chaining
+    kind: constrains-value
+    versions: "6.0-"
+    conformance: PM6
+    tags: [330]
+    when: "defined(SubIFDs) && count(SubIFDs) references multiple children via one offset"
+    semantics: >
+      Child IFDs beyond the first are chained through the children's own
+      NextIFD links; the last child's NextIFD is 0. Alternatively each
+      child may be referenced directly by a separate SubIFDs value.
+    sources: [PM6-DEP-001]
+
+  - id: DEP-121
+    title: SubIFDs ignored at unusual bit depths (PS warning)
+    kind: modifies-meaning
+    versions: "6.0-"
+    conformance: PS
+    tags: [330, 258]
+    when: "defined(SubIFDs) && BitsPerSample != 8"
+    semantics: "Readers should ignore the SubIFDs found in the file."
+    sources: [PS-DEP-015]
+    notes: The PS technote does not specify whose bit depth; libtiff should document its choice.
+
+  - id: DEP-122
+    title: ClipPath requires XClipPathUnits
+    kind: requires
+    versions: "6.0-"
+    conformance: PM6
+    tags: [343, 344]
+    when: "defined(ClipPath)"
+    assert: "defined(XClipPathUnits)"
+    severity: error
+    sources: [PM6-DEP-002]
+
+  - id: DEP-123
+    title: YClipPathUnits defaults to XClipPathUnits
+    kind: selects-default
+    versions: "6.0-"
+    conformance: PM6
+    tags: [344, 345]
+    when: "!defined(YClipPathUnits)"
+    semantics: "Effective YClipPathUnits = XClipPathUnits."
+    sources: [PM6-DEP-003]
+
+  - id: DEP-124
+    title: Indexed images require ColorMap and exclude photometric 3
+    kind: requires
+    versions: "6.0-"
+    conformance: PM6
+    tags: [346, 320, 262]
+    when: "Indexed == 1"
+    assert: "defined(ColorMap) && PhotometricInterpretation != 3"
+    severity: error
+    sources: [PM6-DEP-005, PM6-DEP-006, PM6-DEP-007]
+    notes: >
+      PhotometricInterpretation 3 already means (RGB base + indexed); the
+      combination would be circular.
+
+  - id: DEP-125
+    title: OPI proxy requires ImageID
+    kind: requires
+    versions: "6.0-"
+    conformance: PM6
+    tags: [351, 32781]
+    when: "OPIProxy == 1"
+    assert: "defined(ImageID)"
+    severity: warning
+    sources: [PM6-DEP-011]
+
+  # ---------------------------------------------------------------------------
+  # Subfile classification
+  # ---------------------------------------------------------------------------
+  - id: DEP-130
+    title: SubfileType 1/2 required-field rule (4.0)
+    kind: requires
+    versions: "4.0-4.0"
+    conformance: baseline
+    tags: [255, 256, 257, 273]
+    when: "SubfileType in {1, 2}"
+    assert: "defined(ImageWidth) && defined(ImageLength) && defined(StripOffsets)"
+    severity: error
+    sources: [T4-DEP-001, T4-DEP-002]
+
+  - id: DEP-131
+    title: Multi-page bit points to PageNumber
+    kind: modifies-meaning
+    versions: "5.0-"
+    conformance: baseline
+    tags: [254, 297]
+    when: "bit(NewSubfileType, 1) == 1"
+    semantics: "The image is one page of a multi-page document; see PageNumber (297)."
+    sources: [T5-DEP-027]
+
+  # ---------------------------------------------------------------------------
+  # Metadata carriers and private IFD pointers (XMP / Exif / ICC / Photoshop)
+  # ---------------------------------------------------------------------------
+  - id: DEP-140
+    title: Metadata and pointer tags are IFD0-only
+    kind: constrains-value
+    versions: "6.0-"
+    conformance: XMP
+    tags: [700, 33723, 34377, 34665, 34853]
+    when: "defined(XMP) || defined(IPTC) || defined(Photoshop) || defined(ExifIFDPointer) || defined(GPSInfoIFDPointer)"
+    assert: "each such tag appears only in the 0th (primary) IFD"
+    severity: error
+    relax: {flag: tolerate.metadata-outside-ifd0, severity: warning}
+    sources: [XMP-DEP-001]
+    notes: >
+      XMP Part 3 states these tags are not valid in thumbnail or other
+      IFDs. Exif itself permits 34665 in IFD1 (thumbnail Exif); the relax
+      flag accepts such files while reporting them.
+
+  - id: DEP-141
+    title: Exif IFD pointer well-formedness
+    kind: requires
+    versions: "6.0-"
+    conformance: EXIF
+    tags: [34665]
+    when: "defined(ExifIFDPointer)"
+    assert: "type(ExifIFDPointer) == LONG && count(ExifIFDPointer) == 1 && the offset resolves to a structurally valid IFD containing no image data"
+    severity: error
+    sources: [EXIF-DEP-001]
+    notes: BigTIFF containers may use type IFD8. Resident tags are registered in tags-exif.yaml (location exif-ifd).
+
+  - id: DEP-142
+    title: GPS IFD pointer well-formedness and GPSVersionID
+    kind: requires
+    versions: "6.0-"
+    conformance: EXIF
+    tags: [34853]
+    when: "defined(GPSInfoIFDPointer)"
+    assert: "the offset resolves to a structurally valid IFD with no image data, containing GPSVersionID (gps-ifd tag 0, value 2.3.0.0)"
+    severity: error
+    relax: {flag: tolerate.missing-gpsversionid, severity: warning}
+    sources: [EXIF-DEP-002, EXIF-DEP-021]
+
+  - id: DEP-143
+    title: Interoperability IFD pointer resides in the Exif IFD
+    kind: constrains-value
+    versions: "6.0-"
+    conformance: EXIF
+    tags: [40965]
+    when: "defined(InteroperabilityIFDPointer)"
+    assert: "the tag is located in the Exif IFD (not IFD0) and points to a structurally valid IFD with no image data"
+    severity: error
+    sources: [EXIF-DEP-003]
+    notes: Exif 2.3 additionally marks the Interoperability IFD as not-allowed for uncompressed (TIFF) primary images (EXIF-DEP-029/030).
+
+  - id: DEP-144
+    title: ICC profile size consistency
+    kind: constrains-value
+    versions: "6.0-"
+    conformance: ICC
+    tags: [34675]
+    when: "defined(ICCProfile)"
+    assert: "count(ICCProfile) == profile header size field (bytes 0-3, big-endian)"
+    severity: error
+    sources: [ICC-007, ICC-008]
+
+  - id: DEP-145
+    title: ICC profile signature and byte order
+    kind: constrains-value
+    versions: "6.0-"
+    conformance: ICC
+    tags: [34675]
+    when: "defined(ICCProfile)"
+    assert: "profile bytes 36-39 == 'acsp' and all profile fields are big-endian regardless of TIFF byte order"
+    severity: error
+    sources: [ICC-004, ICC-013]
+
+  - id: DEP-146
+    title: Photoshop image resource block structure
+    kind: constrains-value
+    versions: "6.0-"
+    conformance: PSFF
+    tags: [34377]
+    when: "defined(Photoshop)"
+    assert: "the value parses as a sequence of Image Resource Blocks: '8BIM' signature, 2-byte resource ID, even-padded Pascal-string name, 4-byte size, even-padded data, ending exactly at count(Photoshop) bytes"
+    severity: error
+    sources: [PSFF-001, PSFF-002, PSFF-003, PSFF-004, PSFF-005, PSFF-042]
+
+  - id: DEP-147
+    title: No XMP image resource inside the Photoshop tag
+    kind: forbids
+    versions: "6.0-"
+    conformance: XMP
+    tags: [34377, 700]
+    when: "defined(Photoshop)"
+    assert: "the resource block sequence contains no resource 1060 (XMP); XMP belongs in tag 700"
+    severity: warning
+    sources: [XMP-DEP-003, PSFF-009]
+    notes: >
+      Resource 1058 (nested Exif) may be present only in files written by
+      Photoshop 6 (documented quirk); readers may recover Exif metadata
+      from it when tag 34665 is absent.
+
+  - id: DEP-148
+    title: XMP packet type, count and encoding
+    kind: constrains-value
+    versions: "6.0-"
+    conformance: XMP
+    tags: [700]
+    when: "defined(XMP)"
+    assert: "type(XMP) in {UNDEFINED, BYTE} && count(XMP) == byte length of the packet, which is UTF-8 serialized RDF/XML"
+    severity: warning
+    sources: [XMP-DEP-002]
+    notes: SHOULD-level in the source ("should be UNDEFINED or BYTE"), hence warning.
+
+  - id: DEP-149
+    title: Duplicated metadata copies must stay synchronised
+    kind: modifies-meaning
+    versions: "6.0-"
+    conformance: XMP
+    tags: [700, 33723, 34377, 34675]
+    when: "the same metadata exists in more than one carrier (33723 vs resource 0x0404 in 34377; 34675 vs resource 0x040F; XMP properties vs native TIFF/Exif tags)"
+    semantics: >
+      Writers must keep all copies identical. On conflict, native
+      TIFF/Exif tag values take precedence over mirrored XMP properties
+      (single documented exception: exif:ISOSpeedRating when the native
+      tag saturates at 65535). No vendored document states a precedence
+      between 33723/34675/700 and their Photoshop-resource copies inside
+      34377; validators should report divergence.
+    sources: [IPTC-DEP-001, IPTC-DEP-002, XMP-DEP-006, PSFF-007, PSFF-008]
+
+  # ---------------------------------------------------------------------------
+  # Exif-specific rules for TIFF (uncompressed) Exif files
+  # ---------------------------------------------------------------------------
+  - id: DEP-150
+    title: ExifVersion expected in the Exif IFD
+    kind: requires
+    versions: "6.0-"
+    conformance: EXIF
+    tags: [34665]
+    when: "defined(ExifIFDPointer)"
+    assert: "ExifVersion (exif-ifd tag 36864) is present"
+    severity: warning
+    sources: [EXIF-DEP-025]
+    notes: Absence makes the file non-conformant to Exif, not malformed TIFF.
+
+  - id: DEP-151
+    title: GPS coordinate values require their reference tags
+    kind: requires
+    versions: "6.0-"
+    conformance: EXIF
+    tags: [34853]
+    when: "GPSLatitude (gps-ifd 2) or GPSLongitude (gps-ifd 4) is present"
+    assert: "the matching GPSLatitudeRef (1) / GPSLongitudeRef (3) is present"
+    severity: warning
+    sources: [EXIF-DEP-022]
+
+  - id: DEP-152
+    title: Sensitivity tag group co-requirements
+    kind: requires
+    versions: "6.0-"
+    conformance: EXIF
+    tags: [34665]
+    when: "StandardOutputSensitivity (34865), RecommendedExposureIndex (34866) or ISOSpeed (34867) is present in the Exif IFD"
+    assert: "PhotographicSensitivity (34855) and SensitivityType (34864) are also present; ISOSpeedLatitudeyyy (34868) additionally requires ISOSpeed (34867) and ISOSpeedLatitudezzz (34869)"
+    severity: warning
+    sources: [EXIF-DEP-017, EXIF-DEP-018]
+
+  - id: DEP-153
+    title: JPEG-only Exif tags forbidden in uncompressed Exif TIFF
+    kind: forbids
+    versions: "6.0-"
+    conformance: EXIF
+    tags: [513, 514, 34665, 40965]
+    when: "Exif-compliant file with uncompressed (TIFF) primary image"
+    assert: "JPEGInterchangeFormat (513), JPEGInterchangeFormatLength (514), CompressedBitsPerPixel (37122) and the Interoperability IFD are not used for the primary image"
+    severity: warning
+    sources: [EXIF-DEP-016, EXIF-DEP-029, EXIF-DEP-030]
+
+  # ---------------------------------------------------------------------------
+  # DNG rules (apply when DNGVersion 50706 is present in IFD0)
+  # ---------------------------------------------------------------------------
+  - id: DEP-160
+    title: DNGVersion marks a DNG file and gates DNG rules
+    kind: modifies-meaning
+    versions: "6.0-"
+    conformance: DNG
+    tags: [50706]
+    when: "defined(DNGVersion)"
+    semantics: >
+      The file is a DNG; IFD roles (raw/preview/enhanced/depth/semantic
+      mask) are assigned via NewSubfileType and the SubIFDs tree, and the
+      DEP-161..167 rules apply. SubIFD trees (SubIFDs 330) are used; SubIFD
+      chains are not supported. DNGBackwardVersion (50707) states the
+      oldest compatible reader version.
+    sources: [DNG-003]
+
+  - id: DEP-161
+    title: CFA photometric requires the CFA pattern tags
+    kind: requires
+    versions: "6.0-"
+    conformance: DNG
+    tags: [262, 33421, 33422]
+    when: "PhotometricInterpretation == 32803"
+    assert: "defined(CFARepeatPatternDim) && defined(CFAPattern)"
+    severity: error
+    sources: [DNG-DEP-002]
+
+  - id: DEP-162
+    title: BlackLevel count follows BlackLevelRepeatDim
+    kind: constrains-value
+    versions: "6.0-"
+    conformance: DNG
+    tags: [50713, 50714, 277]
+    when: "defined(BlackLevel)"
+    assert: "count(BlackLevel) == BlackLevelRepeatDim[0] * BlackLevelRepeatDim[1] * SamplesPerPixel"
+    severity: error
+    sources: [DNG-DEP-014]
+
+  - id: DEP-163
+    title: Calibration illuminant/matrix chains are complete
+    kind: requires
+    versions: "6.0-"
+    conformance: DNG
+    tags: [50778, 50779, 52529, 52531, 52533, 52534, 52535]
+    when: "defined(CalibrationIlluminant3)"
+    assert: "defined(CalibrationIlluminant1) && defined(CalibrationIlluminant2) && defined(ColorMatrix3); illuminant white points must be distinct. CalibrationIlluminantN == 255 requires IlluminantDataN"
+    severity: error
+    sources: [DNG-DEP-007, DNG-DEP-008, DNG-DEP-009, DNG-DEP-010]
+
+  - id: DEP-164
+    title: Floating-point raw data bit depths
+    kind: constrains-value
+    versions: "6.0-"
+    conformance: DNG
+    tags: [339, 258]
+    when: "SampleFormat == 3"
+    assert: "BitsPerSample in {16, 24, 32}"
+    severity: error
+    sources: [DNG-DEP-022]
+    notes: DNG 1.4+; earlier DNG versions always use unsigned integer samples.
+
+  - id: DEP-165
+    title: Enhanced-image IFD photometric constraint
+    kind: requires
+    versions: "6.0-"
+    conformance: DNG
+    tags: [254, 262, 51182]
+    when: "defined(DNGVersion) && NewSubfileType == 16"
+    assert: "PhotometricInterpretation == 34892"
+    severity: error
+    sources: [DNG-DEP-031]
+
+  - id: DEP-166
+    title: DNGBackwardVersion floor for 1.4 features
+    kind: constrains-value
+    versions: "6.0-"
+    conformance: DNG
+    tags: [50707, 339, 254, 259]
+    when: "SampleFormat == 3 || NewSubfileType == 4 || Compression in {8, 34892}"
+    assert: "DNGBackwardVersion >= 1.4.0.0"
+    severity: warning
+    sources: [DNG-DEP-042]
+
+  - id: DEP-167
+    title: Uniform BitsPerSample across DNG samples
+    kind: constrains-value
+    versions: "6.0-"
+    conformance: DNG
+    tags: [258, 277]
+    when: "defined(DNGVersion) && SamplesPerPixel != 1"
+    assert: "all BitsPerSample values are equal"
+    severity: error
+    sources: [DNG-DEP-021]
+
+  # ---------------------------------------------------------------------------
+  # TIFF/FX rules (fax files; see also the CLS-FAX-* profiles)
+  # ---------------------------------------------------------------------------
+  - id: DEP-170
+    title: Fax T.4 coding requires T4Options
+    kind: requires
+    versions: "6.0-"
+    conformance: TFX
+    tags: [259, 292]
+    when: "fax file && Compression == 3"
+    assert: "defined(T4Options)"
+    severity: error
+    sources: [TFX-DEP-005]
+    notes: >
+      Classic TIFF gives T4Options a default of 0; RFC 3949 requires the
+      field to be written explicitly in fax profiles.
+
+  - id: DEP-171
+    title: Fax T.6 coding requires T6Options == 0
+    kind: requires
+    versions: "6.0-"
+    conformance: TFX
+    tags: [259, 293]
+    when: "fax file && Compression == 4"
+    assert: "defined(T6Options) && T6Options == 0"
+    severity: error
+    sources: [TFX-DEP-006]
+    notes: Uncompressed mode (bit 1) is not allowed in fax use.
+
+  - id: DEP-172
+    title: ITULAB requires Decode semantics
+    kind: requires
+    versions: "6.0-"
+    conformance: TFX
+    tags: [262, 433, 277]
+    when: "PhotometricInterpretation == 10"
+    assert: "Decode is present with count == 2 * SamplesPerPixel, or the T.42 default ranges apply"
+    severity: error
+    sources: [TFX-DEP-011, TFX-118]
+    notes: >
+      Decode gives (min, max) pairs mapping unsigned ITULAB samples to
+      signed L*a*b*; defaults per ITU-T T.42 when absent (see
+      sources/TFX.yaml for the default table).
+
+  - id: DEP-173
+    title: StripRowCounts excludes RowsPerStrip
+    kind: forbids
+    versions: "6.0-"
+    conformance: TFX
+    tags: [559, 278]
+    when: "defined(StripRowCounts)"
+    assert: "!defined(RowsPerStrip)"
+    severity: error
+    sources: [TFX-DEP-022]
+
+  - id: DEP-174
+    title: MRC IFDs carry NewSubfileType bit 4
+    kind: constrains-value
+    versions: "6.0-"
+    conformance: TFX
+    tags: [254, 330, 286, 287, 34732]
+    when: "Profile M (MRC) file"
+    assert: "primary IFD has NewSubfileType 18 and child IFDs 16; child IFDs are reached via SubIFDs (330), carry ImageLayer (34732) and XPosition/YPosition; the primary IFD must not use XPosition/YPosition"
+    severity: error
+    sources: [TFX-DEP-017, TFX-DEP-018, TFX-DEP-019, TFX-DEP-030, TFX-146]
+
+  - id: DEP-175
+    title: GlobalParametersIFD placement and content
+    kind: constrains-value
+    versions: "6.0-"
+    conformance: TFX
+    tags: [400, 401, 402, 403, 404, 405]
+    when: "defined(GlobalParametersIFD)"
+    assert: "the tag resides in the first page IFD and points to a structurally valid IFD holding file-global parameters (ProfileType, FaxProfile, CodingMethods, VersionYear, ModeNumber)"
+    severity: error
+    sources: [TFX-DEP-028, TFX-040]
+    notes: Values in the GlobalParametersIFD describe the whole file; per-page IFD values prevail on conflict for their page.
+
+  - id: DEP-176
+    title: Page-quality tags only from real fax hardware
+    kind: forbids
+    versions: "6.0-"
+    conformance: TFX
+    tags: [326, 327, 328]
+    when: "the producing system has no page-quality information (not a fax receiver)"
+    assert: "!defined(BadFaxLines) && !defined(CleanFaxData) && !defined(ConsecutiveBadFaxLines)"
+    severity: info
+    sources: [TFX-DEP-029]
+
+  # ---------------------------------------------------------------------------
+  # LogLuv HDR rules
+  # ---------------------------------------------------------------------------
+  - id: DEP-180
+    title: LOGLUV photometric pairs with SGILOG compression
+    kind: constrains-value
+    versions: "6.0-"
+    conformance: LLV
+    tags: [262, 259]
+    when: "PhotometricInterpretation == 32845"
+    assert: "Compression in {34676, 34677}"
+    severity: error
+    sources: [LLV-DEP-001]
+    notes: 34676 carries the 32-bit encoding, 34677 the 24-bit packing.
+
+  - id: DEP-181
+    title: LOGL photometric pairs with SGILOG compression
+    kind: constrains-value
+    versions: "6.0-"
+    conformance: LLV
+    tags: [262, 259]
+    when: "PhotometricInterpretation == 32844"
+    assert: "Compression == 34676"
+    severity: error
+    sources: [LLV-DEP-002]
+
+  - id: DEP-182
+    title: StoNits calibrates absolute luminance
+    kind: modifies-meaning
+    versions: "6.0-"
+    conformance: LLV
+    tags: [37439, 262]
+    when: "PhotometricInterpretation in {32844, 32845}"
+    semantics: >
+      When StoNits (37439) is present, decoded Y values multiplied by it
+      yield absolute luminance in cd/m^2; absence means the data is
+      uncalibrated (relative luminance).
+    sources: [LLV-DEP-004, LLV-DEP-005]
+
+# -----------------------------------------------------------------------------
+# Vendor-deviation acceptance flags with no corresponding spec rule violation
+# check above. These document repairs libtiff-class readers need even though
+# the specification is unambiguous.
+# -----------------------------------------------------------------------------
+deviations:
+  - flag: tolerate.unsorted-ifd
+    concerns: STR sort-order requirement
+    behavior: Accept IFDs whose entries are not sorted ascending by tag; sort in memory.
+  - flag: tolerate.unaligned-values
+    concerns: STR word-alignment requirement
+    behavior: Accept value offsets that are not 2-byte (classic) / 8-byte (BigTIFF) aligned.
+  - flag: tolerate.missing-nul
+    concerns: ASCII field termination
+    behavior: Accept ASCII values lacking the final NUL; treat count as the string length.
+  - flag: tolerate.type-mismatch
+    concerns: per-tag `types` in tags.yaml
+    behavior: >
+      Accept documented wild-type variants (ExtraSamples as BYTE,
+      ReferenceBlackWhite as LONG, SubIFDs as LONG where IFD/IFD8 expected)
+      and convert; both cases stem from spec inconsistencies noted in
+      tags.yaml.
+  - flag: tolerate.deflate-32946
+    concerns: Compression enumerated values
+    behavior: Treat Compression 32946 as a synonym for 8 (Deflate).
+  - flag: tolerate.iptc-as-long
+    concerns: IPTC (33723) field type
+    behavior: >
+      Accept IPTC data stored as type LONG (count N/4, historical libtiff
+      and NAA practice) and reinterpret the raw bytes as the IIM
+      datastream; no vendored document defines the tag's type (see
+      tags.yaml notes for 33723).
+  - flag: repair.rowsperstrip-zero
+    concerns: RowsPerStrip (278)
+    behavior: Treat RowsPerStrip 0 (invalid) as "entire image in one strip".
+  - flag: repair.colormap-8bit
+    concerns: ColorMap (320) value scale
+    behavior: >
+      When every ColorMap value is <= 255 in a 16-bit map, assume 8-bit
+      vendor scaling and multiply values by 257.

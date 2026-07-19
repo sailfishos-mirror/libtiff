@@ -1,0 +1,1613 @@
+document: TN2
+title: "DRAFT TIFF Technical Note #2: Replacement TIFF/JPEG Compression Scheme (Compression = 7)"
+date: "17-Mar-95"
+requirements:
+  - id: TN2-001
+    section: "Problems in TIFF 6.0 JPEG"
+    heading: "Introduction"
+    level: SHOULD-NOT
+    actor: writer
+    category: compression
+    conformance: extension
+    tags: [259, 512, 513, 514, 515, 516, 517, 518, 519, 520, 521]
+    statement: >
+      TIFF writers are strongly discouraged from using the TIFF 6.0 Section 22 JPEG design
+      (Compression(259)=6, and the associated JPEG auxiliary fields such as JPEGProc,
+      JPEGInterchangeFormat, JPEGInterchangeFormatLength, JPEGRestartInterval,
+      JPEGLosslessPredictors, JPEGPointTransforms, JPEGQTables, JPEGDCTables and
+      JPEGACTables). The next full release of the TIFF specification will not describe the
+      old design at all, except to note that certain tag numbers are reserved; the existing
+      Section 22 is replaced by the specification given in this Technical Note.
+    notes: >
+      The source document names these fields generically (e.g. "JPEGxxTable fields",
+      "JPEGInterchangeFormat field", "JPEGQTables field") and via the range reference
+      "6.0 section 22"; it does not itself print the decimal tag codes. The codes 512-521
+      (with the specific names above) are supplied per the extraction brief for
+      cross-referencing against the TIFF 6.0 document and should be verified against the
+      TIFF 6.0 extraction. Tag 516 is believed to be an unassigned gap in that range.
+  - id: TN2-002
+    section: "Problems in TIFF 6.0 JPEG"
+    heading: "Introduction"
+    level: MUST
+    actor: both
+    category: compression
+    conformance: extension
+    tags: [259, 512, 513, 514, 515, 516, 517, 518, 519, 520, 521]
+    statement: >
+      To permit existing TIFF implementations to continue reading old files, Compression(259)
+      value 6 and the TIFF 6.0 Section 22 JPEG field tag numbers (512-521) remain reserved
+      indefinitely and must not be reassigned to new purposes, even though detailed
+      descriptions of them will be dropped from future editions of the TIFF specification.
+      Readers that need to handle existing 6.0 JPEG files may continue to read both old and
+      new files, using whatever interpretation of the 6.0 spec they used before.
+  - id: TN2-003
+    section: "Problems in TIFF 6.0 JPEG"
+    heading: "Introduction"
+    level: INFO
+    actor: file
+    category: compression
+    conformance: extension
+    statement: >
+      This Technical Note's "Replacement TIFF/JPEG specification" section is intended to
+      replace Section 22 of the TIFF 6.0 specification (3 June 1992) in the next full release
+      of the TIFF specification.
+  - id: TN2-004
+    section: "Problems in TIFF 6.0 JPEG"
+    heading: "Design errors and limitations"
+    level: INFO
+    actor: both
+    category: compression
+    conformance: extension
+    statement: >
+      Rationale for deprecating TIFF 6.0 Section 22: its fundamental design error is that
+      JPEG's various tables and parameters are broken out as separate TIFF fields that the
+      TIFF control logic must manage, rather than being treated as private data belonging to
+      the JPEG codec.
+  - id: TN2-005
+    section: "Problems in TIFF 6.0 JPEG"
+    heading: "Design errors and limitations"
+    level: INFO
+    actor: both
+    category: compression
+    conformance: extension
+    statement: >
+      Rationale: unlike every other TIFF auxiliary field (which contains data and can be
+      copied/relocated by generic code), the 6.0 JPEGxxTable fields hold pointers to
+      information elsewhere in the file, forcing even trivial TIFF-editing applications to
+      be aware of JPEG-specific internal table structure or risk corrupting the file.
+  - id: TN2-006
+    section: "Problems in TIFF 6.0 JPEG"
+    heading: "Design errors and limitations"
+    level: INFO
+    actor: both
+    category: compression
+    conformance: extension
+    statement: >
+      Rationale: manipulating the 6.0 JPEG fields requires TIFF control logic to know
+      JPEG-specific arcana, such as how to compute the length of a Huffman code table (not
+      supplied directly in the field structure), which also impedes adoption of future JPEG
+      extensions that might change such low-level details.
+  - id: TN2-007
+    section: "Problems in TIFF 6.0 JPEG"
+    heading: "Design errors and limitations"
+    level: INFO
+    actor: both
+    category: compression
+    conformance: extension
+    statement: >
+      Rationale: the 6.0 design specifies a separate Huffman table field per color
+      component even though baseline JPEG codecs support only two sets of Huffman tables,
+      forcing encoders to either duplicate tables (violating TIFF's convention against
+      duplicate pointers) or forcing decoders to test for identical tables at a cost in time
+      and code space.
+  - id: TN2-008
+    section: "Problems in TIFF 6.0 JPEG"
+    heading: "Design errors and limitations"
+    level: INFO
+    actor: both
+    category: compression
+    conformance: extension
+    statement: >
+      Rationale: the 6.0 JPEGInterchangeFormat field violates TIFF's proscription against
+      duplicate pointers, because the normal strip/tile pointers point into the data area
+      referenced by JPEGInterchangeFormat, and the JPEGxxTables fields are also likely to
+      point into that same area, creating fragile pointer relationships that all TIFF-editing
+      applications must maintain.
+  - id: TN2-009
+    section: "Problems in TIFF 6.0 JPEG"
+    heading: "Design errors and limitations"
+    level: INFO
+    actor: both
+    category: compression
+    conformance: extension
+    statement: >
+      Rationale: the 6.0 JPEGQTables field is fixed at one byte per table entry, so it
+      cannot support 16-bit quantization values, which is a serious impediment to extending
+      TIFF to use 12-bit JPEG.
+  - id: TN2-010
+    section: "Problems in TIFF 6.0 JPEG"
+    heading: "Design errors and limitations"
+    level: INFO
+    actor: both
+    category: compression
+    conformance: extension
+    statement: >
+      Rationale: because 6.0 quantization tables are tied one-for-one to color components,
+      the 6.0 design cannot support using different quantization tables in different
+      strips/tiles of an image (to encode some areas at higher quality), nor can it support
+      table-switching options likely to be added in future JPEG revisions.
+  - id: TN2-011
+    section: "Problems in TIFF 6.0 JPEG"
+    heading: "Ambiguities"
+    level: INFO
+    actor: both
+    category: compression
+    conformance: extension
+    statement: >
+      TIFF 6.0's treatment of JPEG restart markers is ambiguous: it is unclear whether
+      restart markers must be omitted at TIFF strip/tile segment boundaries, or whether they
+      are optional.
+  - id: TN2-012
+    section: "Problems in TIFF 6.0 JPEG"
+    heading: "Ambiguities"
+    level: INFO
+    actor: both
+    category: compression
+    conformance: extension
+    statement: >
+      TIFF 6.0 is ambiguous about whether segment size is required to be a multiple of the
+      specified restart interval, or whether the JPEG codec is instead supposed to be reset
+      at every segment boundary as if a restart marker occurred there, regardless of whether
+      the boundary falls at a multiple of the nominal restart interval.
+  - id: TN2-013
+    section: "Problems in TIFF 6.0 JPEG"
+    heading: "Ambiguities"
+    level: INFO
+    actor: both
+    category: compression
+    conformance: extension
+    statement: >
+      TIFF 6.0 fails to address whether JPEG restart-marker numbering restarts within each
+      segment or continues across segment boundaries; this Tech Note does not resolve this
+      or the other restart-marker ambiguities, so implementations that follow the 6.0 design
+      should expect inter-application compatibility problems.
+    notes: >
+      The document explains the tradeoff: restarting numbering per segment loses the ability
+      to impose TIFF strip/tile structure on an existing JPEG datastream with restarts, while
+      continuing numbering across segments interferes with random access (a reader must
+      compute the expected first restart number for a segment and reset its JPEG decoder to
+      a nonzero restart number, which may not be possible with some JPEG hardware).
+  - id: TN2-014
+    section: "Problems in TIFF 6.0 JPEG"
+    heading: "Ambiguities"
+    level: INFO
+    actor: both
+    category: compression
+    conformance: extension
+    statement: >
+      TIFF 6.0's tile height restriction on page 104 (specifying a tile height of one MCU
+      or 8 pixels for images that are not vertically downsampled) contradicts TIFF 6.0
+      Section 15's general requirement that tiles be a multiple of 16 pixels high.
+  - id: TN2-015
+    section: "Problems in TIFF 6.0 JPEG"
+    heading: "Unnecessary complexity"
+    level: INFO
+    actor: both
+    category: compression
+    conformance: extension
+    statement: >
+      Rationale: the 6.0 design creates problems for implementations that want to keep the
+      JPEG codec separate from TIFF control logic (e.g. a JPEG hardware chip not designed
+      specifically for TIFF), because such codecs want to produce/consume a standard ISO
+      JPEG datastream, forcing the TIFF control logic to parse JPEG markers into TIFF table
+      fields (when writing) or synthesize JPEG markers from TIFF fields (when reading).
+  - id: TN2-016
+    section: "Problems in TIFF 6.0 JPEG"
+    heading: "Unnecessary complexity"
+    level: INFO
+    actor: file
+    category: structure
+    conformance: extension
+    tags: [513]
+    statement: >
+      Ad hoc "TIFF/JPEG" files that simply dump a standard JPEG datastream and point to it
+      via JPEGInterchangeFormat, omitting the JPEG auxiliary fields and even the basic
+      strip/tile data pointers, are incompatible with full TIFF 6.0 JPEG implementations and
+      are arguably not TIFF at all, since all TIFF-reading applications expect to find strip
+      or tile pointers; such a non-upward-compatible subset implementation is unacceptable.
+  - id: TN2-017
+    section: "Overview of the solution"
+    heading: "Overview of the solution"
+    level: INFO
+    actor: both
+    category: compression
+    conformance: extension
+    statement: >
+      The replacement design uses only complete, uninterpreted ISO JPEG datastreams per
+      segment, intended to be more forgiving of future extensions to the ISO JPEG standard
+      and easier to implement using unmodified JPEG codecs.
+  - id: TN2-018
+    section: "Overview of the solution"
+    heading: "Overview of the solution"
+    level: MAY
+    actor: writer
+    category: tag
+    conformance: extension
+    tags: [347]
+    statement: >
+      To reduce overhead in multi-segment TIFF files, JPEG overhead tables may be stored
+      just once in the JPEGTables(347) auxiliary field; this does not violate the integrity
+      of the per-segment JPEG datastreams because it relies on the ISO-standard notions of
+      "tables-only datastream" and "abbreviated image datastream".
+  - id: TN2-019
+    section: "Overview of the solution"
+    heading: "Overview of the solution"
+    level: MUST
+    actor: both
+    category: compression
+    conformance: extension
+    tags: [259]
+    statement: >
+      To prevent confusion with the old TIFF 6.0 JPEG design, the replacement design is
+      signaled by a new Compression(259) tag value, Compression=7, distinct from the old
+      value 6.
+  - id: TN2-020
+    section: "Overview of the solution"
+    heading: "Overview of the solution"
+    level: MUST
+    actor: both
+    category: compression
+    conformance: extension
+    tags: [259, 512, 513, 514, 515, 516, 517, 518, 519, 520, 521]
+    statement: >
+      Compression(259) tag value 6 and the TIFF 6.0 Section 22 JPEG field tag numbers remain
+      reserved indefinitely, even though detailed descriptions of these fields will be
+      dropped from future editions of the TIFF specification.
+    notes: "Duplicate of TN2-002; restated in the 'Overview of the solution' section."
+  - id: TN2-021
+    section: "Replacement TIFF/JPEG specification"
+    heading: "Introduction"
+    level: INFO
+    actor: both
+    category: compression
+    conformance: extension
+    statement: >
+      TIFF Compression(259)=7 uses the international standard ISO/IEC 10918-1 ("JPEG"),
+      a joint ISO/CCITT standard for continuous-tone image compression that is structured as
+      a "toolkit" of multiple algorithms and optional capabilities rather than one
+      algorithmic procedure.
+  - id: TN2-022
+    section: "Replacement TIFF/JPEG specification"
+    heading: "Introduction"
+    level: INFO
+    actor: both
+    category: compression
+    conformance: extension
+    statement: >
+      JPEG's lossy processes trade compressed file size against reconstruction fidelity,
+      typically achieving 10:1 or greater compression of full-color data while remaining
+      visually indistinguishable from the original; JPEG's lossless process gives exact
+      reconstruction but typically only around 2:1 compression of full-color data.
+  - id: TN2-023
+    section: "Replacement TIFF/JPEG specification"
+    heading: "Introduction"
+    level: INFO
+    actor: both
+    category: compression
+    conformance: extension
+    statement: >
+      The most widely implemented JPEG subset is "baseline" JPEG, providing lossy
+      compression of 8-bit-per-channel data; optional extensions include 12-bit-per-channel
+      data, arithmetic entropy coding, and progressive/hierarchical representations. The
+      lossless process is an independent algorithm with little in common with the lossy
+      processes.
+  - id: TN2-024
+    section: "Replacement TIFF/JPEG specification"
+    heading: "Introduction"
+    level: SHOULD-NOT
+    actor: writer
+    category: compression
+    conformance: extension
+    statement: >
+      Use of JPEG arithmetic-coding compression processes in TIFF files intended for
+      inter-application interchange is discouraged, because the arithmetic-coding extension
+      is subject to several US and Japanese patents.
+  - id: TN2-025
+    section: "Replacement TIFF/JPEG specification"
+    heading: "Introduction"
+    level: INFO
+    actor: writer
+    category: compression
+    conformance: extension
+    statement: >
+      JPEG compression processes are useful only for "continuous tone" data where the
+      difference between adjacent pixel values is usually small; low-bit-depth source data
+      and palette-color images are not appropriate candidates for JPEG compression, while
+      grayscale and full-color data work well.
+  - id: TN2-026
+    section: "Replacement TIFF/JPEG specification"
+    heading: "What data is being compressed?"
+    level: MUST
+    actor: both
+    category: compression
+    conformance: extension
+    tags: [259]
+    statement: >
+      For TIFF purposes, the Compression(259) tag value 7 represents the ISO JPEG
+      compression standard only, applied to exactly the same data that would be stored in
+      the TIFF file if no compression were used.
+  - id: TN2-027
+    section: "Replacement TIFF/JPEG specification"
+    heading: "What data is being compressed?"
+    level: MUST
+    actor: writer
+    category: color
+    conformance: extension
+    tags: [259, 262, 530]
+    statement: >
+      If color-space conversion or chroma downsampling is applied prior to JPEG compression,
+      these steps must be reflected in the regular TIFF fields (PhotometricInterpretation(262),
+      YCbCrSubSampling(530)); they are not considered implicit in the Compression(259) tag
+      value.
+  - id: TN2-028
+    section: "Replacement TIFF/JPEG specification"
+    heading: "What data is being compressed?"
+    level: MUST
+    actor: writer
+    category: color
+    conformance: extension
+    tags: [262]
+    statement: >
+      PhotometricInterpretation(262) and related color-description fields shall describe
+      the color space actually stored in the file, regardless of what color space the
+      original source data was in.
+  - id: TN2-029
+    section: "Replacement TIFF/JPEG specification"
+    heading: "What data is being compressed?"
+    level: MUST
+    actor: writer
+    category: color
+    conformance: extension
+    tags: [262, 530]
+    statement: >
+      With the TIFF 6.0 field definitions, downsampling is permissible only for YCbCr data
+      (PhotometricInterpretation(262)=6) and must correspond to the value of
+      YCbCrSubSampling(530).
+    notes: >
+      The document notes that the default value of YCbCrSubSampling(530) is not [1,1], so
+      the default behavior for YCbCr data is to apply downsampling.
+  - id: TN2-030
+    section: "Replacement TIFF/JPEG specification"
+    heading: "What data is being compressed?"
+    level: MUST
+    actor: writer
+    category: color
+    conformance: extension
+    tags: [262, 530]
+    statement: >
+      Even if the JPEG codec internally performs automatic color conversion and downsampling
+      (so the application supplies full-size RGB data that is converted to downsampled
+      YCbCr by the codec), the TIFF control layer must still write PhotometricInterpretation(262)
+      and YCbCrSubSampling(530) values that accurately describe what is actually stored in the
+      file.
+  - id: TN2-031
+    section: "Replacement TIFF/JPEG specification"
+    heading: "What data is being compressed?"
+    level: INFO
+    actor: writer
+    category: color
+    conformance: extension
+    tags: [262, 530]
+    statement: >
+      A JPEG-compressed TIFF file will typically have PhotometricInterpretation(262)=6
+      (YCbCr) and YCbCrSubSampling(530)=[2,1] or [2,2], unless the source data was grayscale
+      or CMYK.
+  - id: TN2-032
+    section: "Replacement TIFF/JPEG specification"
+    heading: "Basic representation of JPEG-compressed images"
+    level: INFO
+    actor: both
+    category: compression
+    conformance: extension
+    statement: >
+      JPEG compression (Compression(259)=7) works in either strip-based or tile-based TIFF
+      files; the document uses the term "segment" to mean either a strip or a tile.
+  - id: TN2-033
+    section: "Replacement TIFF/JPEG specification"
+    heading: "Basic representation of JPEG-compressed images"
+    level: MUST
+    actor: both
+    category: compression
+    conformance: extension
+    tags: [259]
+    statement: >
+      When Compression(259)=7, each image segment (strip or tile) shall contain a complete
+      JPEG datastream that is valid according to the ISO JPEG standard (ISO/IEC 10918-1).
+  - id: TN2-034
+    section: "Replacement TIFF/JPEG specification"
+    heading: "Basic representation of JPEG-compressed images"
+    level: MUST-NOT
+    actor: writer
+    category: compression
+    conformance: extension
+    tags: [259]
+    statement: >
+      Any sequential JPEG process, including lossless JPEG, can be used with Compression(259)=7,
+      but progressive and hierarchical JPEG processes are not supported.
+  - id: TN2-035
+    section: "Replacement TIFF/JPEG specification"
+    heading: "Basic representation of JPEG-compressed images"
+    level: MUST-NOT
+    actor: writer
+    category: color
+    conformance: extension
+    tags: [259, 262]
+    statement: >
+      When Compression(259)=7, PhotometricInterpretation(262) shall not be 3 (palette color)
+      nor 4 (transparency mask), since JPEG is useful only for continuous-tone images.
+  - id: TN2-036
+    section: "Replacement TIFF/JPEG specification"
+    heading: "Basic representation of JPEG-compressed images"
+    level: MUST
+    actor: writer
+    category: compression
+    conformance: extension
+    tags: [259]
+    statement: >
+      Each image segment in a Compression(259)=7 TIFF file shall contain a valid JPEG
+      datastream conforming to the ISO JPEG standard's rules for interchange-format or
+      abbreviated-image-format data, and that datastream shall contain a single JPEG frame
+      storing that segment's portion of the image.
+  - id: TN2-037
+    section: "Replacement TIFF/JPEG specification"
+    heading: "Basic representation of JPEG-compressed images"
+    level: MUST
+    actor: writer
+    category: compression
+    conformance: extension
+    statement: >
+      Each segment's JPEG datastream shall contain, in order: an SOI marker at the very
+      beginning of the segment, an SOFn marker, one SOS marker per scan (if there is more
+      than one scan), and an EOI marker at the very end of the segment.
+  - id: TN2-038
+    section: "Replacement TIFF/JPEG specification"
+    heading: "Basic representation of JPEG-compressed images"
+    level: INFO
+    actor: writer
+    category: compression
+    conformance: extension
+    statement: >
+      The actual compressed entropy-coded data follows the SOS marker and may contain RSTn
+      restart markers if the DRI marker is used.
+  - id: TN2-039
+    section: "Replacement TIFF/JPEG specification"
+    heading: "Basic representation of JPEG-compressed images"
+    level: MAY
+    actor: writer
+    category: compression
+    conformance: extension
+    statement: >
+      Additional JPEG "tables and miscellaneous" markers (DQT, DHT, DAC, DRI, APPn, COM) may
+      appear between SOI and SOFn, between SOFn and SOS, and before each subsequent SOS if
+      there is more than one scan.
+  - id: TN2-040
+    section: "Replacement TIFF/JPEG specification"
+    heading: "Basic representation of JPEG-compressed images"
+    level: MUST-NOT
+    actor: writer
+    category: compression
+    conformance: extension
+    statement: >
+      A DAC marker shall not appear within a segment's JPEG datastream unless arithmetic
+      coding is used.
+  - id: TN2-041
+    section: "Replacement TIFF/JPEG specification"
+    heading: "Basic representation of JPEG-compressed images"
+    level: MUST
+    actor: reader
+    category: compression
+    conformance: extension
+    statement: >
+      APPn and COM markers appearing within an image segment's JPEG datastream shall be
+      ignored by TIFF readers.
+  - id: TN2-042
+    section: "Replacement TIFF/JPEG specification"
+    heading: "Basic representation of JPEG-compressed images"
+    level: MUST-NOT
+    actor: writer
+    category: compression
+    conformance: extension
+    statement: >
+      DNL markers shall not be used in TIFF JPEG datastreams.
+  - id: TN2-043
+    section: "Replacement TIFF/JPEG specification"
+    heading: "Basic representation of JPEG-compressed images"
+    level: SHOULD
+    actor: reader
+    category: compression
+    conformance: extension
+    statement: >
+      Readers should abort if any marker type other than the permitted set is found in a
+      segment's JPEG datastream, especially JPEG reserved markers, since occurrence of such
+      a marker is likely to indicate an unsupported JPEG extension.
+  - id: TN2-044
+    section: "Replacement TIFF/JPEG specification"
+    heading: "Basic representation of JPEG-compressed images"
+    level: SHOULD
+    actor: reader
+    category: compression
+    conformance: extension
+    statement: >
+      The tables/miscellaneous markers may appear in any order within a segment's
+      datastream; although the SOFn marker refers to DQT tables, JPEG does not require DQT
+      to precede SOFn (only to precede SOS), so readers should perform missing-table checks
+      only when SOS is reached.
+  - id: TN2-045
+    section: "Replacement TIFF/JPEG specification"
+    heading: "Basic representation of JPEG-compressed images"
+    level: MUST
+    actor: writer
+    category: compression
+    conformance: extension
+    tags: [347]
+    statement: >
+      If no JPEGTables(347) field is used, each image segment shall be a complete JPEG
+      interchange datastream that defines all the tables it references; no segment may
+      rely on tables carried over from a previous segment, so readers can decode segments in
+      any order.
+  - id: TN2-046
+    section: "Replacement TIFF/JPEG specification"
+    heading: "Basic representation of JPEG-compressed images"
+    level: MAY
+    actor: writer
+    category: compression
+    conformance: extension
+    tags: [347]
+    statement: >
+      When a JPEGTables(347) field is used, image segments may omit tables that have
+      already been specified in the JPEGTables field.
+  - id: TN2-047
+    section: "Replacement TIFF/JPEG specification"
+    heading: "Basic representation of JPEG-compressed images"
+    level: MUST
+    actor: writer
+    category: compression
+    conformance: extension
+    statement: >
+      The SOFn marker shall be of type SOF0 for strict baseline JPEG data, SOF1 for
+      non-baseline lossy JPEG data, or SOF3 for lossless JPEG data (SOF9 or SOF11 would be
+      used for arithmetic coding).
+  - id: TN2-048
+    section: "Replacement TIFF/JPEG specification"
+    heading: "Basic representation of JPEG-compressed images"
+    level: MUST
+    actor: writer
+    category: compression
+    conformance: extension
+    statement: >
+      All segments of a JPEG-compressed TIFF image shall use the same JPEG compression
+      process, in particular the same SOFn marker type.
+  - id: TN2-049
+    section: "Replacement TIFF/JPEG specification"
+    heading: "Basic representation of JPEG-compressed images"
+    level: MUST
+    actor: writer
+    category: compression
+    conformance: extension
+    tags: [258, 284]
+    statement: >
+      The data-precision field of the SOFn marker shall agree with the TIFF
+      BitsPerSample(258) field; when PlanarConfiguration(284)=1 this implies that all
+      components must have the same BitsPerSample value, while when PlanarConfiguration=2
+      different components could have different bit depths.
+  - id: TN2-050
+    section: "Replacement TIFF/JPEG specification"
+    heading: "Basic representation of JPEG-compressed images"
+    level: MUST
+    actor: writer
+    category: compression
+    conformance: extension
+    statement: >
+      For SOF0 only data precision 8 is permitted; for SOF1, precision 8 or 12 is permitted;
+      for SOF3 (lossless), precisions 2 to 16 are permitted.
+  - id: TN2-051
+    section: "Replacement TIFF/JPEG specification"
+    heading: "Basic representation of JPEG-compressed images"
+    level: MUST
+    actor: writer
+    category: data-layout
+    conformance: extension
+    tags: [256, 257, 278]
+    statement: >
+      For strip images, the SOFn image width shall equal ImageWidth(256) and the SOFn image
+      height shall equal RowsPerStrip(278), except for the last strip, whose SOFn height
+      shall equal the number of rows remaining per ImageLength(257); no padding data is
+      counted in the SOFn dimensions.
+  - id: TN2-052
+    section: "Replacement TIFF/JPEG specification"
+    heading: "Basic representation of JPEG-compressed images"
+    level: MUST
+    actor: writer
+    category: data-layout
+    conformance: extension
+    tags: [322, 323]
+    statement: >
+      For tile images, each segment's SOFn shall have width equal to TileWidth(322) and
+      height equal to TileLength(323); adding and removing any padding needed in edge tiles
+      is the concern of a higher level of the TIFF software, not reflected in the SOFn
+      dimensions.
+  - id: TN2-053
+    section: "Replacement TIFF/JPEG specification"
+    heading: "Basic representation of JPEG-compressed images"
+    level: INFO
+    actor: both
+    category: data-layout
+    conformance: extension
+    statement: >
+      Because the ISO JPEG standard's SOFn marker uses 2-byte dimension fields, it only
+      permits images up to 65535 pixels in width or height; in TIFF this limits the size of
+      an individual JPEG-compressed strip or tile, but the total TIFF image size (spanning
+      multiple segments) can be greater.
+  - id: TN2-054
+    section: "Replacement TIFF/JPEG specification"
+    heading: "Basic representation of JPEG-compressed images"
+    level: MUST
+    actor: writer
+    category: compression
+    conformance: extension
+    tags: [277, 284]
+    statement: >
+      The number of components in a segment's JPEG datastream shall equal
+      SamplesPerPixel(277) when PlanarConfiguration(284)=1, and shall be 1 when
+      PlanarConfiguration(284)=2.
+  - id: TN2-055
+    section: "Replacement TIFF/JPEG specification"
+    heading: "Basic representation of JPEG-compressed images"
+    level: MUST
+    actor: writer
+    category: compression
+    conformance: extension
+    statement: >
+      JPEG components shall be stored in the same order as they are described at the TIFF
+      field level; this applies both to their order in the SOFn marker and to the order in
+      which they are scanned if multiple JPEG scans are used.
+  - id: TN2-056
+    section: "Replacement TIFF/JPEG specification"
+    heading: "Basic representation of JPEG-compressed images"
+    level: MUST
+    actor: writer
+    category: compression
+    conformance: extension
+    statement: >
+      The JPEG component ID bytes may be arbitrary, so long as each component within an
+      image segment is given a distinct ID.
+  - id: TN2-057
+    section: "Replacement TIFF/JPEG specification"
+    heading: "Basic representation of JPEG-compressed images"
+    level: MUST
+    actor: writer
+    category: compression
+    conformance: extension
+    statement: >
+      To avoid confusion, all segments of a TIFF image shall use the same JPEG component ID
+      code for a given component.
+  - id: TN2-058
+    section: "Replacement TIFF/JPEG specification"
+    heading: "Basic representation of JPEG-compressed images"
+    level: MUST
+    actor: writer
+    category: compression
+    conformance: extension
+    tags: [284, 530]
+    statement: >
+      In PlanarConfiguration(284)=1, the sampling factors given in the SOFn markers shall
+      agree with the sampling factors defined by the related TIFF fields (e.g.
+      YCbCrSubSampling(530)), or with the applicable default values if those fields are
+      absent.
+  - id: TN2-059
+    section: "Replacement TIFF/JPEG specification"
+    heading: "Basic representation of JPEG-compressed images"
+    level: MUST
+    actor: writer
+    category: data-layout
+    conformance: extension
+    tags: [278, 530]
+    statement: >
+      When DCT-based JPEG is used in a strip TIFF file, RowsPerStrip(278) is required to be
+      a multiple of 8 times the largest vertical JPEG sampling factor (i.e. a multiple of
+      the height of an interleaved MCU), required even if the data is not actually
+      interleaved; for example, if YCbCrSubSampling(530)=[2,2] then RowsPerStrip(278) must
+      be a multiple of 16.
+  - id: TN2-060
+    section: "Replacement TIFF/JPEG specification"
+    heading: "Basic representation of JPEG-compressed images"
+    level: INFO
+    actor: writer
+    category: data-layout
+    conformance: extension
+    tags: [278, 257]
+    statement: >
+      An exception to the RowsPerStrip(278) MCU-multiple rule is made for single-strip
+      images (RowsPerStrip >= ImageLength(257)): in that case the exact value of
+      RowsPerStrip is unimportant.
+  - id: TN2-061
+    section: "Replacement TIFF/JPEG specification"
+    heading: "Basic representation of JPEG-compressed images"
+    level: INFO
+    actor: both
+    category: data-layout
+    conformance: extension
+    statement: >
+      For strip images, any padding required at the right edge of the image, or at the
+      bottom of the last strip, is expected to occur internally to the JPEG codec rather
+      than via explicit TIFF-level padding.
+  - id: TN2-062
+    section: "Replacement TIFF/JPEG specification"
+    heading: "Basic representation of JPEG-compressed images"
+    level: MUST
+    actor: writer
+    category: data-layout
+    conformance: extension
+    tags: [322, 323]
+    statement: >
+      When DCT-based JPEG is used in a tiled TIFF file, TileLength(323) is required to be a
+      multiple of 8 times the largest vertical JPEG sampling factor and TileWidth(322) is
+      required to be a multiple of 8 times the largest horizontal JPEG sampling factor
+      (i.e. multiples of an interleaved MCU's height/width), required even if the data is
+      not actually interleaved.
+  - id: TN2-063
+    section: "Replacement TIFF/JPEG specification"
+    heading: "Basic representation of JPEG-compressed images"
+    level: INFO
+    actor: both
+    category: data-layout
+    conformance: extension
+    statement: >
+      For tiled JPEG images, all edge padding occurs via normal TIFF tile padding rules;
+      nothing JPEG-specific is required.
+  - id: TN2-064
+    section: "Replacement TIFF/JPEG specification"
+    heading: "Basic representation of JPEG-compressed images"
+    level: INFO
+    actor: both
+    category: compression
+    conformance: extension
+    statement: >
+      Lossless JPEG (SOF3) is not DCT-based and therefore does not impose the
+      RowsPerStrip(278)/TileWidth(322)/TileLength(323) MCU-multiple constraints that apply
+      to DCT-based (SOF0/SOF1) JPEG.
+  - id: TN2-065
+    section: "Replacement TIFF/JPEG specification"
+    heading: "Basic representation of JPEG-compressed images"
+    level: MUST
+    actor: both
+    category: structure
+    conformance: extension
+    statement: >
+      Within JPEG datastreams, multibyte values appear in the MSB-first order specified by
+      the JPEG standard, regardless of the byte ordering (II or MM) of the surrounding TIFF
+      file.
+  - id: TN2-066
+    section: "Replacement TIFF/JPEG specification"
+    heading: "JPEGTables field"
+    level: INFO
+    actor: both
+    category: tag
+    conformance: extension
+    tags: [347]
+    statement: >
+      JPEGTables(347) is the only auxiliary TIFF field added for Compression(259)=7; it is
+      optional and predefines JPEG quantization and/or Huffman tables for use by subsequent
+      JPEG image segments, so that bulky tables need not be duplicated in each segment.
+  - id: TN2-067
+    section: "Replacement TIFF/JPEG specification"
+    heading: "JPEGTables field"
+    level: MAY
+    actor: writer
+    category: tag
+    conformance: extension
+    tags: [347]
+    statement: >
+      JPEGTables(347) may be used even in a single-segment file, although there is no space
+      savings in that case.
+  - id: TN2-068
+    section: "Replacement TIFF/JPEG specification"
+    heading: "JPEGTables field"
+    level: MUST
+    actor: both
+    category: tag
+    conformance: extension
+    tags: [347]
+    statement: >
+      The JPEGTables(347) field's type shall be UNDEFINED, not BYTE, to signal readers that
+      expanding individual bytes to short or long integers is not appropriate; a TIFF reader
+      must store the field's value as an uninterpreted byte sequence until it is fed to the
+      JPEG decoder.
+  - id: TN2-069
+    section: "Replacement TIFF/JPEG specification"
+    heading: "JPEGTables field"
+    level: MUST
+    actor: both
+    category: tag
+    conformance: extension
+    tags: [347]
+    statement: >
+      Multibyte quantities within the JPEGTables(347) datastream follow the ISO JPEG
+      convention of MSB-first storage, regardless of the byte ordering of the surrounding
+      TIFF file.
+    notes: "Restates the general JPEG-datastream byte-order rule (TN2-065) specifically for JPEGTables."
+  - id: TN2-070
+    section: "Replacement TIFF/JPEG specification"
+    heading: "JPEGTables field"
+    level: MUST
+    actor: writer
+    category: tag
+    conformance: extension
+    tags: [347]
+    statement: >
+      When present, JPEGTables(347) shall contain a valid JPEG "abbreviated table
+      specification" datastream, beginning with an SOI marker and ending with an EOI marker.
+  - id: TN2-071
+    section: "Replacement TIFF/JPEG specification"
+    heading: "JPEGTables field"
+    level: MAY
+    actor: writer
+    category: tag
+    conformance: extension
+    tags: [347]
+    statement: >
+      The JPEGTables(347) datastream may contain zero or more JPEG "tables and
+      miscellaneous" markers: DQT, DHT, DAC (only if arithmetic coding is used), DRI, APPn
+      and COM. APPn and COM markers appearing in JPEGTables shall be ignored by TIFF readers.
+  - id: TN2-072
+    section: "Replacement TIFF/JPEG specification"
+    heading: "JPEGTables field"
+    level: SHOULD
+    actor: writer
+    category: tag
+    conformance: extension
+    tags: [347]
+    statement: >
+      Because JPEG defines the SOI marker to reset DAC and DRI state, any DAC or DRI markers
+      placed in JPEGTables(347) cannot carry their values over into an image segment
+      datastream and are effectively no-ops there; writers are recommended not to place DAC
+      or DRI markers in JPEGTables, though readers must properly skip over them if they
+      appear.
+  - id: TN2-073
+    section: "Replacement TIFF/JPEG specification"
+    heading: "JPEGTables field"
+    level: MUST
+    actor: reader
+    category: tag
+    conformance: extension
+    tags: [347]
+    statement: >
+      When JPEGTables(347) is present, readers shall load the table specifications it
+      contains before processing any image segment datastreams.
+  - id: TN2-074
+    section: "Replacement TIFF/JPEG specification"
+    heading: "JPEGTables field"
+    level: MAY
+    actor: writer
+    category: tag
+    conformance: extension
+    tags: [347]
+    statement: >
+      When JPEGTables(347) is present, image segments may simply refer to the preloaded
+      tables without defining them; an image segment can still define and use its own
+      tables, subject to the restrictions in TN2-075 and TN2-076.
+  - id: TN2-075
+    section: "Replacement TIFF/JPEG specification"
+    heading: "JPEGTables field"
+    level: MUST-NOT
+    actor: writer
+    category: tag
+    conformance: extension
+    tags: [347]
+    statement: >
+      An image segment shall not redefine any table already defined in JPEGTables(347);
+      this restriction allows readers to process image segments in random order without
+      having to reload JPEGTables between segments.
+  - id: TN2-076
+    section: "Replacement TIFF/JPEG specification"
+    heading: "JPEGTables field"
+    level: INFO
+    actor: both
+    category: tag
+    conformance: extension
+    tags: [347]
+    statement: >
+      Use of JPEGTables(347) divides the available JPEG table slots into two groups:
+      "global" slots, defined in JPEGTables and usable but not redefinable by segments, and
+      "local" slots, available for local definition and use within each segment.
+  - id: TN2-077
+    section: "Replacement TIFF/JPEG specification"
+    heading: "JPEGTables field"
+    level: MUST-NOT
+    actor: writer
+    category: tag
+    conformance: extension
+    tags: [347]
+    statement: >
+      A segment shall not reference any local (segment-defined) table slot that it does not
+      itself define, in order to permit random access to segments.
+  - id: TN2-078
+    section: "Replacement TIFF/JPEG specification"
+    heading: "Special considerations for PlanarConfiguration 2"
+    level: MUST
+    actor: writer
+    category: compression
+    conformance: extension
+    tags: [284]
+    statement: >
+      In PlanarConfiguration(284)=2, each image segment contains data for only one color
+      component and shall be written so as to look like a valid single-channel (grayscale)
+      JPEG datastream, to avoid confusing the JPEG codec.
+  - id: TN2-079
+    section: "Replacement TIFF/JPEG specification"
+    heading: "Special considerations for PlanarConfiguration 2"
+    level: MUST
+    actor: writer
+    category: data-layout
+    conformance: extension
+    tags: [284, 530]
+    statement: >
+      In PlanarConfiguration(284)=2, the SOFn dimensions of a subsampled component's segment
+      shall be scaled down by the applicable sampling factors compared to the SOFn
+      dimensions that would be used under PlanarConfiguration=1, to match the actual number
+      of samples stored in that segment.
+  - id: TN2-080
+    section: "Replacement TIFF/JPEG specification"
+    heading: "Special considerations for PlanarConfiguration 2"
+    level: INFO
+    actor: writer
+    category: data-layout
+    conformance: extension
+    tags: [284]
+    statement: >
+      In strip TIFF files with PlanarConfiguration(284)=2, the computed (scaled-down) SOFn
+      dimensions may need to be rounded up to the next integer; in tiled files this rounding
+      case cannot occur because of tile-size restrictions.
+  - id: TN2-081
+    section: "Replacement TIFF/JPEG specification"
+    heading: "Special considerations for PlanarConfiguration 2"
+    level: MUST
+    actor: writer
+    category: compression
+    conformance: extension
+    tags: [284]
+    statement: >
+      In PlanarConfiguration(284)=2, all SOFn sampling factors shall be given as 1, since the
+      sampling factors in a single-channel JPEG datastream have no real effect.
+  - id: TN2-082
+    section: "Replacement TIFF/JPEG specification"
+    heading: "Special considerations for PlanarConfiguration 2"
+    level: INFO
+    actor: writer
+    category: compression
+    conformance: extension
+    tags: [284]
+    statement: >
+      In PlanarConfiguration(284)=2, any downsampling must happen externally to the JPEG
+      codec, since JPEG sampling factors are defined with reference to the full-precision
+      component and the codec, working on only one component at a time, has no reference
+      component to downsample against.
+  - id: TN2-083
+    section: "Replacement TIFF/JPEG specification"
+    heading: "Minimum requirements for TIFF/JPEG"
+    level: MUST
+    actor: reader
+    category: compression
+    conformance: extension
+    statement: >
+      A "core" subset of TIFF/JPEG, defined in this section, must be supported by readers
+      that wish to claim TIFF/JPEG compatibility; writers are recommended to confine
+      themselves to this subset unless there is very good reason to do otherwise.
+  - id: TN2-084
+    section: "Replacement TIFF/JPEG specification"
+    heading: "Minimum requirements for TIFF/JPEG"
+    level: SHOULD
+    actor: writer
+    category: compression
+    conformance: extension
+    tags: [258]
+    statement: >
+      The recommended core subset uses the ISO baseline JPEG process: 8-bit data precision,
+      Huffman coding, with no more than 2 DC and 2 AC Huffman tables, implying
+      BitsPerSample(258)=8 for each component; deviation from baseline JPEG is recommended
+      only if 12-bit data precision or lossless coding is required.
+  - id: TN2-085
+    section: "Replacement TIFF/JPEG specification"
+    heading: "Minimum requirements for TIFF/JPEG"
+    level: MUST
+    actor: writer
+    category: color
+    conformance: extension
+    tags: [262, 530]
+    statement: >
+      For color spaces other than YCbCr, no subsampling is used (all JPEG sampling factors
+      = 1); with the TIFF 6.0 field definitions this is in fact required, although future
+      TIFF revisions may not require it.
+  - id: TN2-086
+    section: "Replacement TIFF/JPEG specification"
+    heading: "Minimum requirements for TIFF/JPEG"
+    level: SHOULD
+    actor: writer
+    category: color
+    conformance: extension
+    tags: [530]
+    statement: >
+      For YCbCr data, the recommended subset uses one of: YCbCrSubSampling(530)=[1,1] with
+      JPEG sampling factors 1h1v/1h1v/1h1v for Y/Cb/Cr; [2,1] with factors
+      2h1v/1h1v/1h1v; or [2,2] (the default) with factors 2h2v/1h1v/1h1v.
+  - id: TN2-087
+    section: "Replacement TIFF/JPEG specification"
+    heading: "Minimum requirements for TIFF/JPEG"
+    level: SHOULD
+    actor: writer
+    category: color
+    conformance: extension
+    statement: >
+      RGB source data should be converted to YCbCr before JPEG compression for best
+      compression results; other source data color spaces should probably be left
+      unconverted.
+  - id: TN2-088
+    section: "Replacement TIFF/JPEG specification"
+    heading: "Minimum requirements for TIFF/JPEG"
+    level: MAY
+    actor: reader
+    category: color
+    conformance: extension
+    tags: [262]
+    statement: >
+      Minimal readers need not support JPEG images with color spaces other than YCbCr
+      (PhotometricInterpretation(262)=6) and grayscale (PhotometricInterpretation(262)=1).
+  - id: TN2-089
+    section: "Replacement TIFF/JPEG specification"
+    heading: "Minimum requirements for TIFF/JPEG"
+    level: MAY
+    actor: reader
+    category: color
+    conformance: extension
+    tags: [529, 531, 532]
+    statement: >
+      A minimal reader need not support JPEG YCbCr images with non-default values of
+      YCbCrCoefficients(529) or YCbCrPositioning(531), nor with ReferenceBlackWhite(532)
+      values other than [0,255,128,255,128,255] (the values corresponding to the RGB<=>YCbCr
+      conversion specified by JFIF).
+  - id: TN2-090
+    section: "Replacement TIFF/JPEG specification"
+    heading: "Minimum requirements for TIFF/JPEG"
+    level: MUST
+    actor: writer
+    category: color
+    conformance: extension
+    tags: [262, 532]
+    statement: >
+      Writers must include a ReferenceBlackWhite(532) field whenever
+      PhotometricInterpretation(262) is YCbCr, because the default ReferenceBlackWhite
+      values are inappropriate for YCbCr data.
+  - id: TN2-091
+    section: "Replacement TIFF/JPEG specification"
+    heading: "Minimum requirements for TIFF/JPEG"
+    level: SHOULD
+    actor: writer
+    category: compression
+    conformance: extension
+    tags: [284]
+    statement: >
+      If any subsampling is used, PlanarConfiguration(284)=1 is preferred over
+      PlanarConfiguration=2 to avoid the latter's possibly-confusing requirements; readers
+      are not required to support PlanarConfiguration=2 in any case.
+  - id: TN2-092
+    section: "Replacement TIFF/JPEG specification"
+    heading: "Minimum requirements for TIFF/JPEG"
+    level: SHOULD
+    actor: writer
+    category: compression
+    conformance: extension
+    tags: [277]
+    statement: >
+      Where possible, use a single interleaved JPEG scan in each image segment; this is not
+      legal JPEG if there are more than 4 SamplesPerPixel(277) or if the sampling factors
+      would require more than 10 blocks per MCU, in which case a separate scan must be used
+      for each component. A minimal reader need not support more than one scan per segment,
+      since the recommended color spaces and sampling factors never trigger the multi-scan
+      case.
+  - id: TN2-093
+    section: "Replacement TIFF/JPEG specification"
+    heading: "Minimum requirements for TIFF/JPEG"
+    level: MUST
+    actor: reader
+    category: compression
+    conformance: extension
+    tags: [347]
+    statement: >
+      To claim TIFF/JPEG compatibility, readers shall support multiple-strip TIFF files and
+      the optional JPEGTables(347) field; it is not acceptable to read only
+      single-datastream (single-segment) files.
+  - id: TN2-094
+    section: "Replacement TIFF/JPEG specification"
+    heading: "Minimum requirements for TIFF/JPEG"
+    level: SHOULD
+    actor: reader
+    category: compression
+    conformance: extension
+    statement: >
+      Support for tiled TIFF files with Compression(259)=7 is strongly recommended for
+      readers but not required.
+  - id: TN2-095
+    section: "Replacement TIFF/JPEG specification"
+    heading: "Other recommendations for implementers"
+    level: SHOULD
+    actor: reader
+    category: compression
+    conformance: extension
+    tags: [259]
+    statement: >
+      The Compression(259)=7 tag value guarantees only that the compressed data is
+      represented as ISO JPEG datastreams; readers should apply careful error checking of
+      the JPEG markers, aborting on unknown marker codes, to ensure the compression process
+      is within their capabilities and to avoid confusion from future JPEG extensions.
+  - id: TN2-096
+    section: "Replacement TIFF/JPEG specification"
+    heading: "Other recommendations for implementers"
+    level: INFO
+    actor: both
+    category: behavior
+    conformance: extension
+    statement: >
+      Rationale for requiring all segments to use the same JPEG process (TN2-048): it lets a
+      reader check only one image segment to determine whether it can handle the whole
+      image, e.g. to decide between fast restricted JPEG hardware and a slower general
+      software implementation.
+    notes: "Restates the rationale underlying TN2-048."
+  - id: TN2-097
+    section: "Replacement TIFF/JPEG specification"
+    heading: "Other recommendations for implementers"
+    level: SHOULD
+    actor: writer
+    category: behavior
+    conformance: extension
+    statement: >
+      Writers should try to ensure that all segments of an image look as much "alike" as
+      possible (no variation in scan layout or use of options such as DRI), ideally
+      processed identically except perhaps for using different local quantization or
+      entropy-coding tables.
+  - id: TN2-098
+    section: "Replacement TIFF/JPEG specification"
+    heading: "Other recommendations for implementers"
+    level: SHOULD-NOT
+    actor: writer
+    category: behavior
+    conformance: extension
+    statement: >
+      Writers should avoid including "noise" JPEG markers (COM and APPn markers); standard
+      TIFF fields provide a better way to transport non-image data, and some JPEG codecs may
+      change behavior if they see an APPn marker they think they understand, even though the
+      TIFF spec requires such markers to be ignored by readers.
+  - id: TN2-099
+    section: "Replacement TIFF/JPEG specification"
+    heading: "Other recommendations for implementers"
+    level: INFO
+    actor: writer
+    category: behavior
+    conformance: extension
+    statement: >
+      An interchange-JPEG file (e.g. a JFIF file) can be converted to Compression(259)=7
+      TIFF simply by dropping the interchange datastream into a single strip; however, since
+      the TIFF spec discourages huge strips, splitting the image into multiple strips is
+      somewhat more work but may give better results.
+  - id: TN2-100
+    section: "Replacement TIFF/JPEG specification"
+    heading: "Other recommendations for implementers"
+    level: INFO
+    actor: writer
+    category: behavior
+    conformance: extension
+    statement: >
+      A strip-based Compression(259)=7 TIFF/JPEG file can be converted fairly easily to an
+      interchange JPEG file if all strips use identical JPEG tables and no RSTn markers, by
+      deleting the overhead markers and inserting RSTn markers between strips. Converting
+      tiled images is harder, since the data is usually not in raster order (unless tiles
+      are one MCU high); it can still be done losslessly but requires undoing and redoing
+      the entropy coding to update DC coefficient differences.
+  - id: TN2-101
+    section: "Replacement TIFF/JPEG specification"
+    heading: "Other recommendations for implementers"
+    level: MUST
+    actor: writer
+    category: tag
+    conformance: extension
+    tags: [347]
+    statement: >
+      There is no default value for JPEGTables(347): standard TIFF files must define all
+      tables that their image segments reference.
+  - id: TN2-102
+    section: "Replacement TIFF/JPEG specification"
+    heading: "Other recommendations for implementers"
+    level: INFO
+    actor: writer
+    category: tag
+    conformance: extension
+    tags: [347]
+    statement: >
+      A private default JPEGTables(347) value, or a private field selecting among N default
+      JPEGTables settings, may be defined for closed systems where many files share
+      identical tables, but either approach must be regarded as a private extension that
+      will render such files unreadable by other (standard-conforming) applications.
+  - id: TN2-103
+    section: "Changes to Section 21: YCbCr Images"
+    heading: "Changes to Section 21: YCbCr Images"
+    level: MUST
+    actor: both
+    category: data-layout
+    conformance: extension
+    tags: [256, 257, 278, 322, 323, 282, 283]
+    statement: >
+      In a subsampled (YCbCr) image, all TIFF image-dimension fields -- ImageWidth(256),
+      ImageLength(257), RowsPerStrip(278), TileWidth(322), TileLength(323), XResolution(282)
+      and YResolution(283) -- are understood to be measured in terms of the
+      highest-resolution (luminance) component's samples.
+  - id: TN2-104
+    section: "Changes to Section 21: YCbCr Images"
+    heading: "Changes to Section 21: YCbCr Images"
+    level: MUST
+    actor: writer
+    category: data-layout
+    conformance: extension
+    tags: [278, 322, 323, 256, 257]
+    statement: >
+      RowsPerStrip(278), TileWidth(322) and TileLength(323) are constrained so that a
+      complete strip or tile contains an integral number of samples of each component;
+      however, ImageWidth(256) and ImageLength(257) are not constrained to be multiples of
+      the sampling factors.
+  - id: TN2-105
+    section: "Changes to Section 21: YCbCr Images"
+    heading: "Changes to Section 21: YCbCr Images"
+    level: SHOULD
+    actor: writer
+    category: data-layout
+    conformance: extension
+    tags: [530]
+    statement: >
+      If an odd-size image (whose dimensions are not multiples of the sampling factors) is
+      to be converted to subsampled format, the writer should pad the source data to a
+      multiple of the sampling factors by replication of the last column and/or row, then
+      downsample, so that the number of luminance samples actually stored in the file is a
+      multiple of the sampling factors.
+  - id: TN2-106
+    section: "Changes to Section 21: YCbCr Images"
+    heading: "Changes to Section 21: YCbCr Images"
+    level: MUST
+    actor: reader
+    category: data-layout
+    conformance: extension
+    tags: [256, 257]
+    statement: >
+      Readers must ignore any extra data lying outside the specified ImageWidth(256)/
+      ImageLength(257) dimensions after upsampling a subsampled image.
+  - id: TN2-107
+    section: "Changes to Section 21: YCbCr Images"
+    heading: "Changes to Section 21: YCbCr Images"
+    level: MUST
+    actor: both
+    category: data-layout
+    conformance: extension
+    tags: [284]
+    statement: >
+      When PlanarConfiguration(284)=2, each strip or tile covers the same image area despite
+      subsampling, i.e. the total number of strips or tiles in the image is the same for
+      each component; therefore strips or tiles of the subsampled (chroma) components
+      contain fewer samples than strips or tiles of the luminance component.
+  - id: TN2-108
+    section: "Changes to Section 21: YCbCr Images"
+    heading: "Changes to Section 21: YCbCr Images"
+    level: MUST
+    actor: both
+    category: data-layout
+    conformance: extension
+    tags: [338]
+    statement: >
+      If there are extra samples per pixel (field ExtraSamples(338)) in a subsampled image,
+      these extra data channels have the same number of samples as the luminance component,
+      i.e. they are not subsampled.
+  - id: TN2-109
+    section: "Changes to Section 21: YCbCr Images"
+    heading: "Changes to Section 21: YCbCr Images"
+    level: INFO
+    actor: both
+    category: color
+    conformance: extension
+    tags: [530]
+    statement: >
+      YCbCrSubSampling(530) Short 0 (ChromaSubsampleHoriz) enumerated meanings: 1 = equal
+      numbers of luma and chroma samples horizontally; 2 = twice as many luma samples as
+      chroma samples horizontally; 4 = four times as many luma samples as chroma samples
+      horizontally.
+  - id: TN2-110
+    section: "Changes to Section 21: YCbCr Images"
+    heading: "Changes to Section 21: YCbCr Images"
+    level: INFO
+    actor: both
+    category: color
+    conformance: extension
+    tags: [530]
+    statement: >
+      YCbCrSubSampling(530) Short 1 (ChromaSubsampleVert) enumerated meanings: 1 = equal
+      numbers of luma and chroma samples vertically; 2 = twice as many luma samples as
+      chroma samples vertically; 4 = four times as many luma samples as chroma samples
+      vertically.
+  - id: TN2-111
+    section: "Changes to Section 21: YCbCr Images"
+    heading: "Changes to Section 21: YCbCr Images"
+    level: MUST
+    actor: writer
+    category: color
+    conformance: extension
+    tags: [530]
+    statement: >
+      ChromaSubsampleVert (YCbCrSubSampling(530) Short 1) shall always be less than or equal
+      to ChromaSubsampleHoriz (YCbCrSubSampling(530) Short 0); Cb and Cr always have the same
+      sampling ratios as each other.
+  - id: TN2-112
+    section: "Changes to Section 21: YCbCr Images"
+    heading: "Changes to Section 21: YCbCr Images"
+    level: MUST
+    actor: writer
+    category: data-layout
+    conformance: extension
+    tags: [278, 530, 257]
+    statement: >
+      In a strip TIFF file, RowsPerStrip(278) is required to be an integer multiple of
+      ChromaSubsampleVert (YCbCrSubSampling(530) Short 1), unless RowsPerStrip >=
+      ImageLength(257), in which case its exact value is unimportant.
+  - id: TN2-113
+    section: "Changes to Section 21: YCbCr Images"
+    heading: "Changes to Section 21: YCbCr Images"
+    level: MUST
+    actor: writer
+    category: data-layout
+    conformance: extension
+    tags: [256, 257, 530]
+    statement: >
+      If ImageWidth(256) and ImageLength(257) are not multiples of ChromaSubsampleHoriz and
+      ChromaSubsampleVert respectively (YCbCrSubSampling(530)), the source data shall be
+      padded to the next integer multiple of these values before downsampling.
+  - id: TN2-114
+    section: "Changes to Section 21: YCbCr Images"
+    heading: "Changes to Section 21: YCbCr Images"
+    level: MUST
+    actor: writer
+    category: data-layout
+    conformance: extension
+    tags: [322, 323, 530]
+    statement: >
+      In a tiled TIFF file, TileWidth(322) must be an integer multiple of ChromaSubsampleHoriz
+      and TileLength(323) must be an integer multiple of ChromaSubsampleVert (both from
+      YCbCrSubSampling(530)); padding occurs to tile boundaries.
+  - id: TN2-115
+    section: "Changes to Section 21: YCbCr Images"
+    heading: "Changes to Section 21: YCbCr Images"
+    level: INFO
+    actor: both
+    category: color
+    conformance: extension
+    tags: [530]
+    statement: >
+      The default value of YCbCrSubSampling(530) is [2,2]; thus YCbCr data is downsampled by
+      default.
+    notes: "Duplicate of the point already noted under TN2-029/TN2-031."
+
+tags:
+  - code: 347
+    hex: "0x015B"
+    name: JPEGTables
+    types: [UNDEFINED]
+    count: "N (number of bytes in the tables datastream, typically a few hundred)"
+    default: null
+    required: conditional
+    conformance: extension
+    section: "Replacement TIFF/JPEG specification > JPEGTables field"
+    description: >
+      The only auxiliary TIFF field added for Compression(259)=7. Predefines JPEG
+      quantization and/or Huffman tables ("tables and miscellaneous" markers, as an ISO JPEG
+      abbreviated table-specification datastream bounded by SOI/EOI) for reuse by image
+      segments, avoiding duplication of bulky tables in every segment. Optional overall;
+      required to be present, and to define every table an image segment omits, whenever any
+      segment relies on a table not defined within that segment itself. There is no default
+      value.
+    values: null
+    interacts_with: [259, 273, 324]
+  - code: 259
+    hex: "0x0103"
+    name: Compression
+    types: [SHORT]
+    count: "1"
+    default: 1
+    required: yes
+    conformance: extension
+    section: "Overview of the solution"
+    description: >
+      This Technical Note adds enumerated value 7 to the pre-existing Compression tag,
+      denoting the replacement JPEG-in-TIFF scheme in which each strip or tile is an
+      independent, complete ISO/IEC 10918-1 JPEG datastream. Value 6 (the TIFF 6.0 Section
+      22 JPEG design) and the associated field tag numbers 512-521 remain reserved
+      indefinitely but are deprecated; writers are strongly discouraged from using value 6.
+    values:
+      6: "Deprecated TIFF 6.0 Section 22 JPEG design (reserved indefinitely; writers strongly discouraged from use)"
+      7: "Replacement JPEG scheme defined by this Technical Note: each strip/tile is a complete ISO JPEG (ISO/IEC 10918-1) datastream"
+    interacts_with: [347, 262, 530, 258, 277, 284]
+  - code: 530
+    hex: "0x0212"
+    name: YCbCrSubSampling
+    types: [SHORT]
+    count: "2"
+    default: "2,2"
+    required: conditional
+    conformance: extension
+    section: "Changes to Section 21: YCbCr Images"
+    description: >
+      This Technical Note rewrites the YCbCrSubSampling field description (originally TIFF
+      6.0 pp. 91-92) to remove misleading references to the subsampled components'
+      ImageWidth/ImageLength, and to clarify the two elements as ChromaSubsampleHoriz (Short
+      0) and ChromaSubsampleVert (Short 1). Required when PhotometricInterpretation(262) is
+      YCbCr and downsampling is applied; its value constrains RowsPerStrip(278)/
+      TileWidth(322)/TileLength(323) and the JPEG sampling factors used in Compression(259)=7
+      segments.
+    values:
+      "1,1": "ChromaSubsampleHoriz=1, ChromaSubsampleVert=1: equal luma/chroma samples both directions (no subsampling)"
+      "2,1": "ChromaSubsampleHoriz=2, ChromaSubsampleVert=1: half as many chroma samples horizontally, none vertically"
+      "2,2": "ChromaSubsampleHoriz=2, ChromaSubsampleVert=2 (default): half as many chroma samples in both directions"
+      "4,1": "ChromaSubsampleHoriz=4, ChromaSubsampleVert=1: quarter as many chroma samples horizontally, none vertically"
+      "4,4": "ChromaSubsampleHoriz=4, ChromaSubsampleVert=4: quarter as many chroma samples in both directions"
+    interacts_with: [262, 256, 257, 278, 322, 323, 338, 284]
+
+dependencies:
+  - id: TN2-DEP-001
+    requirement: TN2-035
+    when: "Compression(259) == 7"
+    then: "PhotometricInterpretation(262) must not be 3 (palette color) or 4 (transparency mask)"
+    kind: forbids
+    tags: [259, 262]
+  - id: TN2-DEP-002
+    requirement: TN2-054
+    when: "Compression(259) == 7 and PlanarConfiguration(284) == 1"
+    then: "the number of JPEG components in the segment datastream must equal SamplesPerPixel(277)"
+    kind: constrains-value
+    tags: [259, 284, 277]
+  - id: TN2-DEP-003
+    requirement: TN2-054
+    when: "Compression(259) == 7 and PlanarConfiguration(284) == 2"
+    then: "the number of JPEG components in the segment datastream must be 1"
+    kind: constrains-value
+    tags: [259, 284]
+  - id: TN2-DEP-004
+    requirement: TN2-049
+    when: "PlanarConfiguration(284) == 1"
+    then: "BitsPerSample(258) must be identical for every component, since the single SOFn precision field must agree with BitsPerSample for all components"
+    kind: constrains-value
+    tags: [284, 258]
+  - id: TN2-DEP-005
+    requirement: TN2-049
+    when: "PlanarConfiguration(284) == 2"
+    then: "different components may have different BitsPerSample(258) values, since each is coded in its own single-component segment with its own SOFn"
+    kind: modifies-meaning
+    tags: [284, 258]
+  - id: TN2-DEP-006
+    requirement: TN2-050
+    when: "SOFn marker type == SOF0"
+    then: "JPEG data precision must be 8"
+    kind: constrains-value
+  - id: TN2-DEP-007
+    requirement: TN2-050
+    when: "SOFn marker type == SOF1"
+    then: "JPEG data precision must be 8 or 12"
+    kind: constrains-value
+  - id: TN2-DEP-008
+    requirement: TN2-050
+    when: "SOFn marker type == SOF3 (lossless)"
+    then: "JPEG data precision must be between 2 and 16 inclusive"
+    kind: constrains-value
+  - id: TN2-DEP-009
+    requirement: TN2-059
+    when: "YCbCrSubSampling(530) == [2,2] and DCT-based JPEG (SOF0/SOF1) is used in a strip file"
+    then: "RowsPerStrip(278) must be a multiple of 16"
+    kind: constrains-value
+    tags: [530, 278]
+  - id: TN2-DEP-010
+    requirement: TN2-060
+    when: "RowsPerStrip(278) >= ImageLength(257) (single-strip image)"
+    then: "the RowsPerStrip multiple-of-MCU-height rule (TN2-059) does not apply; the exact RowsPerStrip value is unimportant"
+    kind: modifies-meaning
+    tags: [278, 257]
+  - id: TN2-DEP-011
+    requirement: TN2-064
+    when: "SOFn marker type == SOF3 (lossless JPEG)"
+    then: "the RowsPerStrip(278)/TileWidth(322)/TileLength(323) MCU-multiple size constraints (TN2-059, TN2-062) do not apply"
+    kind: modifies-meaning
+    tags: [278, 322, 323]
+  - id: TN2-DEP-012
+    requirement: TN2-046
+    when: "JPEGTables(347) field is present"
+    then: "image segments may omit tables already defined in JPEGTables, must not redefine any table defined in JPEGTables, and must not reference local tables they do not themselves define"
+    kind: modifies-meaning
+    tags: [347]
+  - id: TN2-DEP-013
+    requirement: TN2-045
+    when: "JPEGTables(347) field is absent"
+    then: "each image segment must independently define every table (DQT/DHT/etc.) it references; no segment may rely on tables carried over from another segment"
+    kind: requires
+    tags: [347]
+  - id: TN2-DEP-014
+    requirement: TN2-090
+    when: "PhotometricInterpretation(262) == YCbCr (6)"
+    then: "ReferenceBlackWhite(532) field must be included, because its default values are inappropriate for YCbCr"
+    kind: requires
+    tags: [262, 532]
+  - id: TN2-DEP-015
+    requirement: TN2-079
+    when: "PlanarConfiguration(284) == 2"
+    then: "SOFn dimensions of a subsampled component's segment are scaled down by the sampling factors relative to the PlanarConfiguration=1 case, and all SOFn sampling factors are forced to 1"
+    kind: modifies-meaning
+    tags: [284]
+  - id: TN2-DEP-016
+    requirement: TN2-085
+    when: "color space is not YCbCr"
+    then: "no JPEG subsampling is used (all JPEG sampling factors = 1); required under the TIFF 6.0 field definitions"
+    kind: constrains-value
+    tags: [262, 530]
+  - id: TN2-DEP-017
+    requirement: TN2-092
+    when: "SamplesPerPixel(277) > 4, or the sampling factors would require more than 10 blocks per MCU"
+    then: "a single interleaved JPEG scan per segment is not legal; a separate scan per component must be used instead"
+    kind: requires
+    tags: [277]
+  - id: TN2-DEP-018
+    requirement: TN2-002
+    when: "Compression(259) == 6, or any of tag numbers 512-521 (TIFF 6.0 Section 22 JPEG fields) are encountered"
+    then: "these are reserved/deprecated; new writers should use Compression(259)=7 with JPEGTables(347) instead, though readers may continue to interpret them per TIFF 6.0"
+    kind: modifies-meaning
+    tags: [259, 347, 512, 513, 514, 515, 516, 517, 518, 519, 520, 521]
+  - id: TN2-DEP-019
+    requirement: TN2-073
+    when: "JPEGTables(347) field is present"
+    then: "readers must load its table specifications before processing any image segment datastream"
+    kind: requires
+    tags: [347]
+  - id: TN2-DEP-020
+    requirement: TN2-103
+    when: "image is YCbCr and subsampled"
+    then: "ImageWidth(256), ImageLength(257), RowsPerStrip(278), TileWidth(322), TileLength(323), XResolution(282) and YResolution(283) are measured in luminance-component samples, not chroma-component samples"
+    kind: modifies-meaning
+    tags: [256, 257, 278, 322, 323, 282, 283, 530]
+  - id: TN2-DEP-021
+    requirement: TN2-107
+    when: "PlanarConfiguration(284) == 2 and image is subsampled YCbCr"
+    then: "strip/tile count is identical across all components, but chroma-component strips/tiles contain fewer samples than the corresponding luminance-component strip/tile"
+    kind: modifies-meaning
+    tags: [284, 530]
+  - id: TN2-DEP-022
+    requirement: TN2-108
+    when: "ExtraSamples(338) is present in a subsampled YCbCr image"
+    then: "the extra sample channels are not subsampled; they have the same number of samples as the luminance component"
+    kind: constrains-value
+    tags: [338, 530]
+  - id: TN2-DEP-023
+    requirement: TN2-112
+    when: "YCbCrSubSampling(530) Short 1 (ChromaSubsampleVert) is set, in a strip file"
+    then: "RowsPerStrip(278) must be an integer multiple of ChromaSubsampleVert, unless RowsPerStrip >= ImageLength(257)"
+    kind: constrains-value
+    tags: [530, 278, 257]
+  - id: TN2-DEP-024
+    requirement: TN2-114
+    when: "image is tiled and subsampled (YCbCrSubSampling(530) present)"
+    then: "TileWidth(322) must be an integer multiple of ChromaSubsampleHoriz and TileLength(323) must be an integer multiple of ChromaSubsampleVert"
+    kind: constrains-value
+    tags: [530, 322, 323]
+  - id: TN2-DEP-025
+    requirement: TN2-113
+    when: "ImageWidth(256) or ImageLength(257) is not a multiple of ChromaSubsampleHoriz/ChromaSubsampleVert (YCbCrSubSampling(530))"
+    then: "writer must pad the source data to the next integer multiple of these values before downsampling"
+    kind: requires
+    tags: [256, 257, 530]

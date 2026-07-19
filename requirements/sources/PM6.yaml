@@ -1,0 +1,1262 @@
+document: PM6
+title: "Adobe PageMaker 6.0 TIFF Technical Notes"
+date: "September 14, 1995 (Draft)"
+requirements:
+  - id: PM6-001
+    section: "Tech Note 1"
+    heading: "TIFF Tech Note 1: TIFF Trees - New Tag"
+    page: 4
+    level: MUST
+    actor: file
+    category: tag
+    conformance: extension
+    tags: [330]
+    statement: "SubIFDs (tag 330, 0x14A) field values must be encoded as TIFF type LONG or TIFF type IFD (TIFF data type 13)."
+
+  - id: PM6-002
+    section: "Tech Note 1"
+    heading: "TIFF Tech Note 1: TIFF Trees - New Tag"
+    page: 4
+    level: SHOULD
+    actor: writer
+    category: tag
+    conformance: extension
+    tags: [330]
+    statement: "Writers should use TIFF type IFD (13) rather than LONG for the SubIFDs (330) field values; type IFD is the preferred type for this tag."
+
+  - id: PM6-003
+    section: "Tech Note 1"
+    heading: "TIFF Tech Note 1: TIFF Trees - New Tag"
+    page: 5
+    level: MUST
+    actor: file
+    category: structure
+    conformance: extension
+    tags: [330]
+    statement: "Each value in the SubIFDs (330) field is an offset, measured from the beginning of the TIFF file, to the start of a child IFD structure that provides extra information for the parent image (e.g. a subsampled version)."
+
+  - id: PM6-004
+    section: "Tech Note 1"
+    heading: "TIFF Tech Note 1: TIFF Trees - New Tag"
+    page: 5
+    level: INFO
+    actor: file
+    category: structure
+    conformance: extension
+    tags: [330]
+    statement: "TIFF data type 13 ('IFD') is identical to type LONG in its binary representation, but is defined to be used only for field values that point to other valid IFDs."
+
+  - id: PM6-005
+    section: "Tech Note 1"
+    heading: "TIFF Tech Note 1: TIFF Trees - Examples"
+    page: 5
+    level: MUST
+    actor: writer
+    category: structure
+    conformance: extension
+    tags: [330]
+    statement: "When a parent image has more than one child image referenced via SubIFDs (330), the NextIFD field of child IFD #1 must point to child IFD #2, and so on, chaining together all of the parent's child IFDs via their own NextIFD fields."
+    notes: "This is the key SubIFD tree chaining rule requested for careful capture: multiple children of one parent form their own singly-linked NextIFD chain, separate from (but structurally parallel to) the main-image NextIFD chain."
+
+  - id: PM6-006
+    section: "Tech Note 1"
+    heading: "TIFF Tech Note 1: TIFF Trees - Examples"
+    page: 5
+    level: MUST
+    actor: writer
+    category: structure
+    conformance: extension
+    tags: [330]
+    statement: "The NextIFD field of the last child IFD in a chain of child images referenced via SubIFDs (330) must be zero."
+
+  - id: PM6-007
+    section: "Tech Note 1"
+    heading: "TIFF Tech Note 1: TIFF Trees - Solution"
+    page: 5
+    level: SHOULD
+    actor: writer
+    category: structure
+    conformance: extension
+    tags: [330]
+    statement: "Writers should use the ordinary main-image NextIFD chain to store multiple non-identical main images in one TIFF file (e.g. a burst of camera images or a multi-page fax transmission), and should use the SubIFDs (330) tag to reference ancillary/child images that provide additional information about a parent image (e.g. thumbnails or other subsampled versions), rather than using NextIFD for that latter purpose."
+
+  - id: PM6-008
+    section: "Tech Note 2"
+    heading: "TIFF Tech Note 2: Clipping Path - Implementation"
+    page: 6
+    level: MUST
+    actor: file
+    category: tag
+    conformance: extension
+    tags: [343]
+    statement: "ClipPath (tag 343, 0x157) is of TIFF type BYTE, with count N equal to the total number of bytes comprising the ClipPath data stream (header plus all commands)."
+
+  - id: PM6-009
+    section: "Tech Note 2"
+    heading: "TIFF Tech Note 2: Clipping Path - Header"
+    page: 6
+    level: MUST
+    actor: file
+    category: structure
+    conformance: extension
+    tags: [343]
+    statement: "The first 16-bit word of the ClipPath (343) field data must be the value 'II' or 'MM', and determines the byte order used to interpret all multi-byte operands within the ClipPath."
+
+  - id: PM6-010
+    section: "Tech Note 2"
+    heading: "TIFF Tech Note 2: Clipping Path - Header"
+    page: 6
+    level: MUST
+    actor: file
+    category: structure
+    conformance: extension
+    tags: [343]
+    statement: "The second 16-bit word of the ClipPath (343) field data is the ClipPath format version number and must be zero."
+
+  - id: PM6-011
+    section: "Tech Note 2"
+    heading: "TIFF Tech Note 2: Clipping Path - Header"
+    page: 6
+    level: MUST
+    actor: file
+    category: structure
+    conformance: extension
+    tags: [343]
+    statement: "Words 3 through 8 of the ClipPath (343) header are reserved and must be zero."
+
+  - id: PM6-012
+    section: "Tech Note 2"
+    heading: "TIFF Tech Note 2: Clipping Path - Commands"
+    page: 7
+    level: MUST
+    actor: file
+    category: structure
+    conformance: extension
+    tags: [343]
+    statement: "Each ClipPath (343) command consists of, in order: an 8-bit OperatorID (BYTE), an 8-bit DataType (BYTE), an 8-bit reserved byte, an 8-bit Length (BYTE), and then the operand values."
+
+  - id: PM6-013
+    section: "Tech Note 2"
+    heading: "TIFF Tech Note 2: Clipping Path - Commands"
+    page: 7
+    level: MUST
+    actor: file
+    category: structure
+    conformance: extension
+    tags: [343]
+    statement: "The DataType byte of a ClipPath (343) command must be one of the standard TIFF data types."
+
+  - id: PM6-014
+    section: "Tech Note 2"
+    heading: "TIFF Tech Note 2: Clipping Path - Commands"
+    page: 7
+    level: SHOULD
+    actor: writer
+    category: structure
+    conformance: extension
+    tags: [343]
+    statement: "Only DataType values SBYTE (6), SSHORT (8), and SLONG (9) should be used for ClipPath (343) command operands at this time."
+
+  - id: PM6-015
+    section: "Tech Note 2"
+    heading: "TIFF Tech Note 2: Clipping Path - Commands"
+    page: 7
+    level: MUST
+    actor: file
+    category: structure
+    conformance: extension
+    tags: [343]
+    statement: "The reserved byte following DataType in a ClipPath (343) command must be zero."
+
+  - id: PM6-016
+    section: "Tech Note 2"
+    heading: "TIFF Tech Note 2: Clipping Path - Commands"
+    page: 7
+    level: MUST
+    actor: file
+    category: structure
+    conformance: extension
+    tags: [343]
+    statement: "The Length byte of a ClipPath (343) command gives the number of bytes (not the number of SBYTE/SSHORT/SLONG operand elements) occupied by that command's operands; for example, two SLONG operands give Length = 8, not 2."
+    notes: "The document explicitly notes this differs from the element-count convention used for values in standard TIFF IFD entries; flagged as an intentional deviation."
+
+  - id: PM6-017
+    section: "Tech Note 2"
+    heading: "TIFF Tech Note 2: Clipping Path - Commands"
+    page: 7
+    level: MUST
+    actor: file
+    category: structure
+    conformance: extension
+    tags: [343]
+    statement: "The next ClipPath (343) command begins immediately after the last operand byte of the previous command."
+
+  - id: PM6-018
+    section: "Tech Note 2"
+    heading: "TIFF Tech Note 2: Clipping Path - Commands"
+    page: 7
+    level: MAY
+    actor: file
+    category: structure
+    conformance: extension
+    tags: [343]
+    statement: "ClipPath (343) commands need not begin on even-byte boundaries."
+
+  - id: PM6-019
+    section: "Tech Note 2"
+    heading: "TIFF Tech Note 2: Clipping Path - Commands"
+    page: 7
+    level: INFO
+    actor: file
+    category: tag
+    conformance: extension
+    tags: [343]
+    statement: "ClipPath (343) OperatorID values are: 0 = no-op (ignored, no operation performed); 1 = newpath (no operands); 2 = closepath (no operands); 3 = moveto (operands: x y); 4 = lineto (operands: x y); 5, 6, 7 = reserved; 8 = curveto (operands: x1 y1 x2 y2 x3 y3); 9 = polyto (operands: x1 y1 x2 y2 ...); 10 = rpolyto (operands: dx1 dy1 dx2 dy2 ...); 11-255 = reserved."
+
+  - id: PM6-020
+    section: "Tech Note 2"
+    heading: "TIFF Tech Note 2: Clipping Path - The operators, in general"
+    page: 7
+    level: MUST
+    actor: file
+    category: behavior
+    conformance: extension
+    tags: [343]
+    statement: "Unless otherwise noted, TIFF ClipPath (343) operators have the same path-construction effect as their like-named PostScript operators, as defined in the PostScript Language Reference Manual (the 'Red Book')."
+
+  - id: PM6-021
+    section: "Tech Note 2"
+    heading: "TIFF Tech Note 2: Clipping Path - newpath, closepath"
+    page: 7
+    level: MUST
+    actor: file
+    category: structure
+    conformance: extension
+    tags: [343]
+    statement: "The first operator in a TIFF ClipPath (343) must be newpath (OperatorID 1); the last operator must be closepath (OperatorID 2)."
+
+  - id: PM6-022
+    section: "Tech Note 2"
+    heading: "TIFF Tech Note 2: Clipping Path - newpath, closepath"
+    page: 7
+    level: MUST
+    actor: file
+    category: structure
+    conformance: extension
+    tags: [343]
+    statement: "The newpath and closepath operators in a ClipPath (343) have no operands; their Length field must be zero, and their DataType byte is ignored."
+
+  - id: PM6-023
+    section: "Tech Note 2"
+    heading: "TIFF Tech Note 2: Clipping Path - newpath, closepath"
+    page: 8
+    level: MUST-NOT
+    actor: file
+    category: structure
+    conformance: extension
+    tags: [343]
+    statement: "Additional calls to the newpath operator within a single TIFF ClipPath (343), beyond the mandatory first command, are illegal, because newpath erases all subpaths of the current path."
+
+  - id: PM6-024
+    section: "Tech Note 2"
+    heading: "TIFF Tech Note 2: Clipping Path - newpath, closepath"
+    page: 8
+    level: INFO
+    actor: file
+    category: behavior
+    conformance: extension
+    tags: [343]
+    statement: "Subpaths within a TIFF ClipPath (343) are created by using closepath followed by moveto and other path-construction commands."
+
+  - id: PM6-025
+    section: "Tech Note 2"
+    heading: "TIFF Tech Note 2: Clipping Path - moveto, lineto"
+    page: 8
+    level: MUST
+    actor: file
+    category: structure
+    conformance: extension
+    tags: [343]
+    statement: "The moveto and lineto operators each take two operands (x, y) representing absolute coordinates; lineto draws a line starting from the current point to the given coordinate."
+
+  - id: PM6-026
+    section: "Tech Note 2"
+    heading: "TIFF Tech Note 2: Clipping Path - moveto, lineto"
+    page: 8
+    level: MUST
+    actor: file
+    category: structure
+    conformance: extension
+    tags: [343]
+    statement: "The first command after newpath in a TIFF ClipPath (343) must be moveto, since all other path-construction commands depend on there being a valid current point."
+
+  - id: PM6-027
+    section: "Tech Note 2"
+    heading: "TIFF Tech Note 2: Clipping Path - curveto"
+    page: 8
+    level: INFO
+    actor: file
+    category: behavior
+    conformance: extension
+    tags: [343]
+    statement: "The curveto operator takes six operands (x1 y1 x2 y2 x3 y3) and describes a cubic Bezier arc, defined as in the PostScript Language Reference Manual."
+
+  - id: PM6-028
+    section: "Tech Note 2"
+    heading: "TIFF Tech Note 2: Clipping Path - polyto, rpolyto"
+    page: 8
+    level: MUST
+    actor: file
+    category: structure
+    conformance: extension
+    tags: [343]
+    statement: "polyto operator coordinates are absolute; rpolyto operator coordinates are relative to the previous coordinate pair."
+
+  - id: PM6-029
+    section: "Tech Note 2"
+    heading: "TIFF Tech Note 2: Clipping Path - polyto, rpolyto"
+    page: 8
+    level: INFO
+    actor: file
+    category: behavior
+    conformance: extension
+    tags: [343]
+    statement: "For polyto and rpolyto, the current point going into the command is the first point of the polyline path segment being created by that command; after the command executes, the current point becomes the last point of that polyline. polyto and rpolyto are not PostScript operators themselves but translate directly into multiple lineto/rlineto PostScript commands respectively."
+
+  - id: PM6-030
+    section: "Tech Note 2"
+    heading: "TIFF Tech Note 2: Clipping Path - coordinate system"
+    page: 8
+    level: MUST
+    actor: file
+    category: structure
+    conformance: extension
+    tags: [343]
+    statement: "The origin of the ClipPath (343) coordinate system is the upper-left corner of the image; X coordinates increase left-to-right and Y coordinates increase top-to-bottom, which is the opposite vertical orientation from the default PostScript user space."
+
+  - id: PM6-031
+    section: "Tech Note 2"
+    heading: "TIFF Tech Note 2: Clipping Path - coordinate system"
+    page: 8
+    level: MUST
+    actor: file
+    category: data-layout
+    conformance: extension
+    tags: [343, 344, 345]
+    statement: "Each ClipPath (343) coordinate value is the numerator of a fraction numerator/XClipPathUnits(344) for X coordinates, or numerator/YClipPathUnits(345) for Y coordinates, where a fraction of 1.0 represents the full width (X) or full height (Y) of the image. Coordinates are signed integers of type SBYTE, SSHORT, or SLONG matching the command's DataType."
+
+  - id: PM6-032
+    section: "Tech Note 2"
+    heading: "TIFF Tech Note 2: Clipping Path - coordinate system"
+    page: 9
+    level: MAY
+    actor: file
+    category: structure
+    conformance: extension
+    tags: [343]
+    statement: "Some or all ClipPath (343) coordinates may lie outside the bounds of the image; this may be useful when clipping to certain shapes."
+
+  - id: PM6-033
+    section: "Tech Note 2"
+    heading: "TIFF Tech Note 2: Clipping Path - coordinate system"
+    page: 9
+    level: SHOULD
+    actor: writer
+    category: data-layout
+    conformance: extension
+    tags: [343, 344, 345]
+    statement: "Writers should choose XClipPathUnits(344)/YClipPathUnits(345) values large enough to avoid coordinate overflow when ClipPath(343) coordinates lying outside the image bounds are used."
+
+  - id: PM6-034
+    section: "Tech Note 2"
+    heading: "TIFF Tech Note 2: Clipping Path - Insidedness"
+    page: 9
+    level: MUST
+    actor: file
+    category: behavior
+    conformance: extension
+    tags: [343]
+    statement: "The 'insidedness' of a point within a complex ClipPath (343) (one that self-intersects, or has one subpath enclosing another) is determined by the even-odd rule: a ray is cast from the point in any direction, and the point is inside if the ray crosses an odd number of path segments, outside if it crosses an even number."
+    notes: "Document states this rule was chosen for compatibility with Apple QuickDraw, Adobe Photoshop, and Microsoft Windows."
+
+  - id: PM6-035
+    section: "Tech Note 2"
+    heading: "TIFF Tech Note 2: Clipping Path - XClipPathUnits"
+    page: 9
+    level: MUST
+    actor: file
+    category: tag
+    conformance: extension
+    tags: [344]
+    statement: "XClipPathUnits (tag 344, 0x158) is of TIFF type LONG ('DWORD' in the document's terminology), count 1, giving the number of integer ClipPath (343) coordinate units that span the width of the image. All horizontal ClipPath coordinates are divided by this value to yield a number usually between 0.0 (left edge of image) and 1.0 (right edge of image)."
+
+  - id: PM6-036
+    section: "Tech Note 2"
+    heading: "TIFF Tech Note 2: Clipping Path - XClipPathUnits"
+    page: 9
+    level: INFO
+    actor: writer
+    category: data-layout
+    conformance: extension
+    tags: [344, 345, 343]
+    statement: "The magnitude chosen for XClipPathUnits(344) (and, symmetrically, YClipPathUnits(345)) constrains which DataType may be used for ClipPath(343) command operands: smaller unit values may allow SSHORT or even SBYTE operand types, while larger unit values require SLONG."
+
+  - id: PM6-037
+    section: "Tech Note 2"
+    heading: "TIFF Tech Note 2: Clipping Path - XClipPathUnits"
+    page: 9
+    level: MUST
+    actor: writer
+    category: tag
+    conformance: extension
+    tags: [344, 343]
+    statement: "XClipPathUnits (344) is required for every TIFF ClipPath (343) and has no default value."
+
+  - id: PM6-038
+    section: "Tech Note 2"
+    heading: "TIFF Tech Note 2: Clipping Path - YClipPathUnits"
+    page: 10
+    level: MUST
+    actor: file
+    category: tag
+    conformance: extension
+    tags: [345]
+    statement: "YClipPathUnits (tag 345, 0x159) is of TIFF type LONG ('DWORD'), count 1, giving the number of integer ClipPath (343) coordinate units that span the height of the image. All vertical ClipPath coordinates are divided by this value to yield a number usually between 0.0 (top of image) and 1.0 (bottom of image)."
+
+  - id: PM6-039
+    section: "Tech Note 2"
+    heading: "TIFF Tech Note 2: Clipping Path - YClipPathUnits"
+    page: 10
+    level: MAY
+    actor: writer
+    category: tag
+    conformance: extension
+    tags: [345, 344]
+    statement: "YClipPathUnits (345) is optional; if it is not present, its value defaults to the value of XClipPathUnits (344)."
+
+  - id: PM6-040
+    section: "Tech Note 3"
+    heading: "TIFF Tech Note 3: Indexed Images - New Fields"
+    page: 11
+    level: MUST
+    actor: file
+    category: color
+    conformance: extension
+    tags: [346]
+    statement: "Indexed (tag 346, 0x15A) is of TIFF type SHORT, count 1: value 1 means the image is Indexed (its samples are indices into ColorMap(320) rather than direct color values); value 0 means it is not indexed."
+
+  - id: PM6-041
+    section: "Tech Note 3"
+    heading: "TIFF Tech Note 3: Indexed Images - New Fields"
+    page: 11
+    level: MUST
+    actor: writer
+    category: color
+    conformance: extension
+    tags: [346, 320]
+    statement: "ColorMap (320) is required when Indexed (346) = 1."
+
+  - id: PM6-042
+    section: "Tech Note 3"
+    heading: "TIFF Tech Note 3: Indexed Images - New Fields"
+    page: 11
+    level: INFO
+    actor: file
+    category: color
+    conformance: extension
+    tags: [346, 262, 320, 277]
+    statement: "PhotometricInterpretation(262) = PaletteColor (3) may still be used, and is equivalent to specifying an RGB image with Indexed(346) = 1, a suitable ColorMap(320), and SamplesPerPixel(277) = 1."
+
+  - id: PM6-043
+    section: "Tech Note 3"
+    heading: "TIFF Tech Note 3: Indexed Images - New Fields"
+    page: 11
+    level: MUST-NOT
+    actor: writer
+    category: color
+    conformance: extension
+    tags: [346, 262]
+    statement: "Writers must not use both the Indexed(346) = 1 flag and PhotometricInterpretation(262) = PaletteColor (3) for the same image."
+
+  - id: PM6-044
+    section: "Tech Note 3"
+    heading: "TIFF Tech Note 3: Indexed Images - New Fields"
+    page: 11
+    level: INFO
+    actor: file
+    category: color
+    conformance: extension
+    tags: [346]
+    statement: "The default value of Indexed (346) is 0 (not indexed)."
+
+  - id: PM6-045
+    section: "Tech Note 3"
+    heading: "TIFF Tech Note 3: Indexed Images - Changes to Existing Fields"
+    page: 12
+    level: MUST
+    actor: file
+    category: color
+    conformance: extension
+    tags: [320, 334]
+    statement: "The number of components per ColorMap(320) entry depends on the image's color space: 3 components for RGB and CIELab images, 4 components for CMYK images, and NumberOfInks(334) components for other separated (multi-ink) images (see Section 16 of the TIFF 6.0 specification)."
+
+  - id: PM6-046
+    section: "Tech Note 4"
+    heading: "TIFF Tech Note 4: ICC L*a*b* - Motivation and Implementation"
+    page: 13
+    level: INFO
+    actor: file
+    category: color
+    conformance: extension
+    tags: [262]
+    statement: "PhotometricInterpretation(262) value 9 (ICCLab) is defined for CIE L*a*b* data whose a* and b* components are encoded in the range 0 to 255 (as used by the InterColor Profile Format and other recent CIE L*a*b* implementations), instead of the TIFF 6.0 CIELab (PhotometricInterpretation=8, see Section 23 of the TIFF 6.0 specification) convention of encoding a*/b* as -128 to 127."
+
+  - id: PM6-047
+    section: "Tech Note 4"
+    heading: "TIFF Tech Note 4: ICC L*a*b* - Motivation and Implementation"
+    page: 13
+    level: MUST
+    actor: both
+    category: color
+    conformance: extension
+    tags: [262]
+    statement: "To convert CIE L*a*b* image data from the TIFF 6.0 CIELab encoding (PhotometricInterpretation(262)=8, a*/b* range -128 to 127) to the ICCLab encoding (PhotometricInterpretation(262)=9, a*/b* range 0 to 255), add 128 to the a* and b* sample values."
+
+  - id: PM6-048
+    section: "Tech Note 4"
+    heading: "TIFF Tech Note 4: ICC L*a*b* - Motivation and Implementation"
+    page: 13
+    level: INFO
+    actor: file
+    category: color
+    conformance: extension
+    tags: [262]
+    statement: "The L* component is encoded identically in both the CIELab (PhotometricInterpretation(262)=8) and ICCLab (PhotometricInterpretation(262)=9) formats."
+
+  - id: PM6-049
+    section: "Other Major Changes"
+    heading: "Adobe Photoshop Clipping Paths"
+    page: 14
+    level: INFO
+    actor: both
+    category: metadata
+    conformance: extension
+    tags: [343]
+    statement: "PageMaker 6.0 supports, in addition to the TIFF ClipPath(343) mechanism defined by Technical Note 2, closed clipping paths as specified by Adobe Photoshop 3 and stored in Photoshop's own private TIFF tag (see the Adobe Photoshop Developer Kit for details)."
+    notes: "The document does not give the Photoshop private tag's number here."
+
+  - id: PM6-050
+    section: "Other Major Changes"
+    heading: "ANSI IT8 TIFF/IT"
+    page: 14
+    level: INFO
+    actor: reader
+    category: tag
+    conformance: extension
+    tags: []
+    statement: "PageMaker 6.0 supports ANSI IT8 TIFF/IT CMYK and Linework files."
+
+  - id: PM6-051
+    section: "Other Major Changes"
+    heading: "Dot Range"
+    page: 14
+    level: INFO
+    actor: reader
+    category: tag
+    conformance: extension
+    tags: [336]
+    statement: "PageMaker 6.0 supports the DotRange tag (336), as defined in Section 16 of the TIFF 6.0 specification."
+
+  - id: PM6-052
+    section: "Other Major Changes"
+    heading: "Faster Planar CMYK Separations"
+    page: 14
+    level: SHOULD
+    actor: writer
+    category: data-layout
+    conformance: extension
+    tags: [284]
+    statement: "For faster printing and roughly one-fourth the disk activity, CMYK and hifi/multi-ink images intended for PageMaker 6.0 should be stored with PlanarConfiguration(284) = 2 (planar); PageMaker 6.0 is specifically optimized for printing planar CMYK and hifi images."
+
+  - id: PM6-053
+    section: "Other Major Changes"
+    heading: "Multi-Ink and HiFi"
+    page: 14
+    level: INFO
+    actor: reader
+    category: color
+    conformance: extension
+    tags: [334]
+    statement: "PageMaker 6.0 supports hifi and other multi-ink images, as described in Section 16 of the TIFF 6.0 specification."
+
+  - id: PM6-054
+    section: "Other Major Changes"
+    heading: "Low-resolution preview images"
+    page: 14
+    level: INFO
+    actor: both
+    category: structure
+    conformance: extension
+    tags: [330]
+    statement: "PageMaker 6.0 uses the SubIFDs(330) tag to store a low-resolution RGB or CMYK preview image (as a child IFD) of a pre-separated hifi or CMYK image, created via the 'Element:Image:Save for separation...' menu command, for use in subsequent on-screen display."
+
+  - id: PM6-055
+    section: "Other Major Changes"
+    heading: "OPI-Related Tags - ImageID"
+    page: 15
+    level: MUST
+    actor: file
+    category: metadata
+    conformance: extension
+    tags: [32781]
+    statement: "ImageID (tag 32781, 0x800D) is of TIFF type ASCII, and contains the full pathname of the original, high-resolution image, or any other identifying string that uniquely identifies that original image."
+
+  - id: PM6-056
+    section: "Other Major Changes"
+    heading: "OPI-Related Tags - ImageID"
+    page: 15
+    level: INFO
+    actor: file
+    category: metadata
+    conformance: extension
+    tags: [32781]
+    statement: "The original high-resolution image referenced by ImageID(32781) is not required to be in TIFF format; it may be in any format that an OPI Consumer supports."
+
+  - id: PM6-057
+    section: "Other Major Changes"
+    heading: "OPI-Related Tags - OPIProxy"
+    page: 15
+    level: MUST
+    actor: file
+    category: metadata
+    conformance: extension
+    tags: [351, 32781]
+    statement: "OPIProxy (tag 351, 0x15F) is of TIFF type SHORT, count 1: value 1 means a higher-resolution version of this image exists, and its name is given in ImageID(32781); if this tag does not exist, or its value is 0, no higher-resolution version of this image exists."
+
+  - id: PM6-058
+    section: "Worksheet"
+    heading: "PageMaker 6.0 TIFF Support Worksheet"
+    page: 16
+    level: INFO
+    actor: both
+    category: behavior
+    conformance: extension
+    tags: [254]
+    statement: "PageMaker 6.0 ignores NewSubfileType(254) on import, but writes it when creating new TIFF files."
+
+  - id: PM6-059
+    section: "Worksheet"
+    heading: "PageMaker 6.0 TIFF Support Worksheet"
+    page: 16
+    level: INFO
+    actor: reader
+    category: tag
+    conformance: extension
+    tags: [256]
+    statement: "PageMaker 6.0 imposes no restriction on ImageWidth(256), and accepts LONG-typed values for it."
+
+  - id: PM6-060
+    section: "Worksheet"
+    heading: "PageMaker 6.0 TIFF Support Worksheet"
+    page: 16
+    level: INFO
+    actor: reader
+    category: tag
+    conformance: extension
+    tags: [257]
+    statement: "PageMaker 6.0 imposes no restriction on ImageLength(257), and accepts LONG-typed values for it."
+
+  - id: PM6-061
+    section: "Worksheet"
+    heading: "PageMaker 6.0 TIFF Support Worksheet"
+    page: 16
+    level: INFO
+    actor: reader
+    category: image-class
+    conformance: extension
+    tags: [258, 346]
+    statement: "PageMaker 6.0 supports BitsPerSample(258) values of 1, 2, 4, or 8 for grayscale and Indexed(346) images, and 8 for RGB, CMYK, CIELab, and hifi images."
+
+  - id: PM6-062
+    section: "Worksheet"
+    heading: "PageMaker 6.0 TIFF Support Worksheet"
+    page: 16
+    level: INFO
+    actor: reader
+    category: compression
+    conformance: extension
+    tags: [259]
+    statement: "PageMaker 6.0 supports Compression(259) values 1 (uncompressed), 2 (basic CCITT Group 3 1-dimensional), 5 (LZW), 32773 (PackBits), 32895 (IT8 uncompressed), and 32896 (IT8 linework compression)."
+
+  - id: PM6-063
+    section: "Worksheet"
+    heading: "PageMaker 6.0 TIFF Support Worksheet"
+    page: 16
+    level: INFO
+    actor: reader
+    category: color
+    conformance: extension
+    tags: [262]
+    statement: "PageMaker 6.0 supports PhotometricInterpretation(262) values 0 (monochrome, WhiteIsZero), 1 (monochrome, BlackIsZero), 2 (RGB), 3 (RGB Palette), 5 (CMYK and hifi/multi-ink), 8 (CIELab), and 9 (ICCLab)."
+    notes: "Duplicates the value-9 introduction from Tech Note 4 (PM6-046) as a consolidated worksheet summary."
+
+  - id: PM6-064
+    section: "Worksheet"
+    heading: "PageMaker 6.0 TIFF Support Worksheet"
+    page: 16
+    level: MUST
+    actor: writer
+    category: data-layout
+    conformance: extension
+    tags: [273, 324]
+    statement: "PageMaker 6.0 requires either StripOffsets(273) or TileOffsets(324) to be present, and imposes no limit on the number of strips."
+
+  - id: PM6-065
+    section: "Worksheet"
+    heading: "PageMaker 6.0 TIFF Support Worksheet"
+    page: 16
+    level: INFO
+    actor: reader
+    category: color
+    conformance: extension
+    tags: [277, 338]
+    statement: "PageMaker 6.0 supports SamplesPerPixel(277) = 1 for monochrome and Indexed(346) images, 3 for RGB and CIELab images, and 4 for CMYK images, with a variable value for multi-ink/hifi images; the value may be larger than these base counts when ExtraSamples(338) are present."
+
+  - id: PM6-066
+    section: "Worksheet"
+    heading: "PageMaker 6.0 TIFF Support Worksheet"
+    page: 16
+    level: INFO
+    actor: reader
+    category: data-layout
+    conformance: extension
+    tags: [278, 257]
+    statement: "PageMaker 6.0 supports RowsPerStrip(278) values anywhere from 1 to ImageLength(257), inclusive."
+
+  - id: PM6-067
+    section: "Worksheet"
+    heading: "PageMaker 6.0 TIFF Support Worksheet"
+    page: 16
+    level: MUST
+    actor: writer
+    category: data-layout
+    conformance: extension
+    tags: [279, 325]
+    statement: "PageMaker 6.0 requires either StripByteCounts(279) or TileByteCounts(325) to be present, and imposes no limit on the number of strips."
+
+  - id: PM6-068
+    section: "Worksheet"
+    heading: "PageMaker 6.0 TIFF Support Worksheet"
+    page: 16
+    level: INFO
+    actor: reader
+    category: metadata
+    conformance: extension
+    tags: [282, 283]
+    statement: "PageMaker 6.0 supports all valid values of XResolution(282) and YResolution(283); if either tag is not present, PageMaker defaults it to 72 dpi."
+
+  - id: PM6-069
+    section: "Worksheet"
+    heading: "PageMaker 6.0 TIFF Support Worksheet"
+    page: 16
+    level: SHOULD
+    actor: writer
+    category: data-layout
+    conformance: extension
+    tags: [284]
+    statement: "PageMaker 6.0 prefers PlanarConfiguration(284) = 1 (chunky) for RGB and CIELab images, and PlanarConfiguration(284) = 2 (planar) for CMYK and multi-ink/hifi images."
+    notes: "Restates, for the general tag-support table, the same preference argued for in PM6-052."
+
+  - id: PM6-070
+    section: "Worksheet"
+    heading: "PageMaker 6.0 TIFF Support Worksheet"
+    page: 16
+    level: INFO
+    actor: reader
+    category: tag
+    conformance: extension
+    tags: [296]
+    statement: "PageMaker 6.0 supports ResolutionUnit(296) values 1 (no unit), 2 (inch), and 3 (centimeter)."
+
+  - id: PM6-071
+    section: "Worksheet"
+    heading: "PageMaker 6.0 TIFF Support Worksheet"
+    page: 16
+    level: INFO
+    actor: reader
+    category: compression
+    conformance: extension
+    tags: [317, 259]
+    statement: "PageMaker 6.0 supports Predictor(317) values 1 (no prediction) and 2 (horizontal differencing) for LZW (Compression(259) = 5) compression."
+
+  - id: PM6-072
+    section: "Worksheet"
+    heading: "PageMaker 6.0 TIFF Support Worksheet"
+    page: 16
+    level: MUST
+    actor: writer
+    category: color
+    conformance: extension
+    tags: [320, 262]
+    statement: "ColorMap(320) is required for RGB Palette Color images (PhotometricInterpretation(262) = 3) in PageMaker 6.0."
+    notes: "Distinct from, but related to, the Tech Note 3 rule (PM6-041) requiring ColorMap when Indexed(346)=1."
+
+  - id: PM6-073
+    section: "Worksheet"
+    heading: "PageMaker 6.0 TIFF Support Worksheet"
+    page: 16
+    level: MUST
+    actor: writer
+    category: data-layout
+    conformance: extension
+    tags: [322, 323, 324, 325]
+    statement: "TileWidth(322), TileLength(323), TileOffsets(324), and TileByteCounts(325) are each required for tiled images in PageMaker 6.0."
+
+  - id: PM6-074
+    section: "Worksheet"
+    heading: "PageMaker 6.0 TIFF Support Worksheet"
+    page: 17
+    level: INFO
+    actor: both
+    category: structure
+    conformance: extension
+    tags: [330]
+    statement: "The PageMaker 6.0 TIFF Support Worksheet cross-references SubIFDs(330) to the TIFF Trees technical note (Tech Note 1) for its full definition."
+    notes: "Duplicate cross-reference to Tech Note 1; no new information beyond PM6-001 through PM6-007."
+
+  - id: PM6-075
+    section: "Worksheet"
+    heading: "PageMaker 6.0 TIFF Support Worksheet"
+    page: 17
+    level: INFO
+    actor: reader
+    category: color
+    conformance: extension
+    tags: [332]
+    statement: "PageMaker 6.0 supports InkSet(332) values 1 (CMYK) and 2 (multi-ink/hifi)."
+
+  - id: PM6-076
+    section: "Worksheet"
+    heading: "PageMaker 6.0 TIFF Support Worksheet"
+    page: 17
+    level: MUST
+    actor: writer
+    category: color
+    conformance: extension
+    tags: [333, 332]
+    statement: "InkNames(333) is required when InkSet(332) = 2."
+
+  - id: PM6-077
+    section: "Worksheet"
+    heading: "PageMaker 6.0 TIFF Support Worksheet"
+    page: 17
+    level: MUST
+    actor: writer
+    category: color
+    conformance: extension
+    tags: [334, 332]
+    statement: "NumberOfInks(334) is required when InkSet(332) = 2."
+
+  - id: PM6-078
+    section: "Worksheet"
+    heading: "PageMaker 6.0 TIFF Support Worksheet"
+    page: 17
+    level: INFO
+    actor: reader
+    category: color
+    conformance: extension
+    tags: [338]
+    statement: "PageMaker 6.0 supports ExtraSamples(338), including both associated and unassociated alpha data."
+
+  - id: PM6-079
+    section: "Worksheet"
+    heading: "PageMaker 6.0 TIFF Support Worksheet"
+    page: 17
+    level: INFO
+    actor: writer
+    category: metadata
+    conformance: extension
+    tags: [32781]
+    statement: "PageMaker 6.0 writes ImageID(32781) out as a '%%MainImage' OPI comment in its PostScript language output."
+
+  - id: PM6-080
+    section: "Worksheet"
+    heading: "PageMaker 6.0 TIFF Support Worksheet"
+    page: 17
+    level: INFO
+    actor: reader
+    category: tag
+    conformance: extension
+    tags: [34019, 34022]
+    statement: "PageMaker 6.0 supports the IT8RasterPadding(34019) and IT8ColorTable(34022) tags, as specified in the ANSI IT8 TIFF/IT specification."
+
+  - id: PM6-081
+    section: "Worksheet"
+    heading: "PageMaker 6.0 TIFF Support Worksheet - Other information"
+    page: 17
+    level: INFO
+    actor: both
+    category: behavior
+    conformance: extension
+    tags: []
+    statement: "Fields not present in a TIFF file are automatically given their default values, as required by the TIFF specification, per PageMaker 6.0 behavior."
+
+  - id: PM6-082
+    section: "Worksheet"
+    heading: "PageMaker 6.0 TIFF Support Worksheet - Other information"
+    page: 17
+    level: INFO
+    actor: reader
+    category: behavior
+    conformance: extension
+    tags: []
+    statement: "PageMaker 6.0 ignores any TIFF tag not listed in its Support Worksheet."
+
+  - id: PM6-083
+    section: "Worksheet"
+    heading: "PageMaker 6.0 TIFF Support Worksheet - Byte Order"
+    page: 17
+    level: INFO
+    actor: reader
+    category: structure
+    conformance: extension
+    tags: []
+    statement: "PageMaker 6.0 supports both MM (big-endian) and II (little-endian) byte-order TIFF files, on both Apple Macintosh and Microsoft Windows versions of the application; there is no need to convert files from one byte order to the other when transferring them between platforms."
+
+  - id: PM6-084
+    section: "Worksheet"
+    heading: "PageMaker 6.0 TIFF Support Worksheet - OPI comments"
+    page: 17
+    level: INFO
+    actor: writer
+    category: metadata
+    conformance: extension
+    tags: []
+    statement: "In addition to the standard OPI 2.0 comments, PageMaker 6.0 copies all ASCII-type TIFF fields into its PostScript language output stream as OPI comments."
+
+  - id: PM6-085
+    section: "Worksheet"
+    heading: "PageMaker 6.0 TIFF Support Worksheet - Size of integers"
+    page: 17
+    level: INFO
+    actor: reader
+    category: tag
+    conformance: extension
+    tags: []
+    statement: "PageMaker 6.0 supports the BYTE, SHORT, and LONG TIFF data types for all integer-valued TIFF fields."
+
+  - id: PM6-086
+    section: "Worksheet"
+    heading: "PageMaker 6.0 TIFF Support Worksheet - Filenames and filetypes"
+    page: 17
+    level: INFO
+    actor: reader
+    category: behavior
+    conformance: extension
+    tags: []
+    statement: "PageMaker does not require that Macintosh TIFF files be of file type 'TIFF', as long as the filename ends in '.tif'."
+
+tags:
+  - code: 330
+    hex: "0x014A"
+    name: SubIFDs
+    types: [LONG, IFD]
+    count: "N (number of child IFDs)"
+    default: null
+    required: no
+    conformance: extension
+    section: "Tech Note 1"
+    page: 4
+    description: >
+      Points to one or more child IFD structures that provide auxiliary or subordinate images for
+      a parent image (e.g. thumbnails or other subsampled versions), creating a tree structure
+      within the TIFF file that is distinct from the ordinary main-image NextIFD chain. TIFF data
+      type 13 ("IFD") is functionally identical to LONG but is reserved for offsets that point to
+      other valid IFDs, and is the preferred type for this tag's values.
+    interacts_with: []
+
+  - code: 343
+    hex: "0x0157"
+    name: ClipPath
+    types: [BYTE]
+    count: "N (total number of bytes in the ClipPath data stream)"
+    default: null
+    required: no
+    conformance: extension
+    section: "Tech Note 2"
+    page: 6
+    description: >
+      Encodes a PostScript-style clipping path as a fixed header (byte-order marker, version
+      number, reserved words) followed by a sequence of operator/operand commands (newpath,
+      closepath, moveto, lineto, curveto, polyto, rpolyto), mirroring PostScript path-construction
+      semantics so that a TIFF ClipPath and a PostScript path can be translated to one another.
+    values:
+      0: "no-op operator (ignored)"
+      1: "newpath operator (no operands)"
+      2: "closepath operator (no operands)"
+      3: "moveto operator (operands: x y)"
+      4: "lineto operator (operands: x y)"
+      5: "reserved operator"
+      6: "reserved operator"
+      7: "reserved operator"
+      8: "curveto operator (operands: x1 y1 x2 y2 x3 y3)"
+      9: "polyto operator (operands: x1 y1 x2 y2 ...)"
+      10: "rpolyto operator (operands: dx1 dy1 dx2 dy2 ...)"
+    interacts_with: [344, 345]
+
+  - code: 344
+    hex: "0x0158"
+    name: XClipPathUnits
+    types: [LONG]
+    count: "1"
+    default: null
+    required: conditional
+    conformance: extension
+    section: "Tech Note 2"
+    page: 9
+    description: >
+      Number of integer ClipPath(343) coordinate units that span the width of the image; all
+      horizontal ClipPath coordinates are divided by this value to normalize to a number usually
+      between 0.0 (left edge) and 1.0 (right edge). Required whenever ClipPath(343) is present,
+      with no default value.
+    interacts_with: [343, 345]
+    notes: "Document refers to the type as 'DWORD'; mapped here to the standard TIFF type LONG."
+
+  - code: 345
+    hex: "0x0159"
+    name: YClipPathUnits
+    types: [LONG]
+    count: "1"
+    default: "Equal to XClipPathUnits (344)"
+    required: no
+    conformance: extension
+    section: "Tech Note 2"
+    page: 10
+    description: >
+      Number of integer ClipPath(343) coordinate units that span the height of the image; all
+      vertical ClipPath coordinates are divided by this value to normalize to a number usually
+      between 0.0 (top) and 1.0 (bottom). Optional; defaults to XClipPathUnits(344) if absent.
+    interacts_with: [343, 344]
+    notes: "Document refers to the type as 'DWORD'; mapped here to the standard TIFF type LONG."
+
+  - code: 346
+    hex: "0x015A"
+    name: Indexed
+    types: [SHORT]
+    count: "1"
+    default: 0
+    required: no
+    conformance: extension
+    section: "Tech Note 3"
+    page: 11
+    description: >
+      Flags whether pixel values are indices (usually 8-bit) into a separate color table,
+      ColorMap(320), rather than direct color/photometric values. Extends indexed-image support
+      to any color space, not just RGB PaletteColor. ColorMap(320) is required when this tag is 1.
+      Must not be combined with PhotometricInterpretation(262) = PaletteColor(3) on the same image.
+    values:
+      0: "Not indexed (pixel values are direct color/photometric values)"
+      1: "Indexed (pixel values are indices into ColorMap(320))"
+    interacts_with: [320, 262, 277]
+
+  - code: 320
+    hex: "0x0140"
+    name: ColorMap
+    types: [SHORT]
+    count: "Per-entry component count depends on color space (see description); total length is components-per-entry * 2^BitsPerSample"
+    default: null
+    required: conditional
+    conformance: extension
+    section: "Tech Note 3"
+    page: 12
+    description: >
+      This document broadens ColorMap(320) beyond its TIFF 6.0 baseline use (RGB PaletteColor) to
+      contain the color map for any color space when Indexed(346) = 1. The number of components
+      per map entry depends on the color space: 3 for RGB and CIELab, 4 for CMYK, and
+      NumberOfInks(334) for other separated (multi-ink) color spaces. Also required (per the
+      baseline TIFF 6.0 rule restated in the Support Worksheet) for RGB Palette Color images
+      (PhotometricInterpretation(262) = 3).
+    interacts_with: [346, 262, 334]
+
+  - code: 351
+    hex: "0x015F"
+    name: OPIProxy
+    types: [SHORT]
+    count: "1"
+    default: 0
+    required: no
+    conformance: extension
+    section: "Other Major Changes / OPI-Related Tags"
+    page: 15
+    description: >
+      Indicates whether this image is a low-resolution OPI proxy for a higher-resolution original
+      image. If present and equal to 1, a higher-resolution version of this image exists and is
+      named by ImageID(32781). If absent, or if its value is 0, no higher-resolution version
+      exists.
+    values:
+      0: "No higher-resolution version exists (also the effective value if the tag is absent)"
+      1: "A higher-resolution version exists, named by ImageID(32781)"
+    interacts_with: [32781]
+
+  - code: 32781
+    hex: "0x800D"
+    name: ImageID
+    types: [ASCII]
+    count: "N"
+    default: null
+    required: no
+    conformance: extension
+    section: "Other Major Changes / OPI-Related Tags"
+    page: 15
+    description: >
+      Full pathname of the original, high-resolution image, or any other identifying string that
+      uniquely identifies the original image. The original high-resolution image is not required
+      to be in TIFF format. PageMaker 6.0 writes this tag out as a "%%MainImage" OPI comment in
+      its PostScript output.
+    interacts_with: [351]
+
+  - code: 262
+    hex: "0x0106"
+    name: PhotometricInterpretation
+    types: [SHORT]
+    count: "1"
+    default: null
+    required: yes
+    conformance: extension
+    section: "Tech Note 4 / Worksheet"
+    page: 13
+    description: >
+      Pre-existing TIFF 6.0 tag; this document adds enumerated value 9 (ICCLab) for CIE L*a*b*
+      data whose a*/b* components are encoded in the range 0-255 (InterColor Profile Format
+      convention: add 128 to TIFF 6.0 CIELab a*/b* values to convert), instead of the TIFF 6.0
+      CIELab (value 8) convention of -128 to 127. L* is encoded identically in both. The Support
+      Worksheet lists PageMaker 6.0 as supporting values 0, 1, 2, 3, 5, 8, and 9.
+    values:
+      0: "WhiteIsZero (monochrome)"
+      1: "BlackIsZero (monochrome)"
+      2: "RGB"
+      3: "RGB Palette (PaletteColor)"
+      5: "Separated (CMYK and hifi/multi-ink)"
+      8: "CIELab (a*/b* encoded -128 to 127)"
+      9: "ICCLab (new in this document; a*/b* encoded 0 to 255)"
+    interacts_with: [320, 346, 334]
+
+dependencies:
+  - id: PM6-DEP-001
+    requirement: PM6-005
+    when: "SubIFDs(330) references more than one child IFD for a given parent IFD"
+    then: "The referenced child IFDs must be chained via their own NextIFD fields (child #1's NextIFD points to child #2, etc.), and the last child's NextIFD must be zero."
+    kind: constrains-value
+    tags: [330]
+
+  - id: PM6-DEP-002
+    requirement: PM6-037
+    when: "ClipPath(343) is present in an IFD"
+    then: "XClipPathUnits(344) must also be present; it has no default value."
+    kind: requires
+    tags: [343, 344]
+
+  - id: PM6-DEP-003
+    requirement: PM6-039
+    when: "YClipPathUnits(345) is absent"
+    then: "YClipPathUnits is treated as equal to XClipPathUnits(344)."
+    kind: selects-default
+    tags: [344, 345]
+
+  - id: PM6-DEP-004
+    requirement: PM6-036
+    when: "XClipPathUnits(344) or YClipPathUnits(345) has a small magnitude"
+    then: "ClipPath(343) command DataType may use SBYTE or SSHORT; larger magnitudes require SLONG to avoid overflow."
+    kind: constrains-value
+    tags: [343, 344, 345]
+
+  - id: PM6-DEP-005
+    requirement: PM6-041
+    when: "Indexed(346) == 1"
+    then: "ColorMap(320) must be present."
+    kind: requires
+    tags: [346, 320]
+
+  - id: PM6-DEP-006
+    requirement: PM6-043
+    when: "Indexed(346) == 1"
+    then: "PhotometricInterpretation(262) must not simultaneously equal PaletteColor (3)."
+    kind: forbids
+    tags: [346, 262]
+
+  - id: PM6-DEP-007
+    requirement: PM6-042
+    when: "PhotometricInterpretation(262) == 3 (PaletteColor)"
+    then: "The image is semantically equivalent to an RGB image with Indexed(346) = 1, ColorMap(320) present, and SamplesPerPixel(277) = 1."
+    kind: modifies-meaning
+    tags: [262, 346, 320, 277]
+
+  - id: PM6-DEP-008
+    requirement: PM6-045
+    when: "An image uses ColorMap(320) (Indexed(346)=1 or PhotometricInterpretation(262)=3)"
+    then: "The number of components per ColorMap entry is 3 for RGB/CIELab color spaces, 4 for CMYK, or NumberOfInks(334) for other separated color spaces."
+    kind: constrains-value
+    tags: [320, 334, 346, 262]
+
+  - id: PM6-DEP-009
+    requirement: PM6-047
+    when: "PhotometricInterpretation(262) == 9 (ICCLab)"
+    then: "a*/b* sample values are encoded in the range 0-255 rather than the -128 to 127 range used when PhotometricInterpretation(262) == 8 (CIELab); conversion from CIELab to ICCLab is done by adding 128 to the a* and b* values (L* is unchanged)."
+    kind: modifies-meaning
+    tags: [262]
+
+  - id: PM6-DEP-010
+    requirement: PM6-076
+    when: "InkSet(332) == 2 (multi-ink/hifi)"
+    then: "InkNames(333) and NumberOfInks(334) must both be present."
+    kind: requires
+    tags: [332, 333, 334]
+
+  - id: PM6-DEP-011
+    requirement: PM6-057
+    when: "OPIProxy(351) == 1"
+    then: "ImageID(32781) must be present and must name/identify the higher-resolution original image."
+    kind: requires
+    tags: [351, 32781]
+
+  - id: PM6-DEP-012
+    requirement: PM6-064
+    when: "Image data is organized in strips rather than tiles"
+    then: "StripOffsets(273) is required; if organized in tiles, TileOffsets(324) is required instead. One of the two must be present."
+    kind: requires
+    tags: [273, 324]
+
+  - id: PM6-DEP-013
+    requirement: PM6-067
+    when: "Image data is organized in strips rather than tiles"
+    then: "StripByteCounts(279) is required; if organized in tiles, TileByteCounts(325) is required instead. One of the two must be present."
+    kind: requires
+    tags: [279, 325]
+
+  - id: PM6-DEP-014
+    requirement: PM6-073
+    when: "An image is tiled (uses TileWidth/TileLength/TileOffsets/TileByteCounts organization)"
+    then: "TileWidth(322), TileLength(323), TileOffsets(324), and TileByteCounts(325) must all be present."
+    kind: requires
+    tags: [322, 323, 324, 325]
+
+  - id: PM6-DEP-015
+    requirement: PM6-065
+    when: "ExtraSamples(338) are present"
+    then: "SamplesPerPixel(277) may be larger than the color space's base sample count (1 for monochrome/Indexed, 3 for RGB/CIELab, 4 for CMYK)."
+    kind: modifies-meaning
+    tags: [277, 338]
+
+  - id: PM6-DEP-016
+    requirement: PM6-071
+    when: "Compression(259) == 5 (LZW)"
+    then: "Predictor(317) may be 1 (no prediction) or 2 (horizontal differencing)."
+    kind: constrains-value
+    tags: [317, 259]
+
+  - id: PM6-DEP-017
+    requirement: PM6-072
+    when: "PhotometricInterpretation(262) == 3 (RGB Palette Color)"
+    then: "ColorMap(320) must be present."
+    kind: requires
+    tags: [262, 320]

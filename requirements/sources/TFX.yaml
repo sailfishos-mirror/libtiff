@@ -1,0 +1,3475 @@
+document: TFX
+title: "RFC 3949 - File Format for Internet Fax (TIFF-FX)"
+date: "February 2005"
+requirements:
+  - id: TFX-001
+    section: "1"
+    heading: "Introduction"
+    page: 6
+    level: MUST
+    actor: both
+    category: image-class
+    conformance: TFX
+    statement: >
+      All implementations of TIFF for facsimile (TIFF-FX) MUST implement Profile S
+      (Minimal Black-and-White Fax Profile), the root node of the profile tree.
+    notes: >
+      Profile S guarantees that at least binary black-and-white images can be interchanged.
+
+  - id: TFX-002
+    section: "1"
+    heading: "Introduction"
+    page: 6
+    level: MUST
+    actor: both
+    category: image-class
+    conformance: TFX
+    statement: >
+      All color implementations of TIFF for facsimile MUST implement Profile C
+      (Base Color Fax Profile).
+
+  - id: TFX-003
+    section: "1"
+    heading: "Introduction"
+    page: 6
+    level: MUST
+    actor: both
+    category: image-class
+    conformance: TFX
+    statement: >
+      An implementation of a particular profile MUST also implement all profiles on the
+      path connecting it to the root node (Profile S), and MAY optionally implement
+      profiles not on that path. For example, an implementation of Profile M must also
+      implement Profiles C and S, and may optionally implement Profile F, J, or L; an
+      implementation of Profile C must also implement Profile S.
+
+  - id: TFX-004
+    section: "1"
+    heading: "Introduction"
+    page: 5
+    level: SHOULD
+    actor: both
+    category: metadata
+    conformance: TFX
+    statement: >
+      References to the format described by this specification should always use the
+      term "TIFF-FX" (TIFF for Fax eXtended); some profiles may not be interpreted
+      correctly by other (non-fax) TIFF applications.
+
+  - id: TFX-005
+    section: "2.1.1"
+    heading: "File Structure"
+    page: 8
+    level: MUST
+    actor: file
+    category: structure
+    conformance: TFX
+    statement: >
+      A TIFF-FX file begins with an 8-byte image file header. The first two bytes give
+      the byte order: "II" (0x4949) for little-endian or "MM" (0x4D4D) for big-endian.
+      Either byte order may be used EXCEPT for Profile S (minimal black-and-white),
+      which SHALL use "II". The next two bytes contain the value 42; the last four bytes
+      give the offset (relative to the beginning of the file) to the first IFD.
+    tags: []
+
+  - id: TFX-006
+    section: "2.1.1"
+    heading: "File Structure"
+    page: 8
+    level: MUST
+    actor: file
+    category: structure
+    conformance: TFX
+    statement: >
+      An IFD may be at any location in the file after the 8-byte header but MUST begin
+      on a word boundary. All offsets in a TIFF file are relative to the beginning of
+      the file.
+
+  - id: TFX-007
+    section: "2.1.1"
+    heading: "File Structure"
+    page: 8
+    level: MUST
+    actor: file
+    category: structure
+    conformance: TFX
+    statement: >
+      An IFD is a sequence of tagged fields sorted in ascending order by tag value. It
+      consists of a 2-byte count of the number of fields, a sequence of 12-byte field
+      entries, and a 4-byte offset to the next IFD (0 if none). Each raster image in the
+      file is represented by an IFD. Each field entry is 12 bytes: 2-byte tag, 2-byte
+      field type, 4-byte count, and 4 bytes holding either the value or an offset to it.
+
+  - id: TFX-008
+    section: "2.1.1"
+    heading: "File Structure"
+    page: 9
+    level: MUST
+    actor: file
+    category: data-layout
+    conformance: TFX
+    statement: >
+      All fax profiles represent a multi-page fax image as a linked list of IFDs, with a
+      NewSubfileType(254) field containing a bit (bit 1) identifying the IFD as one page
+      of a multi-page document. Each IFD has a PageNumber(297) field identifying the page
+      number in ascending order, starting at 0 for the first page.
+    tags: [254, 297]
+
+  - id: TFX-009
+    section: "2.1.1"
+    heading: "File Structure"
+    page: 9
+    level: MUST
+    actor: reader
+    category: behavior
+    conformance: TFX
+    statement: >
+      Although a Baseline TIFF reader is not required to read any IFDs beyond the first,
+      an implementation that reads files complying with this specification SHALL read
+      multiple IFDs.
+
+  - id: TFX-010
+    section: "2.1.1"
+    heading: "File Structure"
+    page: 9
+    level: INFO
+    actor: file
+    category: data-layout
+    conformance: TFX
+    statement: >
+      Multiple IFDs may be organized as a linked list (each IFD's next-IFD pointer
+      points to the next IFD; the last is 0) or as a tree using the SubIFDs(330) field.
+      Only the Mixed Raster Content profile (Profile M, Section 8) requires the use of
+      child IFDs.
+    tags: [330]
+
+  - id: TFX-011
+    section: "2.1.2"
+    heading: "Image Structure"
+    page: 10
+    level: MUST
+    actor: file
+    category: data-layout
+    conformance: TFX
+    statement: >
+      Each IFD stores an image as one or more strips and requires three strip-related
+      fields: StripOffsets(273) (array of pointers to strips), RowsPerStrip(278) (number
+      of scanlines per strip), and StripByteCounts(279) (number of bytes per strip after
+      compression).
+    tags: [273, 278, 279]
+
+  - id: TFX-012
+    section: "2.1.2"
+    heading: "Image Structure"
+    page: 11
+    level: MUST
+    actor: file
+    category: data-layout
+    conformance: TFX
+    statement: >
+      Each strip except the last MUST contain the same number of scanlines, given by
+      RowsPerStrip(278). The new StripRowCounts(559) field allows a variable number of
+      scanlines per strip and is required by the Mixed Raster Content profile (Profile M).
+    tags: [278, 559]
+
+  - id: TFX-013
+    section: "2.1.2"
+    heading: "Image Structure"
+    page: 11
+    level: INFO
+    actor: file
+    category: compression
+    conformance: TFX
+    statement: >
+      Image data is stored as uninterpreted, compressed image data streams within a
+      strip, formatted per the ITU-T Recommendations. The Compression(259) field
+      indicates the compression type; compression parameters are stored in the
+      compressed data stream rather than in TIFF fields.
+    tags: [259]
+
+  - id: TFX-014
+    section: "2.1.2"
+    heading: "Image Structure"
+    page: 11
+    level: MUST
+    actor: reader
+    category: behavior
+    conformance: TFX
+    statement: >
+      When an attribute is specified both in the compressed data stream and in a TIFF
+      field and the two differ: for values required to interpret the data stream, the
+      value in the data stream takes precedence; for informational values not required
+      to interpret the data stream (e.g., author name), the TIFF field value takes
+      precedence.
+
+  - id: TFX-015
+    section: "2.1.3"
+    heading: "TIFF File Structure for Fax Applications"
+    page: 11
+    level: SHOULD
+    actor: writer
+    category: data-layout
+    conformance: TFX
+    statement: >
+      When using a TIFF file for facsimile, a multi-page fax document SHOULD be
+      represented as a linked list of IFDs, and pages SHOULD be ordered in the TIFF file
+      in the same way they are ordered in a fax data stream.
+
+  - id: TFX-016
+    section: "2.1.3"
+    heading: "TIFF File Structure for Fax Applications"
+    page: 11
+    level: SHOULD
+    actor: reader
+    category: behavior
+    conformance: TFX
+    statement: >
+      For interchange robustness, readers SHOULD be prepared to read TIFF files whose
+      structure is consistent with [TIFF], which supports a more flexible file structure
+      than recommended here.
+
+  - id: TFX-017
+    section: "2.1.3"
+    heading: "TIFF File Structure for Fax Applications"
+    page: 12
+    level: SHOULD
+    actor: writer
+    category: data-layout
+    conformance: TFX
+    statement: >
+      If a GlobalParametersIFD(400) field occurs in a TIFF file, it SHOULD be located in
+      the first IFD, immediately following the 8-byte image file header, so a reader can
+      find it quickly.
+    tags: [400]
+
+  - id: TFX-018
+    section: "2.2.1"
+    heading: "TIFF fields required for all fax profiles"
+    page: 13
+    level: MUST
+    actor: file
+    category: tag
+    conformance: TFX
+    statement: >
+      All fax profiles SHALL use ImageLength(257) (SHORT or LONG), giving the total
+      number of scanlines in the image. No default; it must be specified.
+    tags: [257]
+
+  - id: TFX-019
+    section: "2.2.1"
+    heading: "TIFF fields required for all fax profiles"
+    page: 13
+    level: MUST
+    actor: file
+    category: tag
+    conformance: TFX
+    statement: >
+      All fax profiles SHALL use PageNumber(297) (SHORT, count 2). The first value is
+      the page number (0 for the first page); the second is the total number of pages
+      (0 if the total page count is not available). No default; it must be specified.
+    tags: [297]
+
+  - id: TFX-020
+    section: "2.2.1"
+    heading: "TIFF fields required for all fax profiles"
+    page: 14
+    level: MUST
+    actor: file
+    category: tag
+    conformance: TFX
+    statement: >
+      All fax profiles SHALL use RowsPerStrip(278) (SHORT or LONG), the number of
+      scanlines per TIFF strip (except the last strip). For a single-strip image this
+      equals ImageLength(257). Default = 2**32 - 1 (all scanlines in one strip).
+    tags: [278, 257]
+
+  - id: TFX-021
+    section: "2.2.1"
+    heading: "TIFF fields required for all fax profiles"
+    page: 14
+    level: MUST
+    actor: file
+    category: tag
+    conformance: TFX
+    statement: >
+      All fax profiles SHALL use StripByteCounts(279) (SHORT or LONG, count = number of
+      strips), giving for each strip the number of bytes after compression. No default.
+    tags: [279]
+
+  - id: TFX-022
+    section: "2.2.1"
+    heading: "TIFF fields required for all fax profiles"
+    page: 14
+    level: MUST
+    actor: file
+    category: tag
+    conformance: TFX
+    statement: >
+      All fax profiles SHALL use StripOffsets(273) (SHORT or LONG, count = number of
+      strips), giving for each strip the byte offset from the beginning of the file to
+      the start of that strip. No default.
+    tags: [273]
+
+  - id: TFX-023
+    section: "2.2.2"
+    heading: "Additional TIFF fields required for all fax profiles"
+    page: 14
+    level: MUST
+    actor: file
+    category: tag
+    conformance: TFX
+    statement: >
+      All fax profiles SHALL use BitsPerSample(258) (SHORT), the number of bits per
+      image sample. Default = 1 (field may be omitted if the value is 1).
+    tags: [258]
+
+  - id: TFX-024
+    section: "2.2.2"
+    heading: "Additional TIFF fields required for all fax profiles"
+    page: 14
+    level: MUST
+    actor: file
+    category: tag
+    conformance: TFX
+    statement: >
+      All fax profiles SHALL use Compression(259) (SHORT). Although the TIFF default is
+      1 (no compression), fax data is always compressed, so the Compression field may
+      NOT be omitted for fax.
+    tags: [259]
+
+  - id: TFX-025
+    section: "2.2.2"
+    heading: "Additional TIFF fields required for all fax profiles"
+    page: 15
+    level: MUST
+    actor: reader
+    category: tag
+    conformance: TFX
+    statement: >
+      FillOrder(266) (SHORT) is required by TIFF for Fax. Baseline default is 1 (bits
+      not reversed); fax typically uses FillOrder=2 (least significant bit first). All
+      readers conforming to this specification MUST be able to read data in both bit
+      orders, EXCEPT Profile S, which only requires support for FillOrder=2. Default = 1.
+    tags: [266]
+
+  - id: TFX-026
+    section: "2.2.2"
+    heading: "Additional TIFF fields required for all fax profiles"
+    page: 15
+    level: MUST
+    actor: file
+    category: tag
+    conformance: TFX
+    statement: >
+      All fax profiles SHALL use ImageWidth(256) (SHORT or LONG), the number of pixels
+      (columns) per scanline. No default; it must be specified.
+    tags: [256]
+
+  - id: TFX-027
+    section: "2.2.2"
+    heading: "Additional TIFF fields required for all fax profiles"
+    page: 15
+    level: MUST
+    actor: file
+    category: tag
+    conformance: TFX
+    statement: >
+      All fax profiles SHALL use NewSubfileType(254) (LONG). Bit 1 is set to 1 if the
+      image is a single page of a multi-page document. Default = 0, but the field may
+      NOT be omitted for fax.
+    tags: [254]
+
+  - id: TFX-028
+    section: "2.2.2"
+    heading: "Additional TIFF fields required for all fax profiles"
+    page: 15
+    level: MUST
+    actor: file
+    category: tag
+    conformance: TFX
+    statement: >
+      All fax profiles SHALL use PhotometricInterpretation(262) (SHORT), the color space
+      of the image data. No default; it must be specified.
+    tags: [262]
+
+  - id: TFX-029
+    section: "2.2.2"
+    heading: "Additional TIFF fields required for all fax profiles"
+    page: 15
+    level: MUST
+    actor: file
+    category: tag
+    conformance: TFX
+    statement: >
+      All fax profiles SHALL use ResolutionUnit(296) (SHORT): 2 = inch, 3 = centimeter.
+      Default = 2 (field may be omitted if the value is 2).
+    tags: [296]
+
+  - id: TFX-030
+    section: "2.2.2"
+    heading: "Additional TIFF fields required for all fax profiles"
+    page: 16
+    level: MUST
+    actor: file
+    category: tag
+    conformance: TFX
+    statement: >
+      All fax profiles SHALL use SamplesPerPixel(277) (SHORT), the number of color
+      components per pixel (1 for black-and-white, grayscale, or indexed images).
+      Default = 1 (field may be omitted if the value is 1).
+    tags: [277]
+
+  - id: TFX-031
+    section: "2.2.2"
+    heading: "Additional TIFF fields required for all fax profiles"
+    page: 16
+    level: MUST
+    actor: file
+    category: tag
+    conformance: TFX
+    statement: >
+      All fax profiles SHALL use XResolution(282) (RATIONAL), the horizontal resolution
+      in pixels per resolution unit. The allowed values per profile are defined in the
+      profile sections. Per [T.4] the XResolution pairs <204,200> and <400,408>
+      (pixels/inch) may be treated as equivalent; if an application accepts one member
+      of a pair it must accept both. No default; it must be specified.
+    tags: [282]
+    notes: >
+      Writers SHOULD express XResolution in inch-based units.
+
+  - id: TFX-032
+    section: "2.2.2"
+    heading: "Additional TIFF fields required for all fax profiles"
+    page: 16
+    level: MUST
+    actor: file
+    category: tag
+    conformance: TFX
+    statement: >
+      All fax profiles SHALL use YResolution(283) (RATIONAL), the vertical resolution in
+      pixels per resolution unit. The allowed values per profile are defined in the
+      profile sections. Per [T.4] the YResolution pairs <98,100>, <196,200>, and
+      <391,400> (pixels/inch) may be treated as equivalent; if an application accepts one
+      member of a pair it must accept both. No default; it must be specified.
+    tags: [283]
+    notes: >
+      Writers SHOULD express YResolution in inch-based units.
+
+  - id: TFX-033
+    section: "2.2.2"
+    heading: "Additional TIFF fields required for all fax profiles"
+    page: 16
+    level: SHOULD
+    actor: writer
+    category: color
+    conformance: TFX
+    statement: >
+      TIFF for Facsimile writers SHOULD express XResolution(282) and YResolution(283) in
+      inch-based units, for consistency with historical practice and maximum
+      interoperability. Inch-to-metric equivalents: XResolution 204(inch)=80(cm/cm-unit),
+      408(inch)=160; YResolution 98=38.5, 196=77, 391=154 (metric under ResolutionUnit=3).
+    tags: [282, 283, 296]
+
+  - id: TFX-034
+    section: "2.2.3"
+    heading: "TIFF fields recommended for all fax profiles"
+    page: 17
+    level: SHOULD-NOT
+    actor: writer
+    category: metadata
+    conformance: TFX
+    statement: >
+      The recommended fields DateTime(306), DocumentName(269), ImageDescription(270),
+      Orientation(274), and Software(305) MAY be used by all fax profiles, but Profile S
+      writers SHOULD NOT use these fields.
+    tags: [306, 269, 270, 274, 305]
+
+  - id: TFX-035
+    section: "2.2.3"
+    heading: "TIFF fields recommended for all fax profiles"
+    page: 17
+    level: MAY
+    actor: writer
+    category: metadata
+    conformance: TFX
+    statement: >
+      DateTime(306) (ASCII) records the date/time of image creation in 24-hour format
+      "YYYY:MM:DD HH:MM:SS". No default.
+    tags: [306]
+
+  - id: TFX-036
+    section: "2.2.3"
+    heading: "TIFF fields recommended for all fax profiles"
+    page: 17
+    level: MAY
+    actor: writer
+    category: metadata
+    conformance: TFX
+    statement: >
+      DocumentName(269) (ASCII, TIFF extension field) gives the name of the scanned
+      document. No default.
+    tags: [269]
+
+  - id: TFX-037
+    section: "2.2.3"
+    heading: "TIFF fields recommended for all fax profiles"
+    page: 18
+    level: MAY
+    actor: writer
+    category: metadata
+    conformance: TFX
+    statement: >
+      ImageDescription(270) (ASCII) is a string describing the contents of the image.
+      No default.
+    tags: [270]
+
+  - id: TFX-038
+    section: "2.2.3"
+    heading: "TIFF fields recommended for all fax profiles"
+    page: 18
+    level: SHOULD
+    actor: writer
+    category: metadata
+    conformance: TFX
+    statement: >
+      Orientation(274) (SHORT) may take values 1-8; Baseline TIFF requires only value 1
+      (0th row = visual top, 0th column = visual left). Default = 1. A writer aware of
+      the orientation is recommended to include this field even if the value is the
+      default. Writers should NOT generate mirror images, because many readers will not
+      properly reverse the image before display or print.
+    tags: [274]
+
+  - id: TFX-039
+    section: "2.2.3"
+    heading: "TIFF fields recommended for all fax profiles"
+    page: 18
+    level: MAY
+    actor: writer
+    category: metadata
+    conformance: TFX
+    statement: >
+      Software(305) (ASCII) gives the name and release number of the software package
+      that created the image. No default.
+    tags: [305]
+
+  - id: TFX-040
+    section: "2.2.4"
+    heading: "New TIFF fields recommended for fax profiles"
+    page: 18
+    level: SHOULD-NOT
+    actor: writer
+    category: tag
+    conformance: TFX
+    statement: >
+      The new fields GlobalParametersIFD(400), ProfileType(401), FaxProfile(402),
+      CodingMethods(403), VersionYear(404), and ModeNumber(405) MAY be used by all fax
+      profiles, but Profile S writers SHOULD NOT use them. These fields describe global
+      parameters of the fax session and are not part of the current TIFF specification.
+    tags: [400, 401, 402, 403, 404, 405]
+    notes: >
+      Support for these new fields is not present in historical TIFF-F readers.
+
+  - id: TFX-041
+    section: "2.2.4"
+    heading: "New TIFF fields recommended for fax profiles"
+    page: 18
+    level: SHOULD
+    actor: writer
+    category: structure
+    conformance: TFX
+    statement: >
+      GlobalParametersIFD(400) (type IFD or LONG) points to an IFD containing global
+      parameters and is located in a Primary IFD. It is recommended that a writer place
+      this field in the first IFD.
+    tags: [400]
+
+  - id: TFX-042
+    section: "2.2.4"
+    heading: "New TIFF fields recommended for fax profiles"
+    page: 18
+    level: SHOULD-NOT
+    actor: writer
+    category: structure
+    conformance: TFX
+    statement: >
+      Each field in the GlobalParametersIFD is a TIFF field legal in any IFD. Required
+      baseline fields should NOT be located in the GlobalParametersIFD but should be in
+      each image IFD.
+    tags: [400]
+
+  - id: TFX-043
+    section: "2.2.4"
+    heading: "New TIFF fields recommended for fax profiles"
+    page: 19
+    level: MUST
+    actor: reader
+    category: behavior
+    conformance: TFX
+    statement: >
+      If a conflict exists between fields in the GlobalParametersIFD and fields in the
+      image IFDs, the data in the image IFD shall prevail.
+    tags: [400]
+
+  - id: TFX-044
+    section: "2.2.4"
+    heading: "New TIFF fields recommended for fax profiles"
+    page: 19
+    level: INFO
+    actor: file
+    category: tag
+    conformance: TFX
+    statement: >
+      ProfileType(401) (LONG) describes the type of image data stored: 0 = Unspecified,
+      1 = Group 3 fax. No default.
+    tags: [401]
+
+  - id: TFX-045
+    section: "2.2.4"
+    heading: "New TIFF fields recommended for fax profiles"
+    page: 19
+    level: INFO
+    actor: file
+    category: tag
+    conformance: TFX
+    statement: >
+      FaxProfile(402) (BYTE) indicates the profile that applies to the file: 0 = does
+      not conform to a defined TIFF-FX profile, 1 = Profile S, 2 = Profile F, 3 = Profile
+      J, 4 = Profile C, 5 = Profile L, 6 = Profile M.
+    tags: [402]
+
+  - id: TFX-046
+    section: "2.2.4"
+    heading: "New TIFF fields recommended for fax profiles"
+    page: 19
+    level: INFO
+    actor: file
+    category: tag
+    conformance: TFX
+    statement: >
+      CodingMethods(403) (LONG) is a bit field indicating which coding methods are used
+      in the file (bit=1 means used): bit 0 = unspecified compression; bit 1 = T.4 1-D
+      (MH); bit 2 = T.4 2-D (MR); bit 3 = T.6 (MMR); bit 4 = T.82/T.85 (JBIG); bit 5 =
+      T.81 (Baseline JPEG); bit 6 = T.82/T.43 (JBIG color); bits 7-31 reserved. There is
+      a limit of 32 compression types.
+    tags: [403]
+
+  - id: TFX-047
+    section: "2.2.4"
+    heading: "New TIFF fields recommended for fax profiles"
+    page: 20
+    level: INFO
+    actor: file
+    category: tag
+    conformance: TFX
+    statement: >
+      VersionYear(404) (BYTE, count 4) gives the year of the standard specified by the
+      FaxProfile(402) field as 4 characters (e.g., '1997'); used in the lossy and
+      lossless color profiles.
+    tags: [404, 402]
+
+  - id: TFX-048
+    section: "2.2.4"
+    heading: "New TIFF fields recommended for fax profiles"
+    page: 20
+    level: INFO
+    actor: file
+    category: tag
+    conformance: TFX
+    statement: >
+      ModeNumber(405) (BYTE) gives the mode of the standard specified by the
+      FaxProfile(402) field; a value of 0 indicates Mode 1.0. Used in the Mixed Raster
+      Content profile (Profile M).
+    tags: [405, 402]
+
+  - id: TFX-049
+    section: "3.1"
+    heading: "Profile S: Overview"
+    page: 20
+    level: INFO
+    actor: file
+    category: image-class
+    conformance: TFX
+    statement: >
+      Profile S (Minimal Black-and-White) supports 1-dimensional Modified Huffman (MH)
+      compression with the original Group 3 "standard" and "fine" resolutions. It uses a
+      minimal set of fields with minimal values, has no recommended fields, requires
+      little-endian ("II") byte order, defines a required ordering for pages/IFDs/image
+      data, and requires a single strip per page.
+
+  - id: TFX-050
+    section: "3.2.1"
+    heading: "Profile S: Baseline fields"
+    page: 21
+    level: MUST
+    actor: file
+    category: image-class
+    conformance: TFX
+    statement: >
+      Profile S requires BitsPerSample(258) = 1 (binary data only).
+    tags: [258]
+
+  - id: TFX-051
+    section: "3.2.1"
+    heading: "Profile S: Baseline fields"
+    page: 21
+    level: MUST
+    actor: file
+    category: compression
+    conformance: TFX
+    statement: >
+      Profile S requires Compression(259) = 3 (1- or 2-dimensional coding, a TIFF
+      extension value). The T4Options(292) field must be specified and must indicate
+      Modified Huffman (MH) compression per [T.4].
+    tags: [259, 292]
+
+  - id: TFX-052
+    section: "3.2.1"
+    heading: "Profile S: Baseline fields"
+    page: 21
+    level: MUST
+    actor: file
+    category: image-class
+    conformance: TFX
+    statement: >
+      Profile S requires FillOrder(266) = 2 (least significant bit first; lowest
+      numbered pixel stored in the LSB of the byte).
+    tags: [266]
+
+  - id: TFX-053
+    section: "3.2.1"
+    heading: "Profile S: Baseline fields"
+    page: 21
+    level: MUST
+    actor: file
+    category: image-class
+    conformance: TFX
+    statement: >
+      Profile S supports only ImageWidth(256) = 1728 pixels (North American Letter/Legal
+      and ISO A4). No default; it must be specified.
+    tags: [256]
+
+  - id: TFX-054
+    section: "3.2.1"
+    heading: "Profile S: Baseline fields"
+    page: 22
+    level: MUST
+    actor: file
+    category: image-class
+    conformance: TFX
+    statement: >
+      Profile S requires NewSubfileType(254) with bit 1 = 1 (single page of a multi-page
+      document); i.e., value 2. Field may not be omitted for fax.
+    tags: [254]
+
+  - id: TFX-055
+    section: "3.2.1"
+    heading: "Profile S: Baseline fields"
+    page: 22
+    level: MUST
+    actor: file
+    category: image-class
+    conformance: TFX
+    statement: >
+      Profile S requires PhotometricInterpretation(262) = 0 (pixel value 1 means black).
+      No default; it must be specified.
+    tags: [262]
+
+  - id: TFX-056
+    section: "3.2.1"
+    heading: "Profile S: Baseline fields"
+    page: 22
+    level: MUST
+    actor: file
+    category: image-class
+    conformance: TFX
+    statement: >
+      Profile S requires ResolutionUnit(296) = 2 (inch). Default = 2 (field may be
+      omitted if this is the value).
+    tags: [296]
+
+  - id: TFX-057
+    section: "3.2.1"
+    heading: "Profile S: Baseline fields"
+    page: 22
+    level: MUST
+    actor: file
+    category: image-class
+    conformance: TFX
+    statement: >
+      Profile S requires SamplesPerPixel(277) = 1 (black-and-white). Default = 1.
+    tags: [277]
+
+  - id: TFX-058
+    section: "3.2.1"
+    heading: "Profile S: Baseline fields"
+    page: 22
+    level: MUST
+    actor: file
+    category: image-class
+    conformance: TFX
+    statement: >
+      Profile S requires XResolution(282) = 200 or 204 (pixels/inch), which may be
+      treated as equivalent. No default; it must be specified.
+    tags: [282]
+
+  - id: TFX-059
+    section: "3.2.1"
+    heading: "Profile S: Baseline fields"
+    page: 22
+    level: MUST
+    actor: file
+    category: image-class
+    conformance: TFX
+    statement: >
+      Profile S requires YResolution(283) = 98, 100, 196, or 200 (pixels/inch); 98 and
+      100 may be treated as equivalent, and 196 and 200 may be treated as equivalent.
+      No default; it must be specified.
+    tags: [283]
+
+  - id: TFX-060
+    section: "3.2.2"
+    heading: "Profile S: Extension fields"
+    page: 23
+    level: MUST
+    actor: file
+    category: compression
+    conformance: TFX
+    statement: >
+      In Profile S, T4Options(292) (LONG) is required when Compression(259) = 3. Bit 0 =
+      0 (MH compression); bit 1 must be 0; bit 2 = 1 if EOL codes are byte aligned, 0 if
+      not. Default is all bits 0 (EOLs not byte aligned). Thus the value is 0 or 4.
+    tags: [292, 259]
+
+  - id: TFX-061
+    section: "3.2.3"
+    heading: "Profile S: New Fields"
+    page: 23
+    level: MUST-NOT
+    actor: writer
+    category: image-class
+    conformance: TFX
+    statement: >
+      Profile S has no new fields and no recommended fields; Profile S writers SHOULD NOT
+      use the recommended baseline/extension or new fax fields.
+
+  - id: TFX-062
+    section: "3.4"
+    heading: "End of Line (EOL) and Return to Control (RTC)"
+    page: 23
+    level: MUST
+    actor: file
+    category: compression
+    conformance: TFX
+    statement: >
+      A 12-bit EOL sequence MUST precede each line of MH-compressed image data (unlike
+      Baseline TIFF, which does not use EOL sequences). The EOL sequence MAY be
+      byte-aligned, in which case fill bits are added so the EOL ends on a byte boundary
+      and subsequent image data begins on a byte boundary.
+    tags: [292]
+
+  - id: TFX-063
+    section: "3.4"
+    heading: "End of Line (EOL) and Return to Control (RTC)"
+    page: 23
+    level: MAY
+    actor: writer
+    category: compression
+    conformance: TFX
+    statement: >
+      If the EOL codes are not byte aligned, the MH image data MAY be followed by an RTC
+      (Return to Control) sequence consisting of 6 consecutive EOLs. RTCs should not
+      occur when EOLs have been byte aligned (T4Options bit 2 = 1).
+    tags: [292]
+
+  - id: TFX-064
+    section: "3.4.1"
+    heading: "RTC Exclusion"
+    page: 24
+    level: SHOULD-NOT
+    actor: writer
+    category: compression
+    conformance: TFX
+    statement: >
+      Implementations seeking strict conformance with TIFF and compatibility with
+      historical fax usage SHOULD NOT include the RTC sequence when writing TIFF files.
+      Implementations needing "transparency" of T.4-generated data MAY include RTCs only
+      if T4Options(292) is set for non byte aligned data (bit 2 = 0).
+    tags: [292]
+
+  - id: TFX-065
+    section: "3.4.1"
+    heading: "RTC Exclusion"
+    page: 24
+    level: MUST
+    actor: reader
+    category: compression
+    conformance: TFX
+    statement: >
+      Minimal-set (Profile S) readers MUST be able to process files that do not include
+      RTCs and SHOULD be able to process files that do include RTCs.
+
+  - id: TFX-066
+    section: "3.5"
+    heading: "Profile S: File Structure"
+    page: 24
+    level: MUST
+    actor: file
+    category: structure
+    conformance: TFX
+    statement: >
+      For Profile S, the header byte-order bytes SHALL be "II" (0x4949, little-endian),
+      the identifier is 42, and the 0th IFD immediately follows the header so the offset
+      to the first IFD is 8 (0x00000008).
+
+  - id: TFX-067
+    section: "3.5"
+    heading: "Profile S: File Structure"
+    page: 25
+    level: MUST
+    actor: file
+    category: data-layout
+    conformance: TFX
+    statement: >
+      Profile S SHALL order IFDs and image data as follows: (1) there SHALL be an IFD for
+      each page; (2) IFDs SHALL occur in the same order as the pages in the document; (3)
+      each IFD SHALL precede the image data it points to; (4) image data SHALL occur in
+      page order; (5) the IFD, its value data, and its image data SHALL precede the next
+      image IFD; and (6) the image data for each page SHALL be contained within a single
+      strip.
+    tags: [273]
+
+  - id: TFX-068
+    section: "3.5"
+    heading: "Profile S: File Structure"
+    page: 25
+    level: MUST
+    actor: file
+    category: data-layout
+    conformance: TFX
+    statement: >
+      In Profile S, all IFD field entries contain the field values inline except
+      XResolution(282) and YResolution(283) (type RATIONAL), whose "long" values SHALL
+      be placed immediately after the IFD that contains the offsets to them and before
+      the image data pointed to by that IFD.
+    tags: [282, 283]
+
+  - id: TFX-069
+    section: "3.5"
+    heading: "Profile S: File Structure"
+    page: 25
+    level: MUST
+    actor: file
+    category: data-layout
+    conformance: TFX
+    statement: >
+      Each Profile S IFD is required to have a PageNumber(297) field with value 0 for the
+      first page, 1 for the second, and so on.
+    tags: [297]
+
+  - id: TFX-070
+    section: "4"
+    heading: "Profile F: Extended Black-and-White Fax Profile"
+    page: 27
+    level: MUST
+    actor: both
+    category: image-class
+    conformance: TFX
+    statement: >
+      Profile F (Extended Black-and-White, historically TIFF Class F / TIFF-F) is a
+      superset of Profile S and adds Modified READ (MR) and Modified Modified READ (MMR)
+      compression per [T.4] and [T.6]. Implementations of Profile F include
+      implementations of Profile S.
+
+  - id: TFX-071
+    section: "4.2.1"
+    heading: "Profile F: Baseline fields"
+    page: 29
+    level: MUST
+    actor: file
+    category: image-class
+    conformance: TFX
+    statement: >
+      Profile F requires BitsPerSample(258) = 1 (binary data only). Default = 1.
+    tags: [258]
+
+  - id: TFX-072
+    section: "4.2.1"
+    heading: "Profile F: Baseline fields"
+    page: 29
+    level: MUST
+    actor: file
+    category: compression
+    conformance: TFX
+    statement: >
+      Profile F requires Compression(259) = 3 or 4. Value 3 = 1- or 2-dimensional
+      (MH/MR) coding and requires the T4Options(292) field; value 4 = T.6 2-dimensional
+      MMR coding and requires the T6Options(293) field. The field must be specified.
+    tags: [259, 292, 293]
+    notes: >
+      Baseline TIFF permits Compression=2 for MH, but that form does not use EOLs; TIFF
+      for facsimile uses Compression=3 instead of 2.
+
+  - id: TFX-073
+    section: "4.2.1"
+    heading: "Profile F: Baseline fields"
+    page: 29
+    level: MUST
+    actor: reader
+    category: image-class
+    conformance: TFX
+    statement: >
+      Profile F requires FillOrder(266) = 1 or 2 (1 = most significant bit first, 2 =
+      least significant bit first). Profile F readers MUST be able to read data in both
+      bit orders; most fax products store data LSB first.
+    tags: [266]
+
+  - id: TFX-074
+    section: "4.2.1"
+    heading: "Profile F: Baseline fields"
+    page: 29
+    level: MUST
+    actor: file
+    category: image-class
+    conformance: TFX
+    statement: >
+      Profile F supports the fixed page widths ImageWidth(256) = 1728, 2592, 3456
+      (Letter/Legal/A4), 2048, 3072, 4096 (ISO B4), and 2432, 3648, 4864 (ISO A3).
+      No default; it must be specified.
+    tags: [256]
+    notes: >
+      Historical TIFF-F did not include 2592, 3072, 3648, 3456, 4096, 4864 (higher
+      resolutions) and included A5/A6 widths 816 and 1216, which are now obsolete for
+      Group 3 fax.
+
+  - id: TFX-075
+    section: "4.2.1"
+    heading: "Profile F: Baseline fields"
+    page: 30
+    level: MUST
+    actor: file
+    category: image-class
+    conformance: TFX
+    statement: >
+      Profile F requires NewSubfileType(254) with bit 1 = 1 (value 2), always set to
+      indicate a single page of a multi-page image (even for a one-page fax).
+    tags: [254]
+
+  - id: TFX-076
+    section: "4.2.1"
+    heading: "Profile F: Baseline fields"
+    page: 30
+    level: MUST
+    actor: file
+    category: image-class
+    conformance: TFX
+    statement: >
+      Profile F requires PhotometricInterpretation(262) = 0 (pixel value 1 means black)
+      or 1 (pixel value 1 means white; inverted/negative image). No default.
+    tags: [262]
+
+  - id: TFX-077
+    section: "4.2.1"
+    heading: "Profile F: Baseline fields"
+    page: 30
+    level: MUST
+    actor: file
+    category: image-class
+    conformance: TFX
+    statement: >
+      Profile F requires ResolutionUnit(296) = 2 (inch) or 3 (centimeter); TIFF-F has
+      traditionally used inch-based measurement. Default = 2.
+    tags: [296]
+
+  - id: TFX-078
+    section: "4.2.1"
+    heading: "Profile F: Baseline fields"
+    page: 30
+    level: MUST
+    actor: file
+    category: image-class
+    conformance: TFX
+    statement: >
+      Profile F requires SamplesPerPixel(277) = 1 (monochrome, bi-level). Default = 1.
+    tags: [277]
+
+  - id: TFX-079
+    section: "4.2.1"
+    heading: "Profile F: Baseline fields"
+    page: 30
+    level: MUST
+    actor: file
+    category: image-class
+    conformance: TFX
+    statement: >
+      Profile F allows XResolution(282) = 200, 204, 300, 400, or 408 (pixels/inch); 204
+      is required of implementations. No default.
+    tags: [282]
+
+  - id: TFX-080
+    section: "4.2.1"
+    heading: "Profile F: Baseline fields"
+    page: 31
+    level: MUST
+    actor: file
+    category: image-class
+    conformance: TFX
+    statement: >
+      Profile F allows YResolution(283) = 98, 100, 196, 200, 300, 391, or 400
+      (pixels/inch); 98 and 196 are required of implementations. No default.
+    tags: [283]
+
+  - id: TFX-081
+    section: "4.2.1"
+    heading: "Profile F: Baseline fields"
+    page: 31
+    level: MUST
+    actor: file
+    category: image-class
+    conformance: TFX
+    statement: >
+      In Profile F, not all combinations of XResolution(282), YResolution(283), and
+      ImageWidth(256) are legal. Legal combinations per [T.30]: resolutions 200x100,
+      204x98, 200x200, 204x196, or 204x391 allow widths 1728/2048/2432 (Letter-A4/B4/A3);
+      300x300 allows 2592/3072/3648; 408x391 or 400x400 allows 3456/4096/4864.
+    tags: [282, 283, 256]
+
+  - id: TFX-082
+    section: "4.2.2"
+    heading: "Profile F: Extension fields"
+    page: 32
+    level: MUST
+    actor: file
+    category: compression
+    conformance: TFX
+    statement: >
+      In Profile F, T4Options(292) (LONG) is required when Compression(259) = 3. Bit 0 =
+      1 indicates MR, = 0 indicates MH; bit 1 must be 0; bit 2 = 1 indicates EOLs are
+      byte aligned, = 0 not byte aligned. Default is all bits 0. Legal values are 0, 1,
+      4, 5.
+    tags: [292, 259]
+    notes: >
+      T4Options was also known as Group3Options in a prior version of [TIFF].
+
+  - id: TFX-083
+    section: "4.2.2"
+    heading: "Profile F: Extension fields"
+    page: 32
+    level: MUST
+    actor: file
+    category: compression
+    conformance: TFX
+    statement: >
+      In Profile F, T6Options(293) (LONG) is required when Compression(259) = 4. Bit 0
+      must be 0; bit 1 = 0 means uncompressed data mode is not allowed (= 1 allows
+      uncompressed). For fax the field must be present and equal to 0; use of
+      uncompressed data (where compression would expand size) is not allowed.
+    tags: [293, 259]
+    notes: >
+      T6Options was also known as Group4Options in a prior version of [TIFF].
+
+  - id: TFX-084
+    section: "4.2.2"
+    heading: "Profile F: Extension fields"
+    page: 32
+    level: MUST
+    actor: file
+    category: compression
+    conformance: TFX
+    statement: >
+      MMR-compressed data (Compression=4) is two-dimensional and does not use EOLs; each
+      MMR-encoded image MUST include an end-of-facsimile-block (EOFB) code at the end of
+      each coded strip.
+    tags: [259, 293]
+
+  - id: TFX-085
+    section: "4.3.3"
+    heading: "Profile F: New fields (page-quality)"
+    page: 33
+    level: SHOULD-NOT
+    actor: writer
+    category: metadata
+    conformance: TFX
+    statement: >
+      The optional page-quality fields BadFaxLines(326), CleanFaxData(327), and
+      ConsecutiveBadFaxLines(328) SHOULD NOT be used when writing TIFF-F files for
+      facsimile image data that is error corrected or otherwise guaranteed not to have
+      coding errors.
+    tags: [326, 327, 328]
+
+  - id: TFX-086
+    section: "4.3.3"
+    heading: "Profile F: New fields (page-quality)"
+    page: 33
+    level: MAY
+    actor: writer
+    category: metadata
+    conformance: TFX
+    statement: >
+      BadFaxLines(326) (SHORT or LONG) gives the number of "bad" scanlines encountered
+      during reception, where a "bad" scanline decodes to an incorrect number of pixels
+      (PercentBad = (BadFaxLines/ImageLength)*100). No default.
+    tags: [326, 257]
+
+  - id: TFX-087
+    section: "4.3.3"
+    heading: "Profile F: New fields (page-quality)"
+    page: 33
+    level: MAY
+    actor: writer
+    category: metadata
+    conformance: TFX
+    statement: >
+      CleanFaxData(327) (SHORT) indicates whether bad lines are stored or were replaced:
+      0 = no bad lines; 1 = bad lines exist but were regenerated by the receiver; 2 = bad
+      lines exist but have not been regenerated. No default.
+    tags: [327]
+
+  - id: TFX-088
+    section: "4.3.3"
+    heading: "Profile F: New fields (page-quality)"
+    page: 34
+    level: MAY
+    actor: writer
+    category: metadata
+    conformance: TFX
+    statement: >
+      ConsecutiveBadFaxLines(328) (LONG or SHORT) gives the maximum number of
+      consecutive bad scanlines received. No default.
+    tags: [328]
+
+  - id: TFX-089
+    section: "4.4.1"
+    heading: "Profile F: Strips"
+    page: 34
+    level: SHOULD
+    actor: writer
+    category: data-layout
+    conformance: TFX
+    statement: >
+      The recommended approach for multi-page TIFF-F images is to represent each page as
+      a single strip (one strip per page).
+    tags: [278]
+
+  - id: TFX-090
+    section: "4.4.3"
+    heading: "Profile F: Multi-Page"
+    page: 35
+    level: SHOULD-NOT
+    actor: writer
+    category: data-layout
+    conformance: TFX
+    statement: >
+      TIFF-F specifies multi-page documents (NewSubfileType(254) = 2) as the standard
+      case. Applications SHOULD export multiple-page TIFF-F files without manipulating
+      fields; producing individual single-page files with modified NewSubfileType and
+      PageNumber(297) (page one-of-one) values is not recommended, because such files
+      cannot easily be linked into a logical multi-page document.
+    tags: [254, 297]
+
+  - id: TFX-091
+    section: "4.4.5"
+    heading: "Example Use of Page-quality Fields"
+    page: 36
+    level: MUST-NOT
+    actor: writer
+    category: metadata
+    conformance: TFX
+    statement: >
+      When facsimile hardware does not provide page-quality information, a writer MUST
+      NOT write the page-quality fields BadFaxLines(326), CleanFaxData(327), or
+      ConsecutiveBadFaxLines(328). When hardware reports no bad lines, write only
+      BadFaxLines = 0. When hardware reports bad lines, write both BadFaxLines and
+      ConsecutiveBadFaxLines, plus CleanFaxData = 1 or 2 if the regeneration capability
+      is known.
+    tags: [326, 327, 328]
+
+  - id: TFX-092
+    section: "4.4.5"
+    heading: "Example Use of Page-quality Fields"
+    page: 36
+    level: SHOULD
+    actor: writer
+    category: metadata
+    conformance: TFX
+    statement: >
+      TIFF writers SHOULD only generate the page-quality fields (BadFaxLines(326),
+      CleanFaxData(327), ConsecutiveBadFaxLines(328)) when the image was generated from a
+      fax data stream where error correction (e.g., Group 3 ECM) was not used.
+    tags: [326, 327, 328]
+
+  - id: TFX-093
+    section: "4.4.6"
+    heading: "Practical Guidelines for Multi-Page TIFF-F Files"
+    page: 36
+    level: SHOULD
+    actor: writer
+    category: data-layout
+    conformance: TFX
+    statement: >
+      For multi-page TIFF-F files: use one IFD per page; present IFDs in the same order
+      as the page sequence (pages numbered from 0 ascending); place image data for each
+      page within a single strip where possible; place each IFD before the image it
+      describes; and place image data in physical order consistent with logical page
+      order. If image data is stored in multiple strips, the strips SHOULD occur in the
+      file in the same order as the data occurs in the fax transmission (top of page
+      first).
+    tags: [278, 297]
+
+  - id: TFX-094
+    section: "4.4.6"
+    heading: "Practical Guidelines for Multi-Page TIFF-F Files"
+    page: 37
+    level: SHOULD
+    actor: reader
+    category: behavior
+    conformance: TFX
+    statement: >
+      TIFF-F readers SHOULD expect IFDs to be presented in page order but MUST be able to
+      handle exceptions, using the strip offsets to find the physical location of image
+      data whether or not it is presented in logical page order.
+    tags: [273]
+
+  - id: TFX-095
+    section: "4.5.1"
+    heading: "Uncompressed data"
+    page: 38
+    level: MUST
+    actor: both
+    category: compression
+    conformance: TFX
+    statement: >
+      TIFF-F requires the ability to read and write at least one-dimensional T.4 Huffman
+      (compressed) data. Uncompressed data is not allowed; the "Uncompressed" bit in
+      T4Options(292) or T6Options(293) must be set to 0.
+    tags: [292, 293]
+
+  - id: TFX-096
+    section: "4.5.2"
+    heading: "Encoding and Resolution"
+    page: 38
+    level: SHOULD
+    actor: writer
+    category: compression
+    conformance: TFX
+    statement: >
+      The minimal subset of TIFF-F requires support for one-dimensional (MH) files.
+      Implementors seeking greater efficiency SHOULD use T.6 MMR compression when writing
+      TIFF-F files; implementors seeking maximum flexibility in reading should support
+      MH, MR, and MMR. Metric-based resolutions (e.g., 77 x 38.5 cm) MAY be read for
+      legacy compatibility but their use is not recommended when writing TIFF-F files.
+    tags: [259, 282, 283]
+
+  - id: TFX-097
+    section: "4.5.3"
+    heading: "EOL byte-aligned"
+    page: 39
+    level: INFO
+    actor: file
+    category: compression
+    conformance: TFX
+    statement: >
+      An EOL is byte-aligned when fill bits are added before EOL codes so that the EOL
+      always ends on a byte boundary (giving the sequence xxxx0000 00000001) and the
+      first bit of following data begins on a byte boundary. For Modified READ (MR), each
+      line is terminated by an EOL and a one-bit tag bit (0 = next line 2-D, 1 = next
+      line is a reference line); fill bits are added before the EOL/tag-bit sequence to
+      maintain byte alignment.
+    tags: [292]
+
+  - id: TFX-098
+    section: "4.5.4"
+    heading: "EOL"
+    page: 40
+    level: INFO
+    actor: file
+    category: compression
+    conformance: TFX
+    statement: >
+      MH-encoded facsimile documents begin with an EOL (which in TIFF-F may be
+      byte-aligned); the last line of the image is not terminated by an EOL. MR
+      two-dimensional images begin with an EOL followed by a tag bit.
+    tags: [292]
+
+  - id: TFX-099
+    section: "4.5.5"
+    heading: "RTC Exclusion"
+    page: 40
+    level: MUST
+    actor: reader
+    category: compression
+    conformance: TFX
+    statement: >
+      TIFF-F readers MUST be able to process files that do not include RTCs and SHOULD be
+      able to process files that do include RTCs. Writers seeking strict conformance
+      SHOULD NOT include the RTC sequence (6 consecutive EOLs); they MAY include RTCs only
+      if T4Options(292) is set for non byte-aligned MH or MR data.
+    tags: [292]
+
+  - id: TFX-100
+    section: "4.5.6"
+    heading: "Use of EOFB for T.6 Compressed Images"
+    page: 40
+    level: MUST
+    actor: both
+    category: compression
+    conformance: TFX
+    statement: >
+      TIFF-F pages encoded with T.6 MMR compression MUST include an end-of-facsimile-block
+      (EOFB) code at the end of each coded strip, followed by pad bits as needed to align
+      on a byte boundary. TIFF readers SHOULD ignore any bits other than pad bits beyond
+      the EOFB.
+    tags: [259, 293]
+
+  - id: TFX-101
+    section: "5"
+    heading: "Profile J: Lossless JBIG Black-and-White Fax Profile"
+    page: 43
+    level: MUST
+    actor: both
+    category: image-class
+    conformance: TFX
+    statement: >
+      Profile J (Lossless JBIG Black-and-White) is essentially Profile F with JBIG
+      compression instead of MH/MR/MMR, using the single-progression sequential mode of
+      JBIG [T.82] applied per [T.85]. Implementations of Profile J are required to
+      implement Profile S. Fields are the same as Profile F (Section 4.2.1) except for
+      Compression and FillOrder.
+
+  - id: TFX-102
+    section: "5.2.1"
+    heading: "Profile J: Baseline fields"
+    page: 44
+    level: MUST
+    actor: file
+    category: compression
+    conformance: TFX
+    statement: >
+      Profile J requires Compression(259) = 9 (JBIG coding, a TIFF extension value),
+      using the ITU-T T.85 profile of T.82; see the T82Options(435) field. The field
+      must be specified.
+    tags: [259, 435]
+
+  - id: TFX-103
+    section: "5.2.1"
+    heading: "Profile J: Baseline fields"
+    page: 44
+    level: MUST
+    actor: reader
+    category: image-class
+    conformance: TFX
+    statement: >
+      Profile J requires FillOrder(266) = 1 or 2, and Profile J readers MUST be able to
+      read data in both bit orders (1 = MSB first, 2 = LSB first).
+    tags: [266]
+    notes: >
+      Per Annex B, FillOrder=1 was added to Profile J in RFC 3949 (it was not in RFC 2301).
+
+  - id: TFX-104
+    section: "5.2.3"
+    heading: "Profile J: New fields"
+    page: 44
+    level: MUST
+    actor: file
+    category: compression
+    conformance: TFX
+    statement: >
+      In Profile J, T82Options(435) (LONG) is required when Compression(259) = 9.
+      Individual bits indicate the applicable JBIG profile; all bits 0 indicates the
+      ITU-T T.85 profile of T.82. Default is all bits 0, and the field may be omitted in
+      Profile J files if this is the value.
+    tags: [435, 259]
+    notes: >
+      A T.82 decoder can decode a T.85-encoded image when it handles the NEWLE marker
+      code per Corrigendum 1 in [T.85].
+
+  - id: TFX-105
+    section: "6"
+    heading: "Profile C: Base Color Fax Profile"
+    page: 47
+    level: MUST
+    actor: both
+    category: image-class
+    conformance: TFX
+    statement: >
+      Profile C (Base Color Fax) is the base profile for color and grayscale fax; all
+      applications that support color fax must support it. It uses lossy JPEG compression
+      [T.4 Annex E, T.81] of L*a*b* color data [T.42]: grayscale uses the L* component,
+      color uses L*, a*, b*. Implementations of Profile C are required to also implement
+      Profile S.
+
+  - id: TFX-106
+    section: "6.2.1"
+    heading: "Profile C: Baseline Fields"
+    page: 47
+    level: MUST
+    actor: file
+    category: image-class
+    conformance: TFX
+    statement: >
+      Profile C supports the fixed page widths ImageWidth(256) = 864, 1024, 1216, 1728,
+      2048, 2432, 2592, 3072, 3456, 3648, 4096, 4864.
+    tags: [256]
+
+  - id: TFX-107
+    section: "6.2.1"
+    heading: "Profile C: Baseline Fields"
+    page: 47
+    level: MUST
+    actor: file
+    category: image-class
+    conformance: TFX
+    statement: >
+      Profile C requires NewSubfileType(254) with bit 1 = 1 (value 2, single page of a
+      multi-page document).
+    tags: [254]
+
+  - id: TFX-108
+    section: "6.2.1"
+    heading: "Profile C: Baseline Fields"
+    page: 47
+    level: MUST
+    actor: file
+    category: image-class
+    conformance: TFX
+    statement: >
+      Profile C requires BitsPerSample(258) = 8 (count = SamplesPerPixel); the base color
+      fax profile requires 8 bits per sample.
+    tags: [258, 277]
+
+  - id: TFX-109
+    section: "6.2.1"
+    heading: "Profile C: Baseline Fields"
+    page: 48
+    level: MUST
+    actor: file
+    category: compression
+    conformance: TFX
+    statement: >
+      Profile C requires Compression(259) = 7 (Baseline JPEG compression as specified in
+      [TTN2]).
+    tags: [259]
+
+  - id: TFX-110
+    section: "6.2.1"
+    heading: "Profile C: Baseline Fields"
+    page: 48
+    level: MUST
+    actor: reader
+    category: image-class
+    conformance: TFX
+    statement: >
+      Profile C requires FillOrder(266) = 1 or 2, and Profile C readers MUST be able to
+      read data in both bit orders.
+    tags: [266]
+
+  - id: TFX-111
+    section: "6.2.1"
+    heading: "Profile C: Baseline Fields"
+    page: 48
+    level: MUST
+    actor: file
+    category: color
+    conformance: TFX
+    statement: >
+      Profile C requires PhotometricInterpretation(262) = 10 (ITULAB), meaning pixel
+      values are stored with the CIE L*a*b* encoding defined in ITU-T Rec. T.42. The
+      minimum sample value maps to 0 and the maximum maps to (2^n - 1) where n =
+      BitsPerSample. Conversion from unsigned ITULAB samples to signed CIE L*a*b* values
+      is determined by the Decode(433) field.
+    tags: [262, 433, 258]
+    notes: >
+      PhotometricInterpretation values 8 (CIE L*a*b* [TIFF]) and 9 (ICC L*a*b* [TTN1])
+      are fixed encodings that cannot represent fax-encoded L*a*b* data.
+
+  - id: TFX-112
+    section: "6.2.1"
+    heading: "Profile C: Baseline Fields"
+    page: 48
+    level: MUST
+    actor: file
+    category: image-class
+    conformance: TFX
+    statement: >
+      Profile C requires ResolutionUnit(296) = 2 (inch); ITU-T standards specify only
+      inch-based resolutions for color fax. Default = 2.
+    tags: [296]
+
+  - id: TFX-113
+    section: "6.2.1"
+    heading: "Profile C: Baseline Fields"
+    page: 48
+    level: MUST
+    actor: file
+    category: color
+    conformance: TFX
+    statement: >
+      Profile C requires SamplesPerPixel(277) = 1 (L* component only, required in the
+      base color profile) or 3 (L*, a*, b* components), encoded per the
+      PhotometricInterpretation(262) field.
+    tags: [277, 262]
+
+  - id: TFX-114
+    section: "6.2.1"
+    heading: "Profile C: Baseline Fields"
+    page: 48
+    level: MUST
+    actor: file
+    category: image-class
+    conformance: TFX
+    statement: >
+      Profile C requires XResolution(282) = 100, 200, 300, or 400 and YResolution(283) =
+      100, 200, 300, or 400 (pixels/inch); pixels must be square, so YResolution must
+      equal XResolution. Base resolution is 200 pixels per inch and SHALL be supported by
+      all implementations of this profile.
+    tags: [282, 283]
+
+  - id: TFX-115
+    section: "6.2.1"
+    heading: "Profile C: Baseline Fields"
+    page: 52
+    level: MUST
+    actor: file
+    category: image-class
+    conformance: TFX
+    statement: >
+      In Profile C, not all combinations of resolution and ImageWidth(256) are legal.
+      Legal inch-based combinations per [T.30]: 100x100 allows widths 864/1024/1216;
+      200x200 allows 1728/2048/2432; 300x300 allows 2592/3072/3648; 400x400 allows
+      3456/4096/4864 (Letter-A4/B4/A3).
+    tags: [282, 283, 256]
+
+  - id: TFX-116
+    section: "6.2.2"
+    heading: "Profile C: Extension Fields"
+    page: 49
+    level: MAY
+    actor: file
+    category: color
+    conformance: TFX
+    statement: >
+      Profile C may use ChromaSubSampling(530) (SHORT, count 2) to specify horizontal
+      (ChromaSubsampleHoriz) and vertical (ChromaSubsampleVert) subsampling of the a*b*
+      chroma components relative to L*: 1 = equal numbers of lightness and chroma
+      samples, 2 = twice as many lightness samples as chroma samples. Default = (2,2);
+      (1,1) means no chroma subsampling.
+    tags: [530]
+
+  - id: TFX-117
+    section: "6.2.2"
+    heading: "Profile C: Extension Fields"
+    page: 49
+    level: MAY
+    actor: file
+    category: color
+    conformance: TFX
+    statement: >
+      Profile C may use ChromaPositioning(531) (SHORT) to specify spatial positioning of
+      chroma relative to lightness: 1 = centered (chrominance samples spatially offset and
+      centered with respect to luminance samples). Default = 1, per ITU-T T.4 Annex E.
+    tags: [531]
+
+  - id: TFX-118
+    section: "6.2.3"
+    heading: "Profile C: New Fields"
+    page: 50
+    level: MUST
+    actor: file
+    category: color
+    conformance: TFX
+    statement: >
+      Profile C requires Decode(433) (SRATIONAL, count = 2*SamplesPerPixel; count 6 for
+      L*a*b*). It maps unsigned ITULAB samples to signed L*a*b* values in min/max pairs:
+      L* = Decode[0] + Lsample*(Decode[1]-Decode[0])/(2^n-1); a* = Decode[2] +
+      asample*(Decode[3]-Decode[2])/(2^n-1); b* = Decode[4] +
+      bsample*(Decode[5]-Decode[4])/(2^n-1), where n = BitsPerSample and Decode[0/2/4]
+      are minima and Decode[1/3/5] are maxima.
+    tags: [433, 277, 258]
+
+  - id: TFX-119
+    section: "6.2.3"
+    heading: "Profile C: New Fields"
+    page: 51
+    level: INFO
+    actor: file
+    category: color
+    conformance: TFX
+    statement: >
+      For the ITULAB color space, the Decode(433) default values correspond to the base
+      range and offset per ITU-T Rec. T.42. For BitsPerSample=8 and
+      PhotometricInterpretation=10 the default Decode is (0, 100, -21760/255, 21590/255,
+      -19200/255, 31800/255), derived from T.42 base values L*(range 100, offset 0),
+      a*(range 170, offset 128), b*(range 200, offset 96) via minimum =
+      -(range*offset)/(2^n-1) and maximum = minimum + range.
+    tags: [433, 258, 262]
+
+  - id: TFX-120
+    section: "7"
+    heading: "Profile L: Lossless Color Profile"
+    page: 54
+    level: MUST
+    actor: both
+    category: image-class
+    conformance: TFX
+    statement: >
+      Profile L (Lossless Color), per [T.43] and [T.4] Annex G, uses JBIG (single-
+      progression sequential mode of T.82) to losslessly code one-bit-per-color CMY/CMYK/
+      RGB images, palettized color images, and continuous-tone color/grayscale images
+      (the latter two multi-level and using T.42 L*a*b* encoding). Implementations of
+      Profile L are required to also implement Profiles S and C.
+
+  - id: TFX-121
+    section: "7.1.1"
+    heading: "Profile L: Color Encoding"
+    page: 54
+    level: MUST
+    actor: file
+    category: color
+    conformance: TFX
+    statement: >
+      Profile L uses the color table embedded in the T.43 data stream rather than the
+      TIFF ColorMap(320) field. Baseline TIFF allows only RGB color maps, but T.43
+      requires L*a*b* color maps (T.42 encoding). Palette indices are 12 bits or fewer,
+      optionally 13 to 16 bits.
+    tags: [320, 346]
+    notes: >
+      Per Annex B, the ColorMap field was deleted from Profile L in RFC 3949 because it
+      re-encoded the color palette already present in the T.43 data stream.
+
+  - id: TFX-122
+    section: "7.1.1"
+    heading: "Profile L: Color Encoding"
+    page: 55
+    level: MUST
+    actor: file
+    category: color
+    conformance: TFX
+    statement: >
+      In Profile L, the field combinations for T.43 image types are: RGB -> PI=2,
+      SamplesPerPixel=3, BitsPerSample=1, Indexed=0; CMY -> PI=5, SPP=3, BPS=1,
+      Indexed=0; CMYK -> PI=5, SPP=4, BPS=1, Indexed=0; Palette -> PI=10(ITULAB), SPP=1,
+      BPS=n, Indexed=1; Grayscale -> PI=10, SPP=1, BPS=2-8 or 9-12, Indexed=0; Color ->
+      PI=10, SPP=3, BPS=2-8 or 9-12, Indexed=0.
+    tags: [262, 277, 258, 346]
+
+  - id: TFX-123
+    section: "7.2.1"
+    heading: "Profile L: Baseline Fields"
+    page: 56
+    level: MUST
+    actor: file
+    category: image-class
+    conformance: TFX
+    statement: >
+      Profile L supports the same page widths (ImageWidth(256)) as Profile C (864, 1024,
+      1216, 1728, 2048, 2432, 2592, 3072, 3456, 3648, 4096, 4864) and requires
+      NewSubfileType(254) with bit 1 = 1 (value 2).
+    tags: [256, 254]
+
+  - id: TFX-124
+    section: "7.2.1"
+    heading: "Profile L: Baseline Fields"
+    page: 56
+    level: MUST
+    actor: file
+    category: image-class
+    conformance: TFX
+    statement: >
+      Profile L requires BitsPerSample(258) (count = SamplesPerPixel) = 1 for RGB/CMY/
+      CMYK; 2-8 (9-12 optional) for continuous-tone L*a*b*; 12 or fewer for palette
+      color. More than 8 bits per sample is not baseline TIFF.
+    tags: [258, 277]
+
+  - id: TFX-125
+    section: "7.2.1"
+    heading: "Profile L: Baseline Fields"
+    page: 56
+    level: MUST
+    actor: file
+    category: compression
+    conformance: TFX
+    statement: >
+      Profile L requires Compression(259) = 10 (ITU-T Rec. T.43 representation using
+      ITU-T Rec. T.82 JBIG coding).
+    tags: [259]
+
+  - id: TFX-126
+    section: "7.2.1"
+    heading: "Profile L: Baseline Fields"
+    page: 56
+    level: MUST
+    actor: reader
+    category: image-class
+    conformance: TFX
+    statement: >
+      Profile L requires FillOrder(266) = 1 or 2, and Profile L readers MUST be able to
+      read data in both bit orders.
+    tags: [266]
+
+  - id: TFX-127
+    section: "7.2.1"
+    heading: "Profile L: Baseline Fields"
+    page: 56
+    level: MUST
+    actor: file
+    category: color
+    conformance: TFX
+    statement: >
+      Profile L requires PhotometricInterpretation(262) = 2 (RGB), 5 (CMYK, including
+      CMY), or 10 (ITULAB). For palette-color images set PI=10, SamplesPerPixel=1,
+      Indexed(346)=1, and use the color map in the data stream.
+    tags: [262, 277, 346]
+
+  - id: TFX-128
+    section: "7.2.1"
+    heading: "Profile L: Baseline Fields"
+    page: 57
+    level: MUST
+    actor: file
+    category: image-class
+    conformance: TFX
+    statement: >
+      Profile L requires ResolutionUnit(296) = 2 (inch). Default = 2.
+    tags: [296]
+
+  - id: TFX-129
+    section: "7.2.1"
+    heading: "Profile L: Baseline Fields"
+    page: 56
+    level: MUST
+    actor: file
+    category: color
+    conformance: TFX
+    statement: >
+      Profile L requires SamplesPerPixel(277) = 1 (palette-color, or L*-only when
+      Indexed=0 and PI=10), 3 (RGB, L*a*b*, or CMY when PI=5), or 4 (CMYK).
+    tags: [277, 262, 346]
+
+  - id: TFX-130
+    section: "7.2.1"
+    heading: "Profile L: Baseline Fields"
+    page: 57
+    level: MUST
+    actor: file
+    category: image-class
+    conformance: TFX
+    statement: >
+      Profile L requires XResolution(282) = 100, 200, 300, or 400 and YResolution(283)
+      equal to XResolution (pixels must be square). Base resolution is 200 pixels/inch.
+    tags: [282, 283]
+
+  - id: TFX-131
+    section: "7.2.2"
+    heading: "Profile L: Extension Fields"
+    page: 57
+    level: MUST
+    actor: file
+    category: color
+    conformance: TFX
+    statement: >
+      Profile L uses Indexed(346) (SHORT) = 0 (not palette-color) or 1 (palette-color).
+      When Indexed=1, each sample value is an index into a color array specified in the
+      image data stream (the ColorMap field is not used) and SamplesPerPixel(277) must
+      be 1.
+    tags: [346, 277]
+
+  - id: TFX-132
+    section: "7.2.3"
+    heading: "Profile L: New Fields"
+    page: 57
+    level: MUST
+    actor: file
+    category: color
+    conformance: TFX
+    statement: >
+      Profile L uses Decode(433) (SRATIONAL) in connection with the ITULAB encoding of
+      image data, as defined for Profile C in Section 6.2.3.
+    tags: [433]
+
+  - id: TFX-133
+    section: "8"
+    heading: "Profile M: Mixed Raster Content Profile"
+    page: 60
+    level: MUST
+    actor: both
+    category: image-class
+    conformance: TFX
+    statement: >
+      Profile M (Mixed Raster Content, per [T.44]) enables different coding methods and
+      resolutions within a single page by defining a 3-layer image model. Implementations
+      of Profile M are required to implement Profiles S and C and may optionally implement
+      Profiles F, J, and L.
+
+  - id: TFX-134
+    section: "8.1.1"
+    heading: "MRC 3-layer model"
+    page: 60
+    level: INFO
+    actor: file
+    category: data-layout
+    conformance: TFX
+    statement: >
+      The 3 MRC layers are Foreground and Background (both multi-level) and Mask
+      (bi-level). Each layer may appear only once per page and is coded independently.
+      The final image is formed using the Mask: where the Mask pixel is 1 the Foreground
+      pixel is selected, where 0 the Background pixel is selected.
+
+  - id: TFX-135
+    section: "8.1.1"
+    heading: "MRC 3-layer model"
+    page: 61
+    level: MUST
+    actor: file
+    category: data-layout
+    conformance: TFX
+    statement: >
+      If a page has only one layer, that layer is the primary image (whether Background,
+      Mask, or Foreground). If there is more than one layer, the Mask must be one of the
+      layers and is the primary image. In all cases the primary image must be page size.
+
+  - id: TFX-136
+    section: "8.1.1"
+    heading: "MRC 3-layer model"
+    page: 61
+    level: SHOULD-NOT
+    actor: file
+    category: data-layout
+    conformance: TFX
+    statement: >
+      A page may be transmitted as a series of stripes each consisting of 1, 2, or 3
+      layers, with a variable number of scanlines per stripe. Per [T.4] Annex H, stripes
+      having more than one layer SHOULD NOT be more than 256 lines long unless the
+      capability to receive longer stripes has been negotiated.
+
+  - id: TFX-137
+    section: "8.1.1"
+    heading: "MRC 3-layer model"
+    page: 61
+    level: MUST
+    actor: file
+    category: color
+    conformance: TFX
+    statement: >
+      Color fax requires the spatial resolutions of Background and Foreground images to
+      be legal fax values that are also integer factors of the Mask image resolution. For
+      example, if the Mask is 400 ppi, allowable Foreground/Background resolutions are
+      100, 200, or 400 ppi; if the Mask is 300 ppi, allowable values are 100 and 300. The
+      Foreground and Background resolutions may be set independently.
+    tags: [282, 283]
+
+  - id: TFX-138
+    section: "8.1.2"
+    heading: "A TIFF Representation for the MRC 3-layer model"
+    page: 62
+    level: MUST
+    actor: file
+    category: data-layout
+    conformance: TFX
+    statement: >
+      In Profile M, each page is represented by a single Primary IFD whose next-IFD offset
+      points to the Primary IFD of the next page. If the page is a single layer, the
+      Primary IFD represents that layer. If more than one layer is present, the Primary
+      IFD represents the Mask layer and the other layers are represented by child IFDs
+      referenced through the SubIFDs(330) field of the Primary IFD.
+    tags: [330]
+
+  - id: TFX-139
+    section: "8.1.2"
+    heading: "A TIFF Representation for the MRC 3-layer model"
+    page: 62
+    level: MUST
+    actor: file
+    category: data-layout
+    conformance: TFX
+    statement: >
+      To distinguish MRC-specific SubIFDs from other SubIFDs, the NewSubfileType(254)
+      field MUST have bit 4 ON, indicating an MRC-related IFD.
+    tags: [254]
+
+  - id: TFX-140
+    section: "8.1.2"
+    heading: "A TIFF Representation for the MRC 3-layer model"
+    page: 62
+    level: MUST
+    actor: file
+    category: data-layout
+    conformance: TFX
+    statement: >
+      In Profile M, the Primary IFD represents a complete layer; there must be no other
+      MRC-related IFDs or SubIFDs that contain image data corresponding to the layer
+      represented by the Primary IFD.
+
+  - id: TFX-141
+    section: "8.1.2"
+    heading: "A TIFF Representation for the MRC 3-layer model"
+    page: 62
+    level: MUST
+    actor: file
+    category: data-layout
+    conformance: TFX
+    statement: >
+      A strip within a Profile M IFD represents a [T.44] stripe. The stripes of the
+      Primary image are represented by a single, multiple-strip IFD; the stripes of other
+      layers are represented as multiple, single-strip IFDs. Layers other than the Primary
+      store each strip as a separate IFD, allowing coding parameters to change from strip
+      to strip. If the Mask layer exists, it shall be represented by a single IFD with a
+      single set of coding parameters.
+
+  - id: TFX-142
+    section: "8.1.2"
+    heading: "A TIFF Representation for the MRC 3-layer model"
+    page: 62
+    level: MUST
+    actor: reader
+    category: data-layout
+    conformance: TFX
+    statement: >
+      Because MRC allows stripes with variable numbers of scanlines, a Profile M reader
+      MUST support the StripRowCounts(559) field, which a writer may use in place of
+      RowsPerStrip(278) to support a variable number of scanlines in each strip of the
+      Primary IFD.
+    tags: [559, 278]
+
+  - id: TFX-143
+    section: "8.1.2"
+    heading: "A TIFF Representation for the MRC 3-layer model"
+    page: 62
+    level: MUST
+    actor: file
+    category: compression
+    conformance: TFX
+    statement: >
+      In accordance with [TTN2], each strip in a Profile M IFD shall be independently
+      encoded, but coding parameters may not change between strips within a single IFD.
+
+  - id: TFX-144
+    section: "8.1.2"
+    heading: "A TIFF Representation for the MRC 3-layer model"
+    page: 63
+    level: SHOULD
+    actor: writer
+    category: data-layout
+    conformance: TFX
+    statement: >
+      A Profile M writer SHOULD structure Background and Foreground layer images using
+      option (3): the SubIFDs(330) field is an array of two pointers, the first to a
+      linked list of all Background layer image IFDs and the second to a linked list of
+      all Foreground layer image IFDs. Child IFDs SHOULD be ordered in the file in the
+      same order as they occur on the page.
+    tags: [330]
+
+  - id: TFX-145
+    section: "8.1.2"
+    heading: "A TIFF Representation for the MRC 3-layer model"
+    page: 63
+    level: MUST
+    actor: reader
+    category: behavior
+    conformance: TFX
+    statement: >
+      A Profile M reader MUST scan all available child IFDs to locate and identify IFDs
+      associated with MRC layers.
+
+  - id: TFX-146
+    section: "8.1.2"
+    heading: "A TIFF Representation for the MRC 3-layer model"
+    page: 63
+    level: MUST-NOT
+    actor: file
+    category: data-layout
+    conformance: TFX
+    statement: >
+      The XPosition(286) and YPosition(287) fields specify the offset to the upper-left
+      corner of a child IFD in resolution units (inches in Profile M). The Primary IFD
+      MUST NOT use the XPosition or YPosition fields.
+    tags: [286, 287]
+
+  - id: TFX-147
+    section: "8.1.2"
+    heading: "A TIFF Representation for the MRC 3-layer model"
+    page: 63
+    level: MUST
+    actor: file
+    category: color
+    conformance: TFX
+    statement: >
+      The new field ImageBaseColor(434) stores the default image color applied where no
+      image data is transmitted for a stripe/layer. By setting the StripByteCounts(279)
+      array to zero values, an IFD defining a default color but containing no encoded
+      image data can be specified. If the StripByteCount entry for a strip is 0, the
+      ImageBaseColor is used for that strip.
+    tags: [434, 279]
+
+  - id: TFX-148
+    section: "8.2.1"
+    heading: "Profile M: Baseline Fields"
+    page: 64
+    level: MUST
+    actor: file
+    category: image-class
+    conformance: TFX
+    statement: >
+      Profile M uses the same page widths as Profile C (ImageWidth(256) = 864, 1024,
+      1216, 1728, 2048, 2432, 2592, 3072, 3456, 3648, 4096, 4864). The width of a
+      Foreground or Background image in the coded data stream may be less than the page
+      width unless it is the primary image, in which case it must equal the page width.
+      ImageWidth always stores the actual width of the coded data.
+    tags: [256]
+
+  - id: TFX-149
+    section: "8.2.1"
+    heading: "Profile M: Baseline Fields"
+    page: 64
+    level: MUST
+    actor: file
+    category: data-layout
+    conformance: TFX
+    statement: >
+      For Profile M, NewSubfileType(254) = 16 or 18. Bit 1 indicates a single page of a
+      multi-page document and must be set for the Primary IFD; bit 4 indicates the MRC
+      model and must be set for the Primary IFD and all MRC-specific child IFDs. Thus
+      Primary IFDs use value 18 (bits 1 and 4) and MRC child IFDs use value 16 (bit 4).
+    tags: [254]
+
+  - id: TFX-150
+    section: "8.2.1"
+    heading: "Profile M: Baseline Fields"
+    page: 65
+    level: MUST
+    actor: file
+    category: compression
+    conformance: TFX
+    statement: >
+      For Profile M, Compression(259) = 1, 3, 4, 7, 9, or 10, per layer (Mask: 3, 4, 9;
+      Foreground/Background: 7, 9, 10). Compression=1 (no compression) is used only for
+      an IFD that specifies a default image color and contains no encoded image data
+      (StripByteCounts = 0); Compression=1 is not allowed for any other IFD.
+    tags: [259, 279]
+
+  - id: TFX-151
+    section: "8.2.1"
+    heading: "Profile M: Baseline Fields"
+    page: 66
+    level: MUST
+    actor: reader
+    category: image-class
+    conformance: TFX
+    statement: >
+      For Profile M, BitsPerSample(258) = 1, 2-8, or 9-12; SamplesPerPixel(277) = 1, 3,
+      or 4; FillOrder(266) = 1 or 2 with readers required to read both bit orders.
+    tags: [258, 277, 266]
+
+  - id: TFX-152
+    section: "8.2.1"
+    heading: "Profile M: Baseline Fields"
+    page: 66
+    level: MUST
+    actor: file
+    category: color
+    conformance: TFX
+    statement: >
+      For Profile M, PhotometricInterpretation(262) = 0 (Mask layer), 2 (RGB), or 10
+      (ITULAB); Foreground/Background layers use the values from Profiles C and L. The
+      Mask layer must use PI=0.
+    tags: [262]
+
+  - id: TFX-153
+    section: "8.2.1"
+    heading: "Profile M: Baseline Fields"
+    page: 66
+    level: MUST
+    actor: file
+    category: image-class
+    conformance: TFX
+    statement: >
+      For Profile M, ResolutionUnit(296) = 2 (inch); default = 2.
+    tags: [296]
+
+  - id: TFX-154
+    section: "8.2.1"
+    heading: "Profile M: Baseline Fields"
+    page: 65
+    level: MAY
+    actor: file
+    category: data-layout
+    conformance: TFX
+    statement: >
+      In Profile M, a StripByteCounts(279) entry for a given strip may be 0, meaning there
+      is no encoded image data for that strip and the current default image color is used
+      instead (black for Foreground, white for Background by default; other colors via
+      ImageBaseColor(434)).
+    tags: [279, 434]
+
+  - id: TFX-155
+    section: "8.2.1"
+    heading: "Profile M: Baseline Fields"
+    page: 66
+    level: MUST
+    actor: file
+    category: image-class
+    conformance: TFX
+    statement: >
+      For Profile M, XResolution(282) = 100, 200, 300, or 400 for all layers and
+      YResolution(283) must equal XResolution (square pixels). The resolution of
+      Background and Foreground layers must each be an integer factor of the Primary
+      (Mask) image resolution when the Mask is present.
+    tags: [282, 283]
+
+  - id: TFX-156
+    section: "8.2.2"
+    heading: "Profile M: Extension Fields"
+    page: 66
+    level: MAY
+    actor: file
+    category: color
+    conformance: TFX
+    statement: >
+      Profile M Foreground/Background layers may use ChromaSubSampling(530) and
+      ChromaPositioning(531) as in Profile C, and Indexed(346) = 0 or 1 (1 = palette-color
+      image) as in Profile L. Mask-layer IFDs may use T4Options(292) = 0,1,4,5 and
+      T6Options(293) = 0 as in Profile F.
+    tags: [530, 531, 346, 292, 293]
+
+  - id: TFX-157
+    section: "8.2.2"
+    heading: "Profile M: Extension Fields"
+    page: 66
+    level: MUST
+    actor: file
+    category: data-layout
+    conformance: TFX
+    statement: >
+      Profile M uses SubIFDs(330) (type IFD, count = number of child IFDs); each value is
+      an offset from the beginning of the TIFF file to a child IFD [TTN1].
+    tags: [330]
+
+  - id: TFX-158
+    section: "8.2.2"
+    heading: "Profile M: Extension Fields"
+    page: 66
+    level: MUST
+    actor: file
+    category: data-layout
+    conformance: TFX
+    statement: >
+      In Profile M, XPosition(286) and YPosition(287) (RATIONAL) specify the horizontal
+      and vertical offsets of the top-left of a child IFD from the top-left of the Primary
+      IFD in resolution units (inches). They MUST be specified for MRC child IFDs (no
+      default value) and MUST NOT be used by the Primary IFD.
+    tags: [286, 287]
+
+  - id: TFX-159
+    section: "8.2.3"
+    heading: "Profile M: New Fields"
+    page: 67
+    level: MUST
+    actor: file
+    category: color
+    conformance: TFX
+    statement: >
+      Profile M uses Decode(433) (SRATIONAL) for Foreground/Background layers (per Section
+      6.2.3) and T82Options(435) (LONG) for the Mask layer (per Section 5.2.3).
+    tags: [433, 435]
+
+  - id: TFX-160
+    section: "8.2.3"
+    heading: "Profile M: New Fields"
+    page: 67
+    level: MUST
+    actor: file
+    category: color
+    conformance: TFX
+    statement: >
+      ImageBaseColor(434) (SHORT, count = SamplesPerPixel) specifies the color used in
+      areas of an image layer with no image data. If used in an IFD with ITU L*a*b*
+      image data, it is interpreted with that data's color-encoding parameters; if used
+      in an IFD with non-L*a*b* data or with no encoded image data, it SHALL be
+      interpreted as 8 bits/sample, 3 samples/pixel ITU L*a*b*.
+    tags: [434, 277]
+
+  - id: TFX-161
+    section: "8.2.3"
+    heading: "Profile M: New Fields"
+    page: 67
+    level: MUST
+    actor: file
+    category: data-layout
+    conformance: TFX
+    statement: >
+      When a [T.44] stripe contains a Foreground/Background image smaller than the stripe,
+      the default image color is imaged first (via a child IFD containing no encoded image
+      data but specifying ImageBaseColor(434)), then the image data (a second child IFD).
+      To ensure the default color is imaged first, ImageLayer[1] (order) of the
+      ImageBaseColor-only IFD MUST be lower than ImageLayer[1] of the IFD with the image
+      data for the same layer and strip.
+    tags: [434, 34732]
+
+  - id: TFX-162
+    section: "8.2.3"
+    heading: "Profile M: New Fields"
+    page: 67
+    level: INFO
+    actor: file
+    category: color
+    conformance: TFX
+    statement: >
+      For the Foreground layer image the default value of ImageBaseColor(434) is black;
+      for other cases, including the Background layer image, the default is white.
+    tags: [434]
+
+  - id: TFX-163
+    section: "8.2.3"
+    heading: "Profile M: New Fields"
+    page: 68
+    level: MUST
+    actor: file
+    category: data-layout
+    conformance: TFX
+    statement: >
+      StripRowCounts(559) (LONG, count = number of strips) gives the number of scanlines
+      in each strip, allowing each fax strip to store a different number of scanlines. For
+      strips with more than one layer the maximum strip size is 256 scanlines or full page
+      size (256 SHOULD be used unless longer strips have been negotiated). This field
+      replaces RowsPerStrip(278) for variable-size strips; only one of StripRowCounts and
+      RowsPerStrip may be used in an IFD.
+    tags: [559, 278]
+
+  - id: TFX-164
+    section: "8.2.3"
+    heading: "Profile M: New Fields"
+    page: 68
+    level: MUST
+    actor: file
+    category: data-layout
+    conformance: TFX
+    statement: >
+      ImageLayer(34732) (LONG, count 2) identifies the layer and imaging order of an IFD.
+      ImageLayer[0] = 1 (Background), 2 (Mask), or 3 (Foreground); ImageLayer[1] gives the
+      imaging order (1 = first image in this layer, 2 = second, ...), ensuring overlapping
+      images within a layer are imaged correctly. For a single-layer page stored as the
+      Primary IFD, ImageLayer is [1,1] (Background) and no Mask exists.
+    tags: [34732]
+
+  - id: TFX-165
+    section: "8.4"
+    heading: "Rules and Requirements for Images"
+    page: 70
+    level: MUST
+    actor: file
+    category: image-class
+    conformance: TFX
+    statement: >
+      Profile M rule 1: If more than one layer exists, the binary Mask layer SHALL be
+      present and be the primary image. The Mask layer SHALL support the binary
+      representations of Section 3 (Profile S) and MAY support those of Sections 4 and 5
+      (Profiles F, J), except PhotometricInterpretation(262) MUST be 0. If only one layer
+      exists, that layer is the primary image.
+    tags: [262]
+
+  - id: TFX-166
+    section: "8.4"
+    heading: "Rules and Requirements for Images"
+    page: 70
+    level: MUST
+    actor: file
+    category: data-layout
+    conformance: TFX
+    statement: >
+      Profile M rule 2: The Primary IFD defines and extends to the entire page boundary;
+      all attached model images cannot extend beyond the Primary image. Resolution
+      differences may cause some pixels to hang over the page boundary, but no new pixels
+      should exist completely beyond the page extent.
+
+  - id: TFX-167
+    section: "8.4"
+    heading: "Rules and Requirements for Images"
+    page: 70
+    level: MUST
+    actor: file
+    category: color
+    conformance: TFX
+    statement: >
+      Profile M rule 3: The Background and Foreground images SHALL support the color
+      representations of Section 6 (Profile C) and MAY support those of Section 7 (Profile
+      L). These images MAY optionally cover only a portion of the strip or page.
+
+  - id: TFX-168
+    section: "8.4"
+    heading: "Rules and Requirements for Images"
+    page: 70
+    level: MUST
+    actor: file
+    category: data-layout
+    conformance: TFX
+    statement: >
+      Profile M rule 4: Each Primary IFD and each MRC-specific SubIFD MUST have an
+      ImageLayer(34732) field specifying which layer the IFD belongs to and the imaging
+      order within the layer.
+    tags: [34732]
+
+  - id: TFX-169
+    section: "8.4"
+    heading: "Rules and Requirements for Images"
+    page: 70
+    level: MUST
+    actor: file
+    category: data-layout
+    conformance: TFX
+    statement: >
+      Profile M rules 5 and 6: Each Primary IFD MUST have NewSubfileType(254) = 18 (bit 1
+      = single page of multi-page document, bit 4 = MRC); each MRC-specific child IFD MUST
+      have NewSubfileType = 16 (bit 4 = MRC).
+    tags: [254]
+
+  - id: TFX-170
+    section: "8.4"
+    heading: "Rules and Requirements for Images"
+    page: 70
+    level: MUST
+    actor: file
+    category: data-layout
+    conformance: TFX
+    statement: >
+      Profile M rule 7: Each layer is transmitted as a sequence of strips. If the page is
+      a single layer, all strips SHALL be stored in the single Primary IFD (coding
+      parameters cannot change between strips). If the page has more than one layer, all
+      Mask-layer strips SHALL be stored in the single Primary IFD, and all Foreground/
+      Background strips SHALL be stored in separate IFDs referenced by the Primary IFD's
+      SubIFDs(330) field, each with an ImageLayer(34732) field identifying the layer and
+      order, and XPosition(286)/YPosition(287) indicating placement.
+    tags: [330, 34732, 286, 287]
+
+  - id: TFX-171
+    section: "8.4"
+    heading: "Rules and Requirements for Images"
+    page: 70
+    level: MUST
+    actor: file
+    category: color
+    conformance: TFX
+    statement: >
+      Profile M rule 8: When the Mask image is present, the resolution of Background and
+      Foreground images must each be an integer factor of the Mask image resolution (e.g.,
+      for a 400 ppi Mask, layers may be 400, 200, or 100 ppi).
+    tags: [282, 283]
+
+  - id: TFX-172
+    section: "9"
+    heading: "MIME content-types"
+    page: 74
+    level: INFO
+    actor: both
+    category: metadata
+    conformance: TFX
+    statement: >
+      The MIME content-types image/tiff and image/tiff-fx are used for TIFF-FX encoded
+      image data; their registration is described in [TIFF-REG] (RFC 3302) and
+      [TIFF-FX-REG] (RFC 3250).
+
+  - id: TFX-173
+    section: "10"
+    heading: "Security Considerations"
+    page: 74
+    level: INFO
+    actor: both
+    category: metadata
+    conformance: TFX
+    statement: >
+      TIFF-FX creates no security issues beyond those in [TIFF-REG] and [TIFF]; the new
+      TIFF fields are purely descriptive. The encoding does not preclude use of Internet
+      security protocols to encrypt, authenticate, or non-repudiate messages.
+
+tags:
+  - code: 254
+    hex: "0x00FE"
+    name: NewSubfileType
+    types: [LONG]
+    count: "1"
+    default: 0
+    required: yes
+    conformance: TFX
+    location: ifd0
+    section: "2.2.2"
+    page: 15
+    description: >
+      General indication of the kind of data in the IFD. For fax, bit 1 = single page of
+      a multi-page document; in Profile M bit 4 = MRC-related IFD. Field may not be
+      omitted for fax.
+    values:
+      2: "Bit 1 set: single page of a multi-page document (Profiles S/F/J/C/L)"
+      16: "Bit 4 set: MRC-specific child IFD (Profile M)"
+      18: "Bits 1 and 4 set: MRC Primary IFD (Profile M)"
+    interacts_with: [297, 330]
+
+  - code: 256
+    hex: "0x0100"
+    name: ImageWidth
+    types: [SHORT, LONG]
+    count: "1"
+    default: null
+    required: yes
+    conformance: TFX
+    location: ifd0
+    section: "2.2.2"
+    page: 15
+    description: >
+      Number of pixels (columns) per scanline. Fax profiles restrict this to specific
+      page widths. No default; must be specified.
+    interacts_with: [282, 283]
+
+  - code: 257
+    hex: "0x0101"
+    name: ImageLength
+    types: [SHORT, LONG]
+    count: "1"
+    default: null
+    required: yes
+    conformance: TFX
+    location: ifd0
+    section: "2.2.1"
+    page: 13
+    description: >
+      Total number of scanlines in the image. No default; must be specified.
+
+  - code: 258
+    hex: "0x0102"
+    name: BitsPerSample
+    types: [SHORT]
+    count: "SamplesPerPixel"
+    default: 1
+    required: yes
+    conformance: TFX
+    location: ifd0
+    section: "2.2.2"
+    page: 14
+    description: >
+      Number of bits per image sample. 1 for black-and-white profiles; 8 for Profile C;
+      1, 2-8, or 9-12 for Profiles L and M. More than 8 bits/sample is not baseline TIFF.
+    interacts_with: [277, 262]
+
+  - code: 259
+    hex: "0x0103"
+    name: Compression
+    types: [SHORT]
+    count: "1"
+    default: 1
+    required: yes
+    conformance: TFX
+    location: ifd0
+    section: "2.2.2"
+    page: 14
+    description: >
+      Compression method for the image data. Must be specified for fax (default 1 not
+      applicable). This document defines fax use of values 3, 4, 7, 9, and 10.
+    values:
+      1: "No compression (Profile M only, for ImageBaseColor-only IFDs with no image data)"
+      3: "1- or 2-dimensional T.4 coding (MH/MR); requires T4Options(292)"
+      4: "T.6 2-dimensional MMR coding; requires T6Options(293)"
+      7: "Baseline JPEG per [TTN2] (Profile C)"
+      9: "JBIG coding, T.85 profile of T.82 (Profile J); requires T82Options(435)"
+      10: "T.43 representation using T.82 JBIG (Profile L)"
+    interacts_with: [292, 293, 435, 262]
+
+  - code: 262
+    hex: "0x0106"
+    name: PhotometricInterpretation
+    types: [SHORT]
+    count: "1"
+    default: null
+    required: yes
+    conformance: TFX
+    location: ifd0
+    section: "2.2.2"
+    page: 15
+    description: >
+      Color space of the image data. This document defines value 10 (ITULAB), the CIE
+      L*a*b* encoding of ITU-T Rec. T.42, where the min sample maps to 0 and the max to
+      (2^n - 1); the Decode(433) field converts unsigned ITULAB samples to signed L*a*b*.
+      No default; must be specified.
+    values:
+      0: "WhiteIsZero / pixel value 1 means black (Profiles S, F, J, M Mask)"
+      1: "BlackIsZero / pixel value 1 means white (Profile F/J, inverted image)"
+      2: "RGB (Profiles L, M)"
+      5: "CMYK, including CMY (Profile L)"
+      10: "ITULAB: CIE L*a*b* per ITU-T T.42 (Profiles C, L, M)"
+    interacts_with: [433, 258, 277, 346]
+
+  - code: 266
+    hex: "0x010A"
+    name: FillOrder
+    types: [SHORT]
+    count: "1"
+    default: 1
+    required: yes
+    conformance: TFX
+    location: ifd0
+    section: "2.2.2"
+    page: 15
+    description: >
+      Logical bit order within bytes. Fax typically uses 2 (LSB first). All conforming
+      readers must read both bit orders, except Profile S which requires only FillOrder=2.
+    values:
+      1: "Most significant bit first (lowest-numbered pixel in MSB)"
+      2: "Least significant bit first (lowest-numbered pixel in LSB)"
+
+  - code: 269
+    hex: "0x010D"
+    name: DocumentName
+    types: [ASCII]
+    count: "N"
+    default: null
+    required: no
+    conformance: TFX
+    location: ifd0
+    section: "2.2.3"
+    page: 17
+    description: >
+      Name of the scanned document (TIFF extension field). Recommended for all profiles
+      except Profile S (Profile S writers should not use it). No default.
+
+  - code: 270
+    hex: "0x010E"
+    name: ImageDescription
+    types: [ASCII]
+    count: "N"
+    default: null
+    required: no
+    conformance: TFX
+    location: ifd0
+    section: "2.2.3"
+    page: 18
+    description: >
+      String describing the contents of the image. Recommended for all profiles except
+      Profile S. No default.
+
+  - code: 273
+    hex: "0x0111"
+    name: StripOffsets
+    types: [SHORT, LONG]
+    count: "number of strips"
+    default: null
+    required: yes
+    conformance: TFX
+    location: ifd0
+    section: "2.2.1"
+    page: 14
+    description: >
+      For each strip, the byte offset from the beginning of the file to the start of that
+      strip. No default.
+
+  - code: 274
+    hex: "0x0112"
+    name: Orientation
+    types: [SHORT]
+    count: "1"
+    default: 1
+    required: no
+    conformance: TFX
+    location: ifd0
+    section: "2.2.3"
+    page: 18
+    description: >
+      Orientation of the image (values 1-8; Baseline requires only 1). Recommended to be
+      included by a writer aware of orientation even if default. Writers should not
+      generate mirror images. Profile S: value 1 only.
+    values:
+      1: "0th row = visual top, 0th column = visual left"
+
+  - code: 277
+    hex: "0x0115"
+    name: SamplesPerPixel
+    types: [SHORT]
+    count: "1"
+    default: 1
+    required: yes
+    conformance: TFX
+    location: ifd0
+    section: "2.2.2"
+    page: 16
+    description: >
+      Number of color components per pixel. 1 for B&W/grayscale/indexed; 1 or 3 for
+      Profile C; 1, 3, or 4 for Profiles L and M.
+    interacts_with: [258, 262, 346]
+
+  - code: 278
+    hex: "0x0116"
+    name: RowsPerStrip
+    types: [SHORT, LONG]
+    count: "1"
+    default: 4294967295
+    required: yes
+    conformance: TFX
+    location: ifd0
+    section: "2.2.1"
+    page: 14
+    description: >
+      Number of scanlines per strip (except the last). Equals ImageLength for single-strip
+      images. Default = 2**32 - 1 (all scanlines in one strip). Replaced by
+      StripRowCounts(559) for variable-size strips in Profile M (only one of the two per IFD).
+    interacts_with: [257, 559]
+
+  - code: 279
+    hex: "0x0117"
+    name: StripByteCounts
+    types: [SHORT, LONG]
+    count: "number of strips"
+    default: null
+    required: yes
+    conformance: TFX
+    location: ifd0
+    section: "2.2.1"
+    page: 14
+    description: >
+      For each strip, the number of bytes after compression. In Profile M a value of 0
+      means no encoded data for that strip and the default image color (ImageBaseColor)
+      is used. No default.
+    interacts_with: [434]
+
+  - code: 282
+    hex: "0x011A"
+    name: XResolution
+    types: [RATIONAL]
+    count: "1"
+    default: null
+    required: yes
+    conformance: TFX
+    location: ifd0
+    section: "2.2.2"
+    page: 16
+    description: >
+      Horizontal resolution in pixels per resolution unit. Allowed values are
+      profile-specific. Writers should express in inch-based units. Pairs <204,200> and
+      <400,408> pixels/inch may be treated as equivalent per [T.4].
+    interacts_with: [283, 296, 256]
+
+  - code: 283
+    hex: "0x011B"
+    name: YResolution
+    types: [RATIONAL]
+    count: "1"
+    default: null
+    required: yes
+    conformance: TFX
+    location: ifd0
+    section: "2.2.2"
+    page: 16
+    description: >
+      Vertical resolution in pixels per resolution unit. Allowed values are
+      profile-specific; for color profiles must equal XResolution (square pixels). Pairs
+      <98,100>, <196,200>, <391,400> pixels/inch may be treated as equivalent per [T.4].
+    interacts_with: [282, 296, 256]
+
+  - code: 286
+    hex: "0x011E"
+    name: XPosition
+    types: [RATIONAL]
+    count: "1"
+    default: null
+    required: conditional
+    conformance: TFX
+    location: any-ifd
+    section: "8.2.2"
+    page: 66
+    description: >
+      Profile M only: horizontal offset of the top-left of a child IFD from the top-left
+      of the Primary IFD in resolution units (inches). Must be specified for MRC child
+      IFDs; must not be used by the Primary IFD. No default.
+    notes: >
+      Appears in MRC Foreground/Background child (sub) IFDs, not the primary/page IFD;
+      location any-ifd used because the addendum vocabulary has no dedicated sub-IFD value.
+    interacts_with: [287, 330]
+
+  - code: 287
+    hex: "0x011F"
+    name: YPosition
+    types: [RATIONAL]
+    count: "1"
+    default: null
+    required: conditional
+    conformance: TFX
+    location: any-ifd
+    section: "8.2.2"
+    page: 66
+    description: >
+      Profile M only: vertical offset of the top-left of a child IFD from the top-left of
+      the Primary IFD in resolution units (inches). Must be specified for MRC child IFDs;
+      must not be used by the Primary IFD. No default.
+    notes: >
+      Appears in MRC child (sub) IFDs, not the primary/page IFD.
+    interacts_with: [286, 330]
+
+  - code: 292
+    hex: "0x0124"
+    name: T4Options
+    types: [LONG]
+    count: "1"
+    default: 0
+    required: conditional
+    conformance: TFX
+    location: ifd0
+    section: "3.2.2"
+    page: 23
+    description: >
+      Required when Compression(259) = 3. Bit 0 = 0 (MH) / 1 (MR); bit 1 must be 0; bit 2
+      = 1 if EOLs are byte aligned, 0 if not. Also known as Group3Options. Legal values 0,
+      1, 4, 5 (Profile S: 0 or 4). Default all bits 0.
+    values:
+      0: "MH coding, EOLs not byte aligned"
+      1: "MR coding, EOLs not byte aligned"
+      4: "MH coding, EOLs byte aligned"
+      5: "MR coding, EOLs byte aligned"
+    interacts_with: [259]
+
+  - code: 293
+    hex: "0x0125"
+    name: T6Options
+    types: [LONG]
+    count: "1"
+    default: 0
+    required: conditional
+    conformance: TFX
+    location: ifd0
+    section: "4.2.2"
+    page: 32
+    description: >
+      Required when Compression(259) = 4. Bit 0 must be 0; bit 1 = 0 means uncompressed
+      data mode not allowed (1 = allowed). For fax must be present and equal to 0. Also
+      known as Group4Options.
+    values:
+      0: "MMR (T.6) coding, uncompressed mode not allowed (required value for fax)"
+    interacts_with: [259]
+
+  - code: 296
+    hex: "0x0128"
+    name: ResolutionUnit
+    types: [SHORT]
+    count: "1"
+    default: 2
+    required: yes
+    conformance: TFX
+    location: ifd0
+    section: "2.2.2"
+    page: 15
+    description: >
+      Unit of measure for resolution. Color profiles (C, L, M) require value 2 (inch);
+      B&W profiles F/J allow 2 or 3; Profile S requires 2. Default = 2.
+    values:
+      2: "inch"
+      3: "centimeter"
+
+  - code: 297
+    hex: "0x0129"
+    name: PageNumber
+    types: [SHORT]
+    count: "2"
+    default: null
+    required: yes
+    conformance: TFX
+    location: ifd0
+    section: "2.2.1"
+    page: 13
+    description: >
+      Two values: page number (0 for the first page) and total number of pages (0 if
+      unknown). Required by all fax profiles. No default.
+    interacts_with: [254]
+
+  - code: 305
+    hex: "0x0131"
+    name: Software
+    types: [ASCII]
+    count: "N"
+    default: null
+    required: no
+    conformance: TFX
+    location: ifd0
+    section: "2.2.3"
+    page: 18
+    description: >
+      Name and release number of the software that created the image. Recommended for all
+      profiles except Profile S. No default.
+
+  - code: 306
+    hex: "0x0132"
+    name: DateTime
+    types: [ASCII]
+    count: "20"
+    default: null
+    required: no
+    conformance: TFX
+    location: ifd0
+    section: "2.2.3"
+    page: 17
+    description: >
+      Date/time of image creation in 24-hour format "YYYY:MM:DD HH:MM:SS". Recommended
+      for all profiles except Profile S. No default.
+
+  - code: 326
+    hex: "0x0146"
+    name: BadFaxLines
+    types: [SHORT, LONG]
+    count: "1"
+    default: null
+    required: no
+    conformance: TFX
+    location: ifd0
+    section: "4.3.3"
+    page: 33
+    description: >
+      Number of "bad" scanlines (decoding to an incorrect pixel count) encountered during
+      reception. PercentBad = (BadFaxLines/ImageLength)*100. Profile F only. No default.
+    interacts_with: [257, 327, 328]
+
+  - code: 327
+    hex: "0x0147"
+    name: CleanFaxData
+    types: [SHORT]
+    count: "1"
+    default: null
+    required: no
+    conformance: TFX
+    location: ifd0
+    section: "4.3.3"
+    page: 33
+    description: >
+      Indicates whether bad lines are stored or were replaced by the receiver. Profile F
+      only. No default.
+    values:
+      0: "No bad lines"
+      1: "Bad lines exist but were regenerated by the receiver"
+      2: "Bad lines exist but have not been regenerated"
+    interacts_with: [326, 328]
+
+  - code: 328
+    hex: "0x0148"
+    name: ConsecutiveBadFaxLines
+    types: [LONG, SHORT]
+    count: "1"
+    default: null
+    required: no
+    conformance: TFX
+    location: ifd0
+    section: "4.3.3"
+    page: 34
+    description: >
+      Maximum number of consecutive bad scanlines received; an indicator of the
+      distribution of bad lines. Profile F only. No default.
+    interacts_with: [326, 327]
+
+  - code: 330
+    hex: "0x014A"
+    name: SubIFDs
+    types: [IFD, LONG]
+    count: "number of child IFDs"
+    default: null
+    required: conditional
+    conformance: TFX
+    location: ifd0
+    section: "8.2.2"
+    page: 66
+    description: >
+      Array of offsets from the beginning of the file to child IFDs [TTN1]. In Profile M,
+      references the Foreground/Background layer child IFDs from the Primary IFD.
+      Recommended organization: two pointers, first to the Background IFD list, second to
+      the Foreground IFD list.
+    interacts_with: [254, 34732]
+
+  - code: 346
+    hex: "0x015A"
+    name: Indexed
+    types: [SHORT]
+    count: "1"
+    default: 0
+    required: conditional
+    conformance: TFX
+    location: ifd0
+    section: "7.2.2"
+    page: 57
+    description: >
+      Indicates a palette-color image whose sample values index a color array in the
+      image data stream (Profiles L and M). When 1, the ColorMap field is not used and
+      SamplesPerPixel must be 1.
+    values:
+      0: "Not a palette-color image"
+      1: "Palette-color image (color map embedded in the data stream)"
+    interacts_with: [262, 277]
+    notes: >
+      Per Annex B, the tag value of Indexed was corrected from 364 to 346 to agree with
+      [TTN1].
+
+  - code: 400
+    hex: "0x0190"
+    name: GlobalParametersIFD
+    types: [IFD, LONG]
+    count: "1"
+    default: null
+    required: no
+    conformance: TFX
+    location: ifd0
+    section: "2.2.4"
+    page: 18
+    description: >
+      Points to an IFD containing global parameters describing the fax session. Located
+      in a Primary IFD; recommended to be placed in the first IFD, immediately after the
+      header. Each field in the GlobalParametersIFD is legal in any IFD; required baseline
+      fields should not be placed there. On conflict, the image IFD prevails. Profile S
+      writers should not use it.
+    interacts_with: [401, 402, 403, 404, 405]
+
+  - code: 401
+    hex: "0x0191"
+    name: ProfileType
+    types: [LONG]
+    count: "1"
+    default: null
+    required: no
+    conformance: TFX
+    location: any-ifd
+    section: "2.2.4"
+    page: 19
+    description: >
+      Type of image data stored in the file. Resides in the GlobalParametersIFD. No default.
+    values:
+      0: "Unspecified"
+      1: "Group 3 fax"
+    notes: >
+      GlobalParametersIFD-resident field; location any-ifd used because the addendum
+      vocabulary has no dedicated GlobalParametersIFD value.
+
+  - code: 402
+    hex: "0x0192"
+    name: FaxProfile
+    types: [BYTE]
+    count: "1"
+    default: null
+    required: no
+    conformance: TFX
+    location: any-ifd
+    section: "2.2.4"
+    page: 19
+    description: >
+      The TIFF-FX profile that applies to the file. Resides in the GlobalParametersIFD.
+    values:
+      0: "Does not conform to a defined TIFF-FX profile"
+      1: "Profile S: minimal black & white lossless"
+      2: "Profile F: extended black & white lossless"
+      3: "Profile J: lossless JBIG black & white"
+      4: "Profile C: lossy color and grayscale"
+      5: "Profile L: lossless color and grayscale"
+      6: "Profile M: Mixed Raster Content"
+    notes: >
+      GlobalParametersIFD-resident field; location any-ifd used per addendum flag.
+    interacts_with: [404, 405]
+
+  - code: 403
+    hex: "0x0193"
+    name: CodingMethods
+    types: [LONG]
+    count: "1"
+    default: null
+    required: no
+    conformance: TFX
+    location: any-ifd
+    section: "2.2.4"
+    page: 19
+    description: >
+      Bit field indicating which coding methods are used in the file (bit=1 means used).
+      Resides in the GlobalParametersIFD. Limit of 32 compression types.
+    values:
+      1: "Bit 0: unspecified compression"
+      2: "Bit 1: T.4 1-D coding (MH)"
+      4: "Bit 2: T.4 2-D coding (MR)"
+      8: "Bit 3: T.6 coding (MMR)"
+      16: "Bit 4: T.82 coding using T.85 (JBIG)"
+      32: "Bit 5: T.81 (Baseline JPEG)"
+      64: "Bit 6: T.82 coding using T.43 (JBIG color)"
+    notes: >
+      GlobalParametersIFD-resident field; location any-ifd used per addendum flag.
+      Values shown are the integer weights of the individual flag bits; more than one may
+      be set. Bits 7-31 reserved.
+
+  - code: 404
+    hex: "0x0194"
+    name: VersionYear
+    types: [BYTE]
+    count: "4"
+    default: null
+    required: no
+    conformance: TFX
+    location: any-ifd
+    section: "2.2.4"
+    page: 20
+    description: >
+      Year of the standard specified by FaxProfile(402), as 4 characters (e.g., '1997').
+      Used in the lossy and lossless color profiles (C, L). Resides in the
+      GlobalParametersIFD.
+    notes: >
+      GlobalParametersIFD-resident field; location any-ifd used per addendum flag.
+    interacts_with: [402]
+
+  - code: 405
+    hex: "0x0195"
+    name: ModeNumber
+    types: [BYTE]
+    count: "1"
+    default: null
+    required: no
+    conformance: TFX
+    location: any-ifd
+    section: "2.2.4"
+    page: 20
+    description: >
+      Mode of the standard specified by FaxProfile(402); value 0 indicates Mode 1.0. Used
+      in the Mixed Raster Content profile (Profile M). Resides in the GlobalParametersIFD.
+    values:
+      0: "Mode 1.0"
+    notes: >
+      GlobalParametersIFD-resident field; location any-ifd used per addendum flag.
+    interacts_with: [402]
+
+  - code: 433
+    hex: "0x01B1"
+    name: Decode
+    types: [SRATIONAL]
+    count: "2 * SamplesPerPixel"
+    default: null
+    required: conditional
+    conformance: TFX
+    location: ifd0
+    section: "6.2.3"
+    page: 50
+    description: >
+      Maps image sample values into the range appropriate for the current color space, in
+      min/max pairs per component. Required with the ITULAB encoding (PhotometricInterpretation
+      = 10) in Profiles C, L, and M. For 8-bit L*a*b* the default is (0, 100, -21760/255,
+      21590/255, -19200/255, 31800/255).
+    interacts_with: [262, 277, 258]
+
+  - code: 434
+    hex: "0x01B2"
+    name: ImageBaseColor
+    types: [SHORT]
+    count: "SamplesPerPixel"
+    default: null
+    required: no
+    conformance: TFX
+    location: any-ifd
+    section: "8.2.3"
+    page: 67
+    description: >
+      Profile M only: default image color used where no image data exists (no strips, or a
+      strip with StripByteCounts = 0). Interpreted with the IFD's L*a*b* parameters if the
+      data is ITU L*a*b*, otherwise as 8 bits/sample, 3 samples/pixel ITU L*a*b*. Default:
+      black for Foreground, white for Background/other.
+    notes: >
+      Formerly named DefaultImageColor (renamed per Annex B). Appears in MRC layer IFDs
+      including child IFDs; location any-ifd used per addendum vocabulary limits.
+    interacts_with: [279, 34732]
+
+  - code: 435
+    hex: "0x01B3"
+    name: T82Options
+    types: [LONG]
+    count: "1"
+    default: 0
+    required: conditional
+    conformance: TFX
+    location: ifd0
+    section: "5.2.3"
+    page: 44
+    description: >
+      Required when Compression(259) = 9 (Profile J) and used for the Mask layer of
+      Profile M. Individual bits indicate the applicable JBIG profile; all bits 0 =
+      ITU-T T.85 profile of T.82. Default all bits 0; may be omitted if this is the value.
+    values:
+      0: "ITU-T T.85 profile of T.82"
+    interacts_with: [259]
+
+  - code: 530
+    hex: "0x0212"
+    name: ChromaSubSampling
+    types: [SHORT]
+    count: "2"
+    default: null
+    required: no
+    conformance: TFX
+    location: ifd0
+    section: "6.2.2"
+    page: 49
+    description: >
+      Subsampling factors for the a*b* chroma components relative to L* (Profiles C, M).
+      Subfield 0 (ChromaSubsampleHoriz) and subfield 1 (ChromaSubsampleVert): 1 = equal
+      numbers of lightness and chroma samples, 2 = twice as many lightness as chroma.
+      Default (2,2); (1,1) = no subsampling. Renamed from YCbCrSubSampling.
+    values:
+      1: "Equal numbers of lightness and chroma samples (in that dimension)"
+      2: "Twice as many lightness samples as chroma samples (in that dimension)"
+
+  - code: 531
+    hex: "0x0213"
+    name: ChromaPositioning
+    types: [SHORT]
+    count: "1"
+    default: 1
+    required: no
+    conformance: TFX
+    location: ifd0
+    section: "6.2.2"
+    page: 49
+    description: >
+      Spatial positioning of chroma relative to lightness (Profiles C, M). Renamed from
+      YCbCrPositioning. Default = 1, per ITU-T T.4 Annex E.
+    values:
+      1: "Centered: chrominance samples spatially offset and centered w.r.t. luminance"
+
+  - code: 559
+    hex: "0x022F"
+    name: StripRowCounts
+    types: [LONG]
+    count: "number of strips"
+    default: null
+    required: conditional
+    conformance: TFX
+    location: ifd0
+    section: "8.2.3"
+    page: 68
+    description: >
+      Profile M only: number of scanlines stored in each strip, allowing a variable number
+      per strip. For strips with more than one layer, maximum strip size is 256 scanlines
+      or full page. Replaces RowsPerStrip(278) for variable-size strips; only one of the
+      two may appear in an IFD. Profile M readers must support it.
+    interacts_with: [278]
+
+  - code: 34732
+    hex: "0x87CC"
+    name: ImageLayer
+    types: [LONG]
+    count: "2"
+    default: null
+    required: conditional
+    conformance: TFX
+    location: any-ifd
+    section: "8.2.3"
+    page: 68
+    description: >
+      Profile M only: identifies the MRC layer and imaging order of an IFD. ImageLayer[0]
+      = layer (1 Background, 2 Mask, 3 Foreground); ImageLayer[1] = imaging order within
+      the layer (1 first, 2 second, ...). Required on the Primary IFD and every
+      MRC-specific child IFD.
+    values:
+      1: "ImageLayer[0]=1: Background layer (shown where Mask=0)"
+      2: "ImageLayer[0]=2: Mask layer (must be Primary IFD, full page)"
+      3: "ImageLayer[0]=3: Foreground layer (shown where Mask=1)"
+    notes: >
+      Appears in the Primary IFD and MRC child IFDs; location any-ifd used per addendum
+      vocabulary limits.
+    interacts_with: [254, 330, 434]
+
+dependencies:
+  - id: TFX-DEP-001
+    requirement: TFX-001
+    when: "any TIFF-FX implementation"
+    then: "MUST implement Profile S (root of the profile tree)"
+    kind: requires
+    tags: [402]
+
+  - id: TFX-DEP-002
+    requirement: TFX-003
+    when: "implementing Profile M"
+    then: "MUST also implement Profiles C and S; MAY implement F, J, L"
+    kind: requires
+    tags: [402]
+
+  - id: TFX-DEP-003
+    requirement: TFX-005
+    when: "FaxProfile == 1 (Profile S)"
+    then: "TIFF header byte order SHALL be II (0x4949, little-endian) and first IFD offset SHALL be 8"
+    kind: constrains-value
+    tags: [402]
+
+  - id: TFX-DEP-004
+    requirement: TFX-025
+    when: "FaxProfile == 1 (Profile S)"
+    then: "FillOrder(266) MUST be 2 and readers need only support FillOrder=2"
+    kind: constrains-value
+    tags: [266, 402]
+
+  - id: TFX-DEP-005
+    requirement: TFX-051
+    when: "Compression(259) == 3"
+    then: "T4Options(292) MUST be present"
+    kind: requires
+    tags: [259, 292]
+
+  - id: TFX-DEP-006
+    requirement: TFX-072
+    when: "Compression(259) == 4"
+    then: "T6Options(293) MUST be present and equal to 0 (uncompressed mode not allowed)"
+    kind: requires
+    tags: [259, 293]
+
+  - id: TFX-DEP-007
+    requirement: TFX-102
+    when: "Compression(259) == 9 (Profile J)"
+    then: "T82Options(435) applies; all-zero value indicates T.85 profile of T.82 and may be omitted"
+    kind: requires
+    tags: [259, 435]
+
+  - id: TFX-DEP-008
+    requirement: TFX-084
+    when: "Compression(259) == 4 (MMR)"
+    then: "each coded strip MUST end with an EOFB code followed by byte-alignment pad bits"
+    kind: constrains-value
+    tags: [259, 293]
+
+  - id: TFX-DEP-009
+    requirement: TFX-062
+    when: "Compression(259) == 3 and coding is MH"
+    then: "a 12-bit EOL MUST precede each line of image data"
+    kind: constrains-value
+    tags: [259, 292]
+
+  - id: TFX-DEP-010
+    requirement: TFX-064
+    when: "T4Options(292) bit 2 == 1 (EOLs byte aligned)"
+    then: "RTC (6 consecutive EOLs) should NOT be present; RTC only allowed when bit 2 == 0"
+    kind: forbids
+    tags: [292]
+
+  - id: TFX-DEP-011
+    requirement: TFX-111
+    when: "PhotometricInterpretation(262) == 10 (ITULAB)"
+    then: "Decode(433) MUST be present to map unsigned ITULAB samples to signed L*a*b* (count = 2*SamplesPerPixel)"
+    kind: requires
+    tags: [262, 433, 277]
+
+  - id: TFX-DEP-012
+    requirement: TFX-108
+    when: "Profile C"
+    then: "BitsPerSample(258) == 8 (count = SamplesPerPixel), Compression(259) == 7, PhotometricInterpretation(262) == 10"
+    kind: constrains-value
+    tags: [258, 259, 262, 277]
+
+  - id: TFX-DEP-013
+    requirement: TFX-114
+    when: "Profile C, L, or M (color)"
+    then: "YResolution(283) MUST equal XResolution(282) (square pixels); ResolutionUnit(296) MUST be 2 (inch)"
+    kind: constrains-value
+    tags: [282, 283, 296]
+
+  - id: TFX-DEP-014
+    requirement: TFX-131
+    when: "Indexed(346) == 1 (palette-color)"
+    then: "SamplesPerPixel(277) MUST be 1; PhotometricInterpretation(262) == 10; ColorMap(320) is not used (color map is in the T.43 data stream)"
+    kind: constrains-value
+    tags: [346, 277, 262, 320]
+
+  - id: TFX-DEP-015
+    requirement: TFX-122
+    when: "Profile L image type is RGB"
+    then: "PhotometricInterpretation(262)=2, SamplesPerPixel(277)=3, BitsPerSample(258)=1, Indexed(346)=0"
+    kind: constrains-value
+    tags: [262, 277, 258, 346]
+
+  - id: TFX-DEP-016
+    requirement: TFX-122
+    when: "Profile L image type is CMY or CMYK"
+    then: "PhotometricInterpretation(262)=5; SamplesPerPixel(277)=3 (CMY) or 4 (CMYK); BitsPerSample(258)=1; Indexed(346)=0"
+    kind: constrains-value
+    tags: [262, 277, 258, 346]
+
+  - id: TFX-DEP-017
+    requirement: TFX-139
+    when: "IFD is an MRC-specific IFD (Profile M)"
+    then: "NewSubfileType(254) MUST have bit 4 set (value 16 for child IFD, 18 for Primary IFD)"
+    kind: constrains-value
+    tags: [254]
+
+  - id: TFX-DEP-018
+    requirement: TFX-169
+    when: "IFD is a Profile M Primary IFD"
+    then: "NewSubfileType(254) MUST be 18 (bits 1 and 4); ImageLayer(34732) MUST be present; XPosition(286)/YPosition(287) MUST NOT be used"
+    kind: constrains-value
+    tags: [254, 34732, 286, 287]
+
+  - id: TFX-DEP-019
+    requirement: TFX-158
+    when: "IFD is a Profile M MRC child (Foreground/Background) IFD"
+    then: "NewSubfileType(254) MUST be 16; ImageLayer(34732), XPosition(286), and YPosition(287) MUST be specified"
+    kind: requires
+    tags: [254, 34732, 286, 287]
+
+  - id: TFX-DEP-020
+    requirement: TFX-150
+    when: "Profile M IFD has StripByteCounts(279) entry == 0 (no encoded image data)"
+    then: "Compression(259) MUST be 1 (none) and ImageBaseColor(434) supplies the color for that strip"
+    kind: constrains-value
+    tags: [279, 259, 434]
+
+  - id: TFX-DEP-021
+    requirement: TFX-150
+    when: "Profile M IFD contains encoded image data"
+    then: "Compression(259) MUST NOT be 1 (value 1 is reserved for ImageBaseColor-only IFDs)"
+    kind: forbids
+    tags: [259]
+
+  - id: TFX-DEP-022
+    requirement: TFX-163
+    when: "an IFD uses StripRowCounts(559)"
+    then: "it MUST NOT also use RowsPerStrip(278) (only one of the two per IFD)"
+    kind: forbids
+    tags: [559, 278]
+
+  - id: TFX-DEP-023
+    requirement: TFX-171
+    when: "Profile M page has a Mask layer (more than one layer)"
+    then: "Background and Foreground layer resolutions MUST each be an integer factor of the Mask (Primary) resolution"
+    kind: constrains-value
+    tags: [282, 283]
+
+  - id: TFX-DEP-024
+    requirement: TFX-161
+    when: "a Profile M child IFD defines ImageBaseColor(434) with no encoded image data"
+    then: "its ImageLayer[1] order value MUST be lower than that of any other IFD for the same layer and strip"
+    kind: constrains-value
+    tags: [434, 34732]
+
+  - id: TFX-DEP-025
+    requirement: TFX-165
+    when: "Profile M Mask layer"
+    then: "PhotometricInterpretation(262) MUST be 0; Mask must be the Primary IFD and full page when more than one layer exists"
+    kind: constrains-value
+    tags: [262, 254]
+
+  - id: TFX-DEP-026
+    requirement: TFX-118
+    when: "PhotometricInterpretation(262) == 10 and BitsPerSample(258) == n"
+    then: "Decode count == 2*SamplesPerPixel(277); ImageBaseColor(434) count == SamplesPerPixel(277); BitsPerSample count == SamplesPerPixel(277)"
+    kind: constrains-value
+    tags: [433, 434, 258, 277]
+
+  - id: TFX-DEP-027
+    requirement: TFX-020
+    when: "single-strip image"
+    then: "RowsPerStrip(278) == ImageLength(257) (one strip); required for Profile S (single strip per page)"
+    kind: constrains-value
+    tags: [278, 257]
+
+  - id: TFX-DEP-028
+    requirement: TFX-043
+    when: "a field appears in both the GlobalParametersIFD and an image IFD with conflicting values"
+    then: "the image IFD value prevails"
+    kind: modifies-meaning
+    tags: [400]
+
+  - id: TFX-DEP-029
+    requirement: TFX-091
+    when: "facsimile hardware does not provide page-quality information"
+    then: "writer MUST NOT write BadFaxLines(326), CleanFaxData(327), or ConsecutiveBadFaxLines(328)"
+    kind: forbids
+    tags: [326, 327, 328]
+
+  - id: TFX-DEP-030
+    requirement: TFX-138
+    when: "Profile M page has more than one layer"
+    then: "the Primary IFD represents the Mask layer and Foreground/Background layers are referenced via SubIFDs(330)"
+    kind: requires
+    tags: [330, 254, 34732]

@@ -1,0 +1,2216 @@
+document: T6B
+title: "TIFF Revision 6.0, Part 1: Baseline TIFF"
+date: "Final - June 3, 1992"
+requirements:
+  # ---------- Introduction: Compatibility, Administration, Private Fields ----------
+  - id: T6B-001
+    section: "Intro"
+    heading: "Compatibility"
+    page: 7
+    level: INFO
+    actor: file
+    category: structure
+    conformance: baseline
+    statement: >
+      Baseline TIFF 6.0 files will generally be readable even by older applications that
+      assume TIFF 5.0 or an earlier version of the specification. Functionality was added
+      to minimize compatibility problems with files and software based on earlier versions.
+  - id: T6B-002
+    section: "Intro"
+    heading: "Compatibility"
+    page: 7
+    level: MUST
+    actor: reader
+    category: behavior
+    conformance: baseline
+    statement: >
+      When an older application encounters a TIFF 6.0 file that uses a major new extension
+      (such as a new compression scheme or color space) that it cannot read, it must
+      gracefully give up and refuse to import the image, providing the user with a
+      reasonably informative message.
+  - id: T6B-003
+    section: "Intro"
+    heading: "Private Fields and Values"
+    page: 8
+    level: INFO
+    actor: file
+    category: metadata
+    conformance: baseline
+    statement: >
+      Tags numbered 32768 or higher (private tags) are reserved for storing information
+      meaningful only to a specific organization. The TIFF administrator (Aldus Developers
+      Desk) allocates and registers blocks of private tags (normally blocks of five or
+      less) on request to avoid conflicts.
+  - id: T6B-004
+    section: "Intro"
+    heading: "Private Fields and Values"
+    page: 8
+    level: INFO
+    actor: file
+    category: metadata
+    conformance: baseline
+    statement: >
+      Enumeration constants numbered 32768 or higher are reserved for private usage; the
+      administrator allocates and registers private enumerated values for a particular
+      field (e.g. Compression) on request to avoid conflicts.
+  - id: T6B-005
+    section: "Intro"
+    heading: "Private Fields and Values"
+    page: 8
+    level: MUST-NOT
+    actor: writer
+    category: metadata
+    conformance: baseline
+    statement: >
+      Writers must not choose their own tag numbers; doing so could cause serious
+      compatibility problems in the future. Tags must be obtained from the TIFF administrator.
+  - id: T6B-006
+    section: "Intro"
+    heading: "Private Fields and Values"
+    page: 9
+    level: INFO
+    actor: writer
+    category: metadata
+    conformance: baseline
+    statement: >
+      If more than 5 or 10 tags are needed, Aldus suggests reserving a single private tag
+      defined as a LONG and using its value as an offset (pointer) to a private IFD or
+      other data structure, providing access to some 65,000 private tags.
+    notes: >
+      Tags and values allocated in the private range are not prohibited from inclusion in a
+      future revision of the specification.
+
+  # ---------- Section 1: Notation ----------
+  - id: T6B-007
+    section: "1"
+    heading: "Notation - Decimal and Hexadecimal"
+    page: 12
+    level: INFO
+    actor: file
+    category: structure
+    conformance: baseline
+    statement: >
+      Unless otherwise noted, all numeric values in the document are expressed in decimal;
+      hexadecimal values are indicated by appending ".H".
+  - id: T6B-008
+    section: "1"
+    heading: "Notation - Compliance"
+    page: 12
+    level: MUST
+    actor: both
+    category: behavior
+    conformance: baseline
+    statement: >
+      The words "is" and "shall" indicate mandatory requirements that all compliant writers
+      and readers must meet. "Should" indicates a recommendation; "may" indicates an option.
+  - id: T6B-009
+    section: "1"
+    heading: "Notation - Compliance"
+    page: 12
+    level: MUST
+    actor: writer
+    category: behavior
+    conformance: extension
+    statement: >
+      Features designated 'not recommended for general data interchange' are considered
+      extensions to Baseline TIFF. Files using such features shall be designated
+      "Extended TIFF 6.0" files, and the particular extensions used should be documented.
+  - id: T6B-010
+    section: "1"
+    heading: "Notation - Compliance"
+    page: 12
+    level: MAY
+    actor: reader
+    category: behavior
+    conformance: baseline
+    statement: >
+      A Baseline TIFF 6.0 reader is not required to support any extensions.
+
+  # ---------- Section 2: TIFF Structure ----------
+  - id: T6B-011
+    section: "2"
+    heading: "TIFF Structure"
+    page: 13
+    level: INFO
+    actor: file
+    category: structure
+    conformance: baseline
+    statement: >
+      A TIFF file is a sequence of 8-bit bytes numbered from 0 to N. The first byte of the
+      file has offset 0; the term "byte offset" always refers to a location relative to the
+      beginning of the TIFF file.
+  - id: T6B-012
+    section: "2"
+    heading: "TIFF Structure"
+    page: 13
+    level: MUST
+    actor: file
+    category: structure
+    conformance: baseline
+    statement: >
+      The largest possible TIFF file is 2**32 bytes in length.
+  - id: T6B-013
+    section: "2"
+    heading: "Image File Header"
+    page: 13
+    level: MUST
+    actor: file
+    category: structure
+    conformance: baseline
+    statement: >
+      A TIFF file begins with an 8-byte image file header that points to an image file
+      directory (IFD). The header contains the byte order (bytes 0-1), the number 42
+      (bytes 2-3), and the offset of the first IFD (bytes 4-7).
+  - id: T6B-014
+    section: "2"
+    heading: "Image File Header"
+    page: 13
+    level: MUST
+    actor: file
+    category: structure
+    conformance: baseline
+    statement: >
+      Header bytes 0-1 specify the byte order used within the file. Legal values are "II"
+      (4949.H) for little-endian (least significant byte first for both 16-bit and 32-bit
+      integers) and "MM" (4D4D.H) for big-endian (most significant byte first). The byte
+      order applies to all data in the file.
+  - id: T6B-015
+    section: "2"
+    heading: "Image File Header"
+    page: 13
+    level: MUST
+    actor: file
+    category: structure
+    conformance: baseline
+    statement: >
+      Header bytes 2-3 contain the arbitrary but carefully chosen number 42 (002A.H, in the
+      file's byte order) that further identifies the file as a TIFF file.
+  - id: T6B-016
+    section: "2"
+    heading: "Image File Header"
+    page: 13
+    level: MUST
+    actor: file
+    category: structure
+    conformance: baseline
+    statement: >
+      Header bytes 4-7 contain the byte offset of the first (0th) IFD. The IFD may be at
+      any location in the file after the header but must begin on a word boundary. An IFD
+      may follow the image data it describes.
+  - id: T6B-017
+    section: "2"
+    heading: "Image File Header"
+    page: 13
+    level: MUST
+    actor: reader
+    category: structure
+    conformance: baseline
+    statement: >
+      Readers must follow the IFD and value pointers wherever they may lead; the directory
+      and values may be at any location in the file after the header.
+  - id: T6B-018
+    section: "2"
+    heading: "Image File Directory"
+    page: 14
+    level: MUST
+    actor: file
+    category: structure
+    conformance: baseline
+    statement: >
+      An Image File Directory (IFD) consists of a 2-byte count of the number of directory
+      entries (fields), followed by a sequence of 12-byte field entries, followed by a
+      4-byte offset of the next IFD (or 0 if none).
+  - id: T6B-019
+    section: "2"
+    heading: "Image File Directory"
+    page: 14
+    level: MUST
+    actor: writer
+    category: structure
+    conformance: baseline
+    statement: >
+      The writer must write the 4-byte offset of the next IFD after the last field entry of
+      each IFD, and must write 4 bytes of 0 after the last IFD to signal that it is the last.
+  - id: T6B-020
+    section: "2"
+    heading: "Image File Directory"
+    page: 14
+    level: MUST
+    actor: file
+    category: structure
+    conformance: baseline
+    statement: >
+      There must be at least 1 IFD in a TIFF file and each IFD must have at least one entry.
+  - id: T6B-021
+    section: "2"
+    heading: "IFD Entry"
+    page: 14
+    level: MUST
+    actor: file
+    category: structure
+    conformance: baseline
+    statement: >
+      Each 12-byte IFD entry has the format: Bytes 0-1 the Tag that identifies the field;
+      Bytes 2-3 the field Type; Bytes 4-7 the Count (number of values of the indicated
+      Type); Bytes 8-11 the Value Offset (file offset in bytes of the field Value).
+  - id: T6B-022
+    section: "2"
+    heading: "IFD Entry"
+    page: 14
+    level: MUST
+    actor: file
+    category: structure
+    conformance: baseline
+    statement: >
+      The field Value is expected to begin on a word boundary, so the Value Offset must be
+      an even number. The Value offset may point anywhere in the file, even after the
+      image data.
+  - id: T6B-023
+    section: "2"
+    heading: "IFD Terminology"
+    page: 14
+    level: INFO
+    actor: file
+    category: structure
+    conformance: baseline
+    statement: >
+      A TIFF field is a logical entity consisting of a TIFF tag and its value, implemented
+      as an IFD Entry plus the actual value if it does not fit into the last 4 bytes
+      (value/offset part) of the IFD Entry. The terms "TIFF field" and "IFD entry" are
+      interchangeable in most contexts.
+  - id: T6B-024
+    section: "2"
+    heading: "Sort Order"
+    page: 14
+    level: MUST
+    actor: file
+    category: structure
+    conformance: baseline
+    statement: >
+      The entries in an IFD must be sorted in ascending order by Tag. This is not the order
+      in which fields are described in the specification.
+  - id: T6B-025
+    section: "2"
+    heading: "Sort Order"
+    page: 14
+    level: MAY
+    actor: file
+    category: structure
+    conformance: baseline
+    statement: >
+      The Values to which directory entries point need not be in any particular order in
+      the file.
+  - id: T6B-026
+    section: "2"
+    heading: "Value/Offset"
+    page: 14
+    level: MUST
+    actor: file
+    category: structure
+    conformance: baseline
+    statement: >
+      The Value Offset field contains the Value itself (instead of pointing to it) if and
+      only if the Value fits into 4 bytes. If the Value is shorter than 4 bytes it is
+      left-justified within the 4-byte Value Offset (stored in the lower-numbered bytes).
+      Whether the Value fits within 4 bytes is determined by the Type and Count of the field.
+  - id: T6B-027
+    section: "2"
+    heading: "Count"
+    page: 14
+    level: INFO
+    actor: file
+    category: structure
+    conformance: baseline
+    statement: >
+      Count (called Length in previous versions) is the number of values, not the total
+      number of bytes. For example a single 16-bit SHORT has a Count of 1, not 2.
+  - id: T6B-028
+    section: "2"
+    heading: "Types"
+    page: 15
+    level: MUST
+    actor: file
+    category: data-layout
+    conformance: baseline
+    statement: >
+      The baseline field types and codes are: 1 = BYTE (8-bit unsigned integer);
+      2 = ASCII (8-bit byte containing a 7-bit ASCII code, last byte must be NUL);
+      3 = SHORT (16-bit/2-byte unsigned integer); 4 = LONG (32-bit/4-byte unsigned
+      integer); 5 = RATIONAL (two LONGs, numerator then denominator of a fraction).
+  - id: T6B-029
+    section: "2"
+    heading: "Types"
+    page: 15
+    level: MUST
+    actor: file
+    category: data-layout
+    conformance: extension
+    statement: >
+      TIFF 6.0 defined additional field types: 6 = SBYTE (8-bit signed twos-complement
+      integer); 7 = UNDEFINED (8-bit byte that may contain anything); 8 = SSHORT (16-bit
+      signed integer); 9 = SLONG (32-bit signed integer); 10 = SRATIONAL (two SLONGs,
+      numerator then denominator); 11 = FLOAT (single-precision 4-byte IEEE); 12 = DOUBLE
+      (double-precision 8-byte IEEE). These are also governed by the header byte order.
+  - id: T6B-030
+    section: "2"
+    heading: "Types - ASCII"
+    page: 15
+    level: MUST
+    actor: file
+    category: data-layout
+    conformance: baseline
+    statement: >
+      An ASCII field's last byte must be NUL (binary zero). The Count of an ASCII field
+      includes the terminating NUL but does not include any pad byte. There is no initial
+      "count byte" as in Pascal-style strings.
+  - id: T6B-031
+    section: "2"
+    heading: "Types - ASCII"
+    page: 16
+    level: MAY
+    actor: file
+    category: data-layout
+    conformance: baseline
+    statement: >
+      An ASCII field can contain multiple strings, each terminated with a NUL; a single
+      string is preferred whenever possible. The Count for a multi-string field is the
+      number of bytes in all strings plus their terminating NULs. Only one NUL is allowed
+      between strings, so strings after the first often begin on an odd byte.
+  - id: T6B-032
+    section: "2"
+    heading: "Types"
+    page: 16
+    level: MUST
+    actor: reader
+    category: behavior
+    conformance: baseline
+    statement: >
+      The reader must check the field Type to verify that it contains an expected value,
+      because TIFF allows more than one valid type for some fields.
+  - id: T6B-033
+    section: "2"
+    heading: "Types"
+    page: 16
+    level: MUST
+    actor: file
+    category: data-layout
+    conformance: baseline
+    statement: >
+      ImageWidth (256) and ImageLength (257) are usually specified as type SHORT, but
+      images with more than 64K rows or columns must use the LONG field type.
+    tags: [256, 257]
+  - id: T6B-034
+    section: "2"
+    heading: "Types"
+    page: 16
+    level: SHOULD
+    actor: reader
+    category: behavior
+    conformance: baseline
+    statement: >
+      TIFF readers should accept BYTE, SHORT, or LONG values for any unsigned integer field,
+      so a single procedure can retrieve any integer value and reading is more robust.
+  - id: T6B-035
+    section: "2"
+    heading: "Types"
+    page: 16
+    level: SHOULD
+    actor: reader
+    category: behavior
+    conformance: baseline
+    statement: >
+      TIFF readers should skip over fields containing an unexpected field type, because
+      other TIFF field types may be added in the future.
+  - id: T6B-036
+    section: "2"
+    heading: "Fields are arrays"
+    page: 16
+    level: INFO
+    actor: file
+    category: structure
+    conformance: baseline
+    statement: >
+      Each TIFF field has an associated Count, so all fields are one-dimensional arrays even
+      when they contain only a single value. To store a complicated data structure in a
+      single private field, use the UNDEFINED type and set Count to the number of bytes.
+  - id: T6B-037
+    section: "2"
+    heading: "Multiple Images per TIFF File"
+    page: 16
+    level: MAY
+    actor: file
+    category: structure
+    conformance: baseline
+    statement: >
+      There may be more than one IFD in a TIFF file; each IFD defines a subfile (e.g. the
+      pages of a facsimile transmission).
+  - id: T6B-038
+    section: "2"
+    heading: "Multiple Images per TIFF File"
+    page: 16
+    level: MAY
+    actor: reader
+    category: behavior
+    conformance: baseline
+    statement: >
+      A Baseline TIFF reader is not required to read any IFDs beyond the first one.
+
+  # ---------- Section 3: Bilevel Images ----------
+  - id: T6B-039
+    section: "3"
+    heading: "Bilevel Images - Compression"
+    page: 17
+    level: MUST
+    actor: reader
+    category: compression
+    conformance: baseline
+    statement: >
+      Baseline TIFF readers must handle all three baseline compression schemes for the
+      Compression (259) field: 1 (no compression), 2 (CCITT Group 3 1D Modified Huffman),
+      and 32773 (PackBits).
+    tags: [259]
+  - id: T6B-040
+    section: "3"
+    heading: "Bilevel Images - Compression"
+    page: 17
+    level: INFO
+    actor: file
+    category: compression
+    conformance: baseline
+    statement: >
+      Data compression applies only to raster image data; all other TIFF fields are
+      unaffected.
+    tags: [259]
+  - id: T6B-041
+    section: "3"
+    heading: "Bilevel Images - Comments on example"
+    page: 21
+    level: MUST
+    actor: file
+    category: structure
+    conformance: baseline
+    statement: >
+      The 0th IFD offset must be an even number greater than or equal to 8, since the TIFF
+      header always occupies the first 8 bytes of the file.
+  - id: T6B-042
+    section: "3"
+    heading: "Bilevel Images - Comments on example"
+    page: 21
+    level: MUST
+    actor: reader
+    category: behavior
+    conformance: baseline
+    statement: >
+      TIFF readers must safely skip over optional fields (such as DateTime) that they do
+      not understand or wish to use. Baseline TIFF readers must not require that such
+      optional fields be present.
+  - id: T6B-043
+    section: "3"
+    heading: "Bilevel Images - Comments on example"
+    page: 21
+    level: MUST
+    actor: reader
+    category: data-layout
+    conformance: baseline
+    statement: >
+      Strip offsets must not be ignored: never assume that strip N+1 follows strip N on
+      disk, and do not assume the image data follows the IFD. Strips may be stored in any
+      order and at any location.
+    tags: [273]
+  - id: T6B-044
+    section: "3"
+    heading: "Required Fields for Bilevel Images"
+    page: 21
+    level: MUST
+    actor: file
+    category: image-class
+    conformance: baseline
+    statement: >
+      A Baseline bilevel image (formerly TIFF Class B) requires these fields (in numerical
+      order): ImageWidth (256), ImageLength (257), Compression (259, value 1, 2 or 32773),
+      PhotometricInterpretation (262, value 0 or 1), StripOffsets (273), RowsPerStrip (278),
+      StripByteCounts (279), XResolution (282), YResolution (283), and ResolutionUnit
+      (296, value 1, 2 or 3). Fields with an appropriate default may be omitted.
+    tags: [256, 257, 259, 262, 273, 278, 279, 282, 283, 296]
+
+  # ---------- Section 4: Grayscale Images ----------
+  - id: T6B-045
+    section: "4"
+    heading: "Grayscale Images"
+    page: 22
+    level: MUST
+    actor: file
+    category: image-class
+    conformance: baseline
+    statement: >
+      In Baseline TIFF, grayscale images use Compression (259) = 1 (uncompressed) or 32773
+      (PackBits) only; they may not use CCITT Group 3 compression.
+    tags: [259]
+    notes: >
+      Caution: PackBits is often ineffective on continuous tone images; leaving grayscale
+      uncompressed may be better.
+  - id: T6B-046
+    section: "4"
+    heading: "Grayscale Images - BitsPerSample"
+    page: 22
+    level: MUST
+    actor: file
+    category: image-class
+    conformance: baseline
+    statement: >
+      For Baseline grayscale images, BitsPerSample (258) must be 4 or 8, allowing 16 or 256
+      distinct shades of gray respectively.
+    tags: [258]
+  - id: T6B-047
+    section: "4"
+    heading: "Required Fields for Grayscale Images"
+    page: 22
+    level: MUST
+    actor: file
+    category: image-class
+    conformance: baseline
+    statement: >
+      A Baseline grayscale image (formerly TIFF Class G) requires these fields (in numerical
+      order): ImageWidth (256), ImageLength (257), BitsPerSample (258, value 4 or 8),
+      Compression (259, value 1 or 32773), PhotometricInterpretation (262, value 0 or 1),
+      StripOffsets (273), RowsPerStrip (278), StripByteCounts (279), XResolution (282),
+      YResolution (283), and ResolutionUnit (296, value 1, 2 or 3).
+    tags: [256, 257, 258, 259, 262, 273, 278, 279, 282, 283, 296]
+
+  # ---------- Section 5: Palette-color Images ----------
+  - id: T6B-048
+    section: "5"
+    heading: "Palette-color Images"
+    page: 23
+    level: MUST
+    actor: file
+    category: image-class
+    conformance: baseline
+    statement: >
+      Palette-color images have one component per pixel used as an index into an RGB lookup
+      table (ColorMap). PhotometricInterpretation (262) must be 3 (Palette Color).
+    tags: [262, 320]
+  - id: T6B-049
+    section: "5"
+    heading: "Palette-color Images - ColorMap"
+    page: 23
+    level: MUST
+    actor: file
+    category: color
+    conformance: baseline
+    statement: >
+      ColorMap (320) defines a Red-Green-Blue lookup table for palette-color images with
+      N = 3 * (2**BitsPerSample) SHORT values. All Red values come first, followed by all
+      Green values, then all Blue values. Black is 0,0,0 and white is 65535,65535,65535.
+    tags: [320, 258]
+  - id: T6B-050
+    section: "5"
+    heading: "Required Fields for Palette Color Images"
+    page: 23
+    level: MUST
+    actor: file
+    category: image-class
+    conformance: baseline
+    statement: >
+      A Baseline palette-color image (formerly TIFF Class P) requires these fields (in
+      numerical order): ImageWidth (256), ImageLength (257), BitsPerSample (258, value 4
+      or 8), Compression (259, value 1 or 32773), PhotometricInterpretation (262, value 3),
+      StripOffsets (273), RowsPerStrip (278), StripByteCounts (279), XResolution (282),
+      YResolution (283), ResolutionUnit (296, value 1, 2 or 3), and ColorMap (320).
+    tags: [256, 257, 258, 259, 262, 273, 278, 279, 282, 283, 296, 320]
+
+  # ---------- Section 6: RGB Full Color Images ----------
+  - id: T6B-051
+    section: "6"
+    heading: "RGB Full Color Images"
+    page: 24
+    level: MUST
+    actor: file
+    category: image-class
+    conformance: baseline
+    statement: >
+      In a Baseline RGB image each pixel has three components (red, green, blue) with
+      BitsPerSample (258) = 8,8,8 (each component 8 bits deep), PhotometricInterpretation
+      (262) = 2 (RGB), and no ColorMap.
+    tags: [258, 262, 277]
+  - id: T6B-052
+    section: "6"
+    heading: "RGB Full Color Images - SamplesPerPixel"
+    page: 24
+    level: MUST
+    actor: file
+    category: image-class
+    conformance: baseline
+    statement: >
+      SamplesPerPixel (277) is 3 for RGB images unless extra samples are present, in which
+      case it is greater than 3 (see ExtraSamples, 338).
+    tags: [277, 338]
+  - id: T6B-053
+    section: "6"
+    heading: "Required Fields for RGB Images"
+    page: 24
+    level: MUST
+    actor: file
+    category: image-class
+    conformance: baseline
+    statement: >
+      A Baseline RGB image (formerly TIFF Class R) requires these fields (in numerical
+      order): ImageWidth (256), ImageLength (257), BitsPerSample (258, value 8,8,8),
+      Compression (259, value 1 or 32773), PhotometricInterpretation (262, value 2),
+      StripOffsets (273), SamplesPerPixel (277, value 3 or more), RowsPerStrip (278),
+      StripByteCounts (279), XResolution (282), YResolution (283), and ResolutionUnit
+      (296, value 1, 2 or 3).
+    tags: [256, 257, 258, 259, 262, 273, 277, 278, 279, 282, 283, 296]
+  - id: T6B-054
+    section: "6"
+    heading: "RGB Full Color Images"
+    page: 25
+    level: MUST
+    actor: writer
+    category: data-layout
+    conformance: baseline
+    statement: >
+      The BitsPerSample (258) values 8,8,8 apply only to the main image data. If
+      ExtraSamples (338) are present, the appropriate BitsPerSample values for those samples
+      must also be included.
+    tags: [258, 338]
+
+  # ---------- Section 7: Additional Baseline TIFF Requirements ----------
+  - id: T6B-055
+    section: "7"
+    heading: "General Requirements - Options"
+    page: 26
+    level: MUST
+    actor: reader
+    category: behavior
+    conformance: baseline
+    statement: >
+      Where the specification offers options, TIFF writers may use whichever they want, and
+      Baseline TIFF readers must be able to handle all of them.
+  - id: T6B-056
+    section: "7"
+    heading: "General Requirements - Defaults"
+    page: 26
+    level: MUST
+    actor: both
+    category: behavior
+    conformance: baseline
+    statement: >
+      TIFF writers may, but are not required to, write out a field that has a default value
+      when the default is desired. TIFF readers must be prepared to handle either situation
+      (field present or absent).
+  - id: T6B-057
+    section: "7"
+    heading: "General Requirements - Other fields"
+    page: 26
+    level: MUST
+    actor: reader
+    category: behavior
+    conformance: baseline
+    statement: >
+      TIFF readers must be prepared to encounter fields other than those required, and must
+      not refuse to read the file if optional fields (such as Make, Model, DateTime) do not
+      exist. Readers must also be prepared to encounter and ignore private fields not
+      described in the TIFF specification.
+  - id: T6B-058
+    section: "7"
+    heading: "General Requirements - byte order"
+    page: 26
+    level: MUST
+    actor: reader
+    category: behavior
+    conformance: baseline
+    statement: >
+      TIFF readers must be able to handle both 'MM' and 'II' byte orders. TIFF writers may
+      use whichever is most convenient or efficient.
+  - id: T6B-059
+    section: "7"
+    heading: "General Requirements - Multiple subfiles"
+    page: 26
+    level: MUST
+    actor: reader
+    category: behavior
+    conformance: baseline
+    statement: >
+      TIFF readers must be prepared for multiple images (subfiles) per TIFF file, although
+      they are not required to do anything with images after the first one.
+  - id: T6B-060
+    section: "7"
+    heading: "General Requirements - Multiple subfiles"
+    page: 26
+    level: MUST
+    actor: writer
+    category: structure
+    conformance: baseline
+    statement: >
+      TIFF writers are required to write a long word of 0 after the last IFD to signal that
+      it is the last IFD.
+  - id: T6B-061
+    section: "7"
+    heading: "General Requirements - Multiple subfiles"
+    page: 26
+    level: MUST
+    actor: writer
+    category: data-layout
+    conformance: baseline
+    statement: >
+      If multiple subfiles are written, the first one must be the full-resolution image.
+      Subsequent images (such as reduced-resolution images) may be in any order.
+  - id: T6B-062
+    section: "7"
+    heading: "General Requirements - Multiple subfiles"
+    page: 26
+    level: MUST
+    actor: reader
+    category: behavior
+    conformance: baseline
+    statement: >
+      If a reader wants to use images after the first, it must scan the corresponding IFDs
+      before deciding how to proceed.
+  - id: T6B-063
+    section: "7"
+    heading: "General Requirements - TIFF Editors"
+    page: 26
+    level: MUST
+    actor: writer
+    category: behavior
+    conformance: baseline
+    statement: >
+      When a TIFF editor edits a full-resolution subfile, it must either create a new
+      reduced-resolution subfile or delete any subfiles it is not prepared to deal with, so
+      that readers using a reduced-resolution subfile do not display the wrong thing.
+  - id: T6B-064
+    section: "7"
+    heading: "General Requirements - TIFF Editors"
+    page: 26
+    level: SHOULD-NOT
+    actor: writer
+    category: behavior
+    conformance: baseline
+    statement: >
+      It is unnecessary and possibly dangerous for an editor to copy fields it does not
+      understand, because the editor might alter the file in a way incompatible with the
+      unknown fields.
+  - id: T6B-065
+    section: "7"
+    heading: "General Requirements - No Duplicate Pointers"
+    page: 26
+    level: SHOULD-NOT
+    actor: writer
+    category: data-layout
+    conformance: baseline
+    statement: >
+      No data should be referenced from more than one place; this applies to both TIFF
+      field value offsets and fields defined as offsets such as StripOffsets (273). Readers
+      and editors are under no obligation to detect duplicate pointers.
+    tags: [273]
+  - id: T6B-066
+    section: "7"
+    heading: "General Requirements - Point to real data"
+    page: 27
+    level: MUST
+    actor: file
+    category: data-layout
+    conformance: baseline
+    statement: >
+      All strip offsets must reference valid locations. It is not legal to use an offset of
+      0 to mean something special.
+    tags: [273]
+  - id: T6B-067
+    section: "7"
+    heading: "General Requirements - Beware of extra components"
+    page: 27
+    level: MUST
+    actor: reader
+    category: behavior
+    conformance: baseline
+    statement: >
+      A Baseline TIFF reader must skip over extra components per pixel gracefully, using the
+      values of SamplesPerPixel (277) and BitsPerSample (258). For example, a file may have
+      PhotometricInterpretation of RGB but 4 SamplesPerPixel (see ExtraSamples, 338).
+    tags: [277, 258, 338]
+  - id: T6B-068
+    section: "7"
+    heading: "General Requirements - Beware of new field types"
+    page: 27
+    level: MUST
+    actor: reader
+    category: behavior
+    conformance: baseline
+    statement: >
+      A Baseline TIFF reader must skip over fields of unexpected field type (such as
+      floating-point data) gracefully. Do not expect BYTE, ASCII, SHORT, LONG, and RATIONAL
+      to always be a complete list of field types.
+  - id: T6B-069
+    section: "7"
+    heading: "General Requirements - Beware of new pixel types"
+    page: 27
+    level: MUST
+    actor: reader
+    category: behavior
+    conformance: baseline
+    statement: >
+      If the SampleFormat field is present and its value is not 1, a Baseline TIFF reader
+      that cannot handle the SampleFormat value must terminate the import process
+      gracefully.
+  - id: T6B-070
+    section: "7"
+    heading: "Notes on Required Fields - ImageWidth/ImageLength"
+    page: 27
+    level: MUST
+    actor: reader
+    category: tag
+    conformance: baseline
+    statement: >
+      Both SHORT and LONG types are allowed for ImageWidth (256) and ImageLength (257) and
+      must be handled properly by readers. Readers are not required to read arbitrarily
+      large files; some may not handle ImageWidth greater than 65535.
+    tags: [256, 257]
+  - id: T6B-071
+    section: "7"
+    heading: "Notes on Required Fields - RowsPerStrip"
+    page: 27
+    level: MUST
+    actor: reader
+    category: tag
+    conformance: baseline
+    statement: >
+      Readers must be able to handle any RowsPerStrip (278) value between 1 and 2**32-1.
+    tags: [278]
+  - id: T6B-072
+    section: "7"
+    heading: "Notes on Required Fields - RowsPerStrip"
+    page: 27
+    level: SHOULD
+    actor: writer
+    category: data-layout
+    conformance: baseline
+    statement: >
+      Recommendation: set RowsPerStrip (278) so that the size of each strip is about 8K
+      bytes, even for uncompressed data. For extremely wide high-resolution images whose
+      rows exceed 8K bytes, RowsPerStrip should be 1.
+    tags: [278]
+  - id: T6B-073
+    section: "7"
+    heading: "Notes on Required Fields - XResolution/YResolution"
+    page: 27
+    level: MUST
+    actor: reader
+    category: tag
+    conformance: baseline
+    statement: >
+      XResolution (282) and YResolution (283) are RATIONAL and may be unequal; a TIFF reader
+      must be able to handle unequal X and Y resolutions.
+    tags: [282, 283]
+  - id: T6B-074
+    section: "7"
+    heading: "Notes on Required Fields - ResolutionUnit"
+    page: 27
+    level: MUST
+    actor: reader
+    category: tag
+    conformance: baseline
+    statement: >
+      TIFF readers must be prepared to handle all three values for ResolutionUnit (296):
+      1 (none), 2 (inch), 3 (centimeter).
+    tags: [296]
+
+  # ---------- Section 8: Baseline Field Reference Guide (defaults / field rules) ----------
+  - id: T6B-075
+    section: "8"
+    heading: "Baseline Field Reference Guide"
+    page: 28
+    level: MUST
+    actor: reader
+    category: behavior
+    conformance: baseline
+    statement: >
+      If a field does not exist in the file, readers must assume the default value for that
+      field.
+  - id: T6B-076
+    section: "8"
+    heading: "BitsPerSample"
+    page: 29
+    level: MUST
+    actor: writer
+    category: tag
+    conformance: baseline
+    statement: >
+      BitsPerSample (258) has N = SamplesPerPixel values, allowing a different number of
+      bits per component. Even when all components have the same depth (e.g. RGB), the
+      writer must write all values (e.g. all three). Default is 1.
+    tags: [258, 277]
+  - id: T6B-077
+    section: "8"
+    heading: "CellLength"
+    page: 29
+    level: MUST
+    actor: file
+    category: tag
+    conformance: baseline
+    statement: >
+      CellLength (265) should only be present if Threshholding (263) = 2. It has no default.
+    tags: [265, 263]
+  - id: T6B-078
+    section: "8"
+    heading: "ColorMap"
+    page: 29
+    level: MUST
+    actor: file
+    category: tag
+    conformance: baseline
+    statement: >
+      ColorMap (320) has no default and must be included in all palette-color images. Each
+      color has 2**BitsPerSample values; the width of each value is 16 bits (type SHORT),
+      0 = minimum intensity, 65535 = maximum intensity.
+    tags: [320, 258]
+  - id: T6B-079
+    section: "8"
+    heading: "Compression - uncompressed storage"
+    page: 30
+    level: MUST
+    actor: file
+    category: compression
+    conformance: baseline
+    statement: >
+      For Compression (259) = 1 (uncompressed), sample values are stored as an array of
+      type SHORT if BitsPerSample = 16 for all samples, LONG if BitsPerSample = 32 for all
+      samples, and BYTE otherwise. Each row is padded to the next BYTE/SHORT/LONG boundary
+      consistent with that rule; rows must begin on byte boundaries (SHORT/LONG boundaries
+      if stored as SHORTs/LONGs).
+    tags: [259, 258]
+  - id: T6B-080
+    section: "8"
+    heading: "Compression - byte order of stored data"
+    page: 30
+    level: MUST
+    actor: file
+    category: compression
+    conformance: baseline
+    statement: >
+      When uncompressed image data is stored as an array of SHORTs or LONGs, the byte
+      ordering must be consistent with that specified in bytes 0-1 of the TIFF header.
+    tags: [259]
+  - id: T6B-081
+    section: "8"
+    heading: "Compression - CCITT"
+    page: 30
+    level: MUST
+    actor: file
+    category: compression
+    conformance: baseline
+    statement: >
+      For Compression (259) = 2 (CCITT Group 3 1D Modified Huffman), BitsPerSample (258)
+      must be 1, since this compression is defined only for bilevel images.
+    tags: [259, 258]
+  - id: T6B-082
+    section: "8"
+    heading: "Compression"
+    page: 31
+    level: INFO
+    actor: file
+    category: compression
+    conformance: baseline
+    statement: >
+      Data compression applies only to the image data pointed to by StripOffsets (273).
+      Compression (259) default is 1.
+    tags: [259, 273]
+  - id: T6B-083
+    section: "8"
+    heading: "DateTime"
+    page: 31
+    level: MUST
+    actor: file
+    category: tag
+    conformance: baseline
+    statement: >
+      DateTime (306) is ASCII with N = 20; the format is "YYYY:MM:DD HH:MM:SS" using a
+      24-hour clock with one space between date and time, and the length including the
+      terminating NUL is 20 bytes.
+    tags: [306]
+  - id: T6B-084
+    section: "8"
+    heading: "ExtraSamples"
+    page: 31
+    level: MUST
+    actor: reader
+    category: tag
+    conformance: baseline
+    statement: >
+      When ExtraSamples (338) is used, SamplesPerPixel (277) is greater than the
+      PhotometricInterpretation (262) suggests. Extra components must be stored as the last
+      components in each pixel, and their size is defined by BitsPerSample (258). With this
+      field, readers must not assume a SamplesPerPixel value based on
+      PhotometricInterpretation.
+    tags: [338, 277, 262, 258]
+  - id: T6B-085
+    section: "8"
+    heading: "ExtraSamples"
+    page: 32
+    level: MUST-NOT
+    actor: file
+    category: tag
+    conformance: baseline
+    statement: >
+      Including both unassociated (value 2) and associated (value 1) alpha in ExtraSamples
+      (338) is undefined, because associated alpha specifies color components are
+      pre-multiplied by alpha while unassociated alpha specifies the opposite.
+    tags: [338]
+  - id: T6B-086
+    section: "8"
+    heading: "ExtraSamples"
+    page: 32
+    level: MUST
+    actor: writer
+    category: tag
+    conformance: baseline
+    statement: >
+      The default is no extra samples; ExtraSamples (338) must be present if there are extra
+      samples.
+    tags: [338]
+  - id: T6B-087
+    section: "8"
+    heading: "FillOrder"
+    page: 32
+    level: SHOULD
+    actor: writer
+    category: tag
+    conformance: extension
+    statement: >
+      FillOrder (266) = 2 should be used only in special-purpose applications, and only
+      when BitsPerSample = 1 and data is uncompressed or CCITT 1D/2D compressed. Support
+      for FillOrder = 2 is not required in a Baseline TIFF compliant reader. Default is 1.
+    tags: [266, 258]
+  - id: T6B-088
+    section: "8"
+    heading: "FreeByteCounts / FreeOffsets"
+    page: 33
+    level: MAY
+    actor: file
+    category: tag
+    conformance: extension
+    statement: >
+      FreeOffsets (288) and FreeByteCounts (289) record the byte offset and length of each
+      string of contiguous unused bytes in a TIFF file; both are type LONG and not
+      recommended for general interchange.
+    tags: [288, 289]
+  - id: T6B-089
+    section: "8"
+    heading: "GrayResponseUnit"
+    page: 34
+    level: SHOULD
+    actor: file
+    category: tag
+    conformance: baseline
+    statement: >
+      GrayResponseUnit (290) sets the precision of GrayResponseCurve (291) values. For
+      historical reasons the default is 2 (hundredths of a unit), but 3 (thousandths) is
+      recommended for greater accuracy.
+    tags: [290, 291]
+  - id: T6B-090
+    section: "8"
+    heading: "ImageLength / ImageWidth"
+    page: 34
+    level: MUST
+    actor: file
+    category: tag
+    conformance: baseline
+    statement: >
+      ImageLength (257) is the number of rows and ImageWidth (256) is the number of columns;
+      both have N = 1 and no default.
+    tags: [257, 256]
+  - id: T6B-091
+    section: "8"
+    heading: "MaxSampleValue"
+    page: 35
+    level: INFO
+    actor: file
+    category: tag
+    conformance: baseline
+    statement: >
+      MaxSampleValue (281) has N = SamplesPerPixel and default 2**BitsPerSample - 1. It must
+      not be used to affect visual appearance or interpretation of any other field; it is
+      for statistical purposes only.
+    tags: [281, 277, 258]
+  - id: T6B-092
+    section: "8"
+    heading: "MinSampleValue"
+    page: 35
+    level: INFO
+    actor: file
+    category: tag
+    conformance: baseline
+    statement: >
+      MinSampleValue (280) has N = SamplesPerPixel and default 0.
+    tags: [280, 277]
+  - id: T6B-093
+    section: "8"
+    heading: "NewSubfileType"
+    page: 36
+    level: MUST
+    actor: file
+    category: tag
+    conformance: baseline
+    statement: >
+      NewSubfileType (254) is a LONG (N=1) of 32 flag bits (unused bits expected to be 0,
+      bit 0 low-order): bit 0 = reduced-resolution version of another image in this file;
+      bit 1 = single page of a multi-page image; bit 2 = transparency mask for another
+      image (PhotometricInterpretation must be 4). Default is 0. Replaces SubfileType.
+    tags: [254, 262]
+  - id: T6B-094
+    section: "8"
+    heading: "Orientation"
+    page: 36
+    level: MAY
+    actor: reader
+    category: tag
+    conformance: baseline
+    statement: >
+      Orientation (274) default is 1. Support for orientations other than 1 is not a
+      Baseline TIFF requirement.
+    tags: [274]
+  - id: T6B-095
+    section: "8"
+    heading: "PhotometricInterpretation"
+    page: 37
+    level: MUST
+    actor: file
+    category: tag
+    conformance: baseline
+    statement: >
+      PhotometricInterpretation (262) has no default and is required; do not rely on
+      applications defaulting to a desired value.
+    tags: [262]
+  - id: T6B-096
+    section: "8"
+    heading: "PhotometricInterpretation - Palette"
+    page: 37
+    level: MUST
+    actor: file
+    category: tag
+    conformance: baseline
+    statement: >
+      When PhotometricInterpretation (262) = 3 (palette color), ColorMap (320) must be
+      present and SamplesPerPixel (277) must be 1.
+    tags: [262, 320, 277]
+  - id: T6B-097
+    section: "8"
+    heading: "PhotometricInterpretation - Transparency Mask"
+    page: 37
+    level: MUST
+    actor: file
+    category: tag
+    conformance: baseline
+    statement: >
+      When PhotometricInterpretation (262) = 4 (transparency mask), SamplesPerPixel (277)
+      and BitsPerSample (258) must be 1; PackBits compression is recommended. 1-bits define
+      the interior of the region and 0-bits define the exterior.
+    tags: [262, 277, 258]
+  - id: T6B-098
+    section: "8"
+    heading: "PhotometricInterpretation - RGB planar order"
+    page: 37
+    level: MUST
+    actor: file
+    category: tag
+    conformance: baseline
+    statement: >
+      For PhotometricInterpretation (262) = 2 (RGB) with PlanarConfiguration = 1, components
+      are stored in order Red, Green, Blue. For PlanarConfiguration = 2, the StripOffsets
+      for the component planes are stored in order: Red plane, then Green plane, then Blue
+      plane.
+    tags: [262, 284, 273]
+  - id: T6B-099
+    section: "8"
+    heading: "PlanarConfiguration"
+    page: 38
+    level: MAY
+    actor: reader
+    category: tag
+    conformance: extension
+    statement: >
+      PlanarConfiguration (284) = 2 (planar format) is not recommended for general
+      interchange, is used as an extension, and Baseline TIFF readers are not required to
+      support it. Default is 1 (chunky). If SamplesPerPixel is 1, PlanarConfiguration is
+      irrelevant and need not be included.
+    tags: [284, 277]
+  - id: T6B-100
+    section: "8"
+    heading: "PlanarConfiguration - planar layout"
+    page: 38
+    level: INFO
+    actor: file
+    category: tag
+    conformance: extension
+    statement: >
+      For PlanarConfiguration (284) = 2, the values in StripOffsets and StripByteCounts are
+      arranged as a 2-dimensional array with SamplesPerPixel rows and StripsPerImage
+      columns (all columns for row 0 first, then row 1, and so on).
+    tags: [284, 273, 279, 277]
+  - id: T6B-101
+    section: "8"
+    heading: "ResolutionUnit"
+    page: 38
+    level: MUST
+    actor: file
+    category: tag
+    conformance: baseline
+    statement: >
+      ResolutionUnit (296) is the unit of measurement for XResolution (282) and YResolution
+      (283): 1 = none, 2 = inch, 3 = centimeter. Default is 2.
+    tags: [296, 282, 283]
+  - id: T6B-102
+    section: "8"
+    heading: "RowsPerStrip - StripsPerImage"
+    page: 39
+    level: MUST
+    actor: reader
+    category: data-layout
+    conformance: baseline
+    statement: >
+      RowsPerStrip (278) and ImageLength (257) together give the number of strips:
+      StripsPerImage = floor((ImageLength + RowsPerStrip - 1) / RowsPerStrip). StripsPerImage
+      is not a field but specifies the number of StripOffsets and StripByteCounts.
+    tags: [278, 257, 273, 279]
+  - id: T6B-103
+    section: "8"
+    heading: "RowsPerStrip - default"
+    page: 39
+    level: MUST
+    actor: file
+    category: tag
+    conformance: baseline
+    statement: >
+      The default for RowsPerStrip (278) is 2**32 - 1 (effectively infinity, i.e. the entire
+      image is one strip). Use of a single strip is not recommended.
+    tags: [278]
+  - id: T6B-104
+    section: "8"
+    heading: "SamplesPerPixel"
+    page: 39
+    level: INFO
+    actor: file
+    category: tag
+    conformance: baseline
+    statement: >
+      SamplesPerPixel (277) is the number of components per pixel: usually 1 for bilevel,
+      grayscale, and palette-color; usually 3 for RGB. Default = 1.
+    tags: [277]
+  - id: T6B-105
+    section: "8"
+    heading: "StripByteCounts"
+    page: 40
+    level: MUST
+    actor: file
+    category: tag
+    conformance: baseline
+    statement: >
+      StripByteCounts (279) gives, for each strip, the number of bytes in the strip after
+      compression, with N = StripsPerImage for PlanarConfiguration = 1 and N =
+      SamplesPerPixel * StripsPerImage for PlanarConfiguration = 2. This tag is required for
+      Baseline TIFF files and has no default.
+    tags: [279, 284, 277]
+  - id: T6B-106
+    section: "8"
+    heading: "StripOffsets"
+    page: 40
+    level: MUST
+    actor: file
+    category: tag
+    conformance: baseline
+    statement: >
+      StripOffsets (273) gives, for each strip, the byte offset of that strip relative to
+      the beginning of the file, with N = StripsPerImage for PlanarConfiguration = 1 and
+      N = SamplesPerPixel * StripsPerImage for PlanarConfiguration = 2. Each strip has a
+      location independent of other strips. This required field (unless TileOffsets is used)
+      is the only way for a reader to find the image data; it has no default.
+    tags: [273, 284, 277]
+  - id: T6B-107
+    section: "8"
+    heading: "StripOffsets - MS-DOS/Windows compatibility"
+    page: 40
+    level: SHOULD
+    actor: writer
+    category: data-layout
+    conformance: baseline
+    statement: >
+      For maximum compatibility with MS-DOS and Windows, the StripOffsets (273) array should
+      be less than or equal to 64K bytes in length, and the strips themselves (compressed
+      and uncompressed) should not be larger than 64K bytes.
+    tags: [273]
+  - id: T6B-108
+    section: "8"
+    heading: "SubfileType"
+    page: 40
+    level: SHOULD-NOT
+    actor: writer
+    category: tag
+    conformance: baseline
+    statement: >
+      SubfileType (255) is deprecated; the NewSubfileType (254) field should be used instead.
+      SubfileType values are 1 = full-resolution, 2 = reduced-resolution, 3 = single page of
+      a multi-page image. No default.
+    tags: [255, 254]
+  - id: T6B-109
+    section: "8"
+    heading: "Threshholding"
+    page: 41
+    level: INFO
+    actor: file
+    category: tag
+    conformance: baseline
+    statement: >
+      Threshholding (263): 1 = none applied, 2 = ordered dither/halftone, 3 = randomized
+      process such as error diffusion. Default is 1.
+    tags: [263, 264, 265]
+  - id: T6B-110
+    section: "8"
+    heading: "XResolution / YResolution"
+    page: 41
+    level: MUST
+    actor: file
+    category: tag
+    conformance: baseline
+    statement: >
+      XResolution (282) and YResolution (283) are RATIONAL (N=1) giving pixels per
+      ResolutionUnit in the ImageWidth and ImageLength directions respectively; both have
+      no default.
+    tags: [282, 283, 296]
+
+  # ---------- Section 9: PackBits Compression ----------
+  - id: T6B-111
+    section: "9"
+    heading: "PackBits Compression"
+    page: 42
+    level: MUST
+    actor: both
+    category: compression
+    conformance: baseline
+    statement: >
+      PackBits (Compression 32773) decoding: loop until the expected number of unpacked
+      bytes is produced. Read source byte n: if n is 0..127 copy the next n+1 bytes
+      literally; if n is -1..-127 copy the next byte -n+1 times; if n is -128, treat as a
+      no-op.
+    tags: [259]
+  - id: T6B-112
+    section: "9"
+    heading: "PackBits Compression"
+    page: 42
+    level: MUST
+    actor: writer
+    category: compression
+    conformance: baseline
+    statement: >
+      When encoding PackBits, pack each row separately and do not compress across row
+      boundaries. If a run is larger than 128 bytes, encode the remainder as one or more
+      additional replicate runs.
+    tags: [259]
+  - id: T6B-113
+    section: "9"
+    heading: "PackBits Compression"
+    page: 42
+    level: SHOULD
+    actor: writer
+    category: compression
+    conformance: baseline
+    statement: >
+      When encoding PackBits, it is best to encode a 2-byte repeat run as a replicate run
+      except when preceded and followed by a literal run (in which case merge into one
+      literal run). Always encode 3-byte repeats as replicate runs.
+    tags: [259]
+  - id: T6B-114
+    section: "9"
+    heading: "PackBits Compression"
+    page: 42
+    level: INFO
+    actor: file
+    category: compression
+    conformance: baseline
+    statement: >
+      For PackBits the number of uncompressed bytes per row is defined to be
+      (ImageWidth + 7) / 8. When decompressed, the result should be interpreted as per
+      compression type 1 (no compression). PackBits has at most 1 extra byte per 128
+      input bytes.
+    tags: [259, 256]
+
+  # ---------- Section 10: Modified Huffman Compression ----------
+  - id: T6B-115
+    section: "10"
+    heading: "Modified Huffman Compression"
+    page: 43
+    level: INFO
+    actor: file
+    category: compression
+    conformance: baseline
+    statement: >
+      Compression scheme 2 compresses bilevel data based on the CCITT Group 3 1D facsimile
+      (Modified Huffman) scheme. A row of data is a series of variable-length code words,
+      each representing an all-white or all-black run length; white and black runs alternate.
+    tags: [259]
+  - id: T6B-116
+    section: "10"
+    heading: "Modified Huffman Compression - color sync"
+    page: 43
+    level: MUST
+    actor: writer
+    category: compression
+    conformance: baseline
+    statement: >
+      All data lines begin with a white run-length code word set to maintain color
+      synchronization. If the actual scan line begins with a black run, a white run-length
+      of zero is written first.
+    tags: [259]
+  - id: T6B-117
+    section: "10"
+    heading: "Modified Huffman Compression - code words"
+    page: 43
+    level: MUST
+    actor: file
+    category: compression
+    conformance: baseline
+    statement: >
+      Each run length is represented by zero or more Make-up code words followed by exactly
+      one Terminating code word. Run lengths 0-63 pels use a single Terminating code;
+      64-2623 pels use the largest Make-up code not longer than the run followed by a
+      Terminating code for the difference; runs of 2624 pels or more use one or more
+      Make-up codes of 2560 until the remainder is less than 2560, then encoded as above.
+      Black and white run lengths use different code word tables.
+    tags: [259]
+  - id: T6B-118
+    section: "10"
+    heading: "Modified Huffman Compression - line length check"
+    page: 44
+    level: MUST
+    actor: file
+    category: compression
+    conformance: baseline
+    statement: >
+      It is considered an unrecoverable error if the sum of the run-lengths for a line does
+      not equal the value of the ImageWidth (256) field.
+    tags: [259, 256]
+  - id: T6B-119
+    section: "10"
+    heading: "Modified Huffman Compression - byte alignment"
+    page: 44
+    level: MUST
+    actor: file
+    category: compression
+    conformance: baseline
+    statement: >
+      New rows always begin on the next available byte boundary. No EOL code words are used,
+      no fill bits are used (except the ignored bits at the end of the last byte of a row),
+      and RTC is not used.
+    tags: [259]
+  - id: T6B-120
+    section: "10"
+    heading: "Modified Huffman Compression - photometry"
+    page: 44
+    level: MUST
+    actor: reader
+    category: compression
+    conformance: baseline
+    statement: >
+      The normal PhotometricInterpretation (262) for bilevel CCITT compressed data is
+      WhiteIsZero (0), where CCITT white runs are white and black runs are black. If
+      PhotometricInterpretation is BlackIsZero (1), the reader must reverse the meaning of
+      white and black when displaying and printing the image.
+    tags: [259, 262]
+tags:
+  - code: 254
+    hex: "0x00FE"
+    name: NewSubfileType
+    types: [LONG]
+    count: "1"
+    default: 0
+    required: no
+    conformance: baseline
+    section: "8"
+    page: 36
+    description: >
+      A general indication of the kind of data contained in this subfile, as 32 flag bits.
+      Replaces the deprecated SubfileType field. Useful with multiple subfiles.
+    values:
+      "bit 0": "1 if reduced-resolution version of another image in this file"
+      "bit 1": "1 if single page of a multi-page image"
+      "bit 2": "1 if transparency mask for another image (PhotometricInterpretation must be 4)"
+    interacts_with: [262]
+  - code: 255
+    hex: "0x00FF"
+    name: SubfileType
+    types: [SHORT]
+    count: "1"
+    default: null
+    required: no
+    conformance: baseline
+    section: "8"
+    page: 40
+    description: >
+      Deprecated general indication of the kind of data in this subfile; use NewSubfileType
+      instead.
+    values:
+      1: "full-resolution image data"
+      2: "reduced-resolution image data"
+      3: "single page of a multi-page image"
+    interacts_with: [254]
+  - code: 256
+    hex: "0x0100"
+    name: ImageWidth
+    types: [SHORT, LONG]
+    count: "1"
+    default: null
+    required: yes
+    conformance: baseline
+    section: "8"
+    page: 34
+    description: >
+      The number of columns in the image, i.e. the number of pixels per row. Must use LONG
+      for images with more than 64K columns.
+    interacts_with: [257]
+  - code: 257
+    hex: "0x0101"
+    name: ImageLength
+    types: [SHORT, LONG]
+    count: "1"
+    default: null
+    required: yes
+    conformance: baseline
+    section: "8"
+    page: 34
+    description: >
+      The number of rows (scanlines) of pixels in the image. Must use LONG for images with
+      more than 64K rows.
+    interacts_with: [256, 278]
+  - code: 258
+    hex: "0x0102"
+    name: BitsPerSample
+    types: [SHORT]
+    count: "SamplesPerPixel"
+    default: 1
+    required: conditional
+    conformance: baseline
+    section: "8"
+    page: 29
+    description: >
+      Number of bits per component. Allows a different depth per component; the writer must
+      write all values. Baseline grayscale = 4 or 8; Baseline RGB = 8,8,8.
+    interacts_with: [277, 262, 320]
+  - code: 259
+    hex: "0x0103"
+    name: Compression
+    types: [SHORT]
+    count: "1"
+    default: 1
+    required: yes
+    conformance: baseline
+    section: "8"
+    page: 30
+    description: >
+      Compression scheme used on the image data. Baseline readers must handle values 1, 2,
+      and 32773.
+    values:
+      1: "No compression; pack data into bytes as tightly as possible (SHORT/LONG/BYTE array per BitsPerSample), each row padded to next byte boundary"
+      2: "CCITT Group 3 1-Dimensional Modified Huffman run-length encoding; BitsPerSample must be 1"
+      32773: "PackBits compression, a byte-oriented run-length scheme"
+    interacts_with: [258, 262, 273]
+  - code: 262
+    hex: "0x0106"
+    name: PhotometricInterpretation
+    types: [SHORT]
+    count: "1"
+    default: null
+    required: yes
+    conformance: baseline
+    section: "8"
+    page: 37
+    description: >
+      The color space of the image data. No default; required.
+    values:
+      0: "WhiteIsZero: 0 imaged as white, 2**BitsPerSample-1 as black; normal for Compression=2"
+      1: "BlackIsZero: 0 imaged as black, 2**BitsPerSample-1 as white"
+      2: "RGB: three components red, green, blue"
+      3: "Palette color: single component indexes ColorMap; ColorMap required, SamplesPerPixel must be 1"
+      4: "Transparency Mask; SamplesPerPixel and BitsPerSample must be 1"
+    interacts_with: [258, 259, 277, 320]
+  - code: 263
+    hex: "0x0107"
+    name: Threshholding
+    types: [SHORT]
+    count: "1"
+    default: 1
+    required: no
+    conformance: baseline
+    section: "8"
+    page: 41
+    description: >
+      For black and white files that represent shades of gray, the technique used to convert
+      from gray to black and white pixels.
+    values:
+      1: "No dithering or halftoning applied"
+      2: "Ordered dither or halftone technique applied"
+      3: "Randomized process such as error diffusion applied"
+    interacts_with: [264, 265]
+  - code: 264
+    hex: "0x0108"
+    name: CellWidth
+    types: [SHORT]
+    count: "1"
+    default: null
+    required: no
+    conformance: baseline
+    section: "8"
+    page: 29
+    description: >
+      The width of the dithering or halftoning matrix used to create a dithered or halftoned
+      bilevel file. No default.
+    interacts_with: [263]
+  - code: 265
+    hex: "0x0109"
+    name: CellLength
+    types: [SHORT]
+    count: "1"
+    default: null
+    required: conditional
+    conformance: baseline
+    section: "8"
+    page: 29
+    description: >
+      The length of the dithering or halftoning matrix. Should only be present if
+      Threshholding = 2. No default.
+    interacts_with: [263]
+  - code: 266
+    hex: "0x010A"
+    name: FillOrder
+    types: [SHORT]
+    count: "1"
+    default: 1
+    required: no
+    conformance: baseline
+    section: "8"
+    page: 32
+    description: >
+      The logical order of bits within a byte. Support for FillOrder=2 is not required in a
+      Baseline reader.
+    values:
+      1: "Lower column values stored in higher-order bits of the byte"
+      2: "Lower column values stored in lower-order bits of the byte"
+    interacts_with: [258]
+  - code: 270
+    hex: "0x010E"
+    name: ImageDescription
+    types: [ASCII]
+    count: "N"
+    default: null
+    required: no
+    conformance: baseline
+    section: "8"
+    page: 34
+    description: >
+      A string that describes the subject of the image (e.g. a caption).
+  - code: 271
+    hex: "0x010F"
+    name: Make
+    types: [ASCII]
+    count: "N"
+    default: null
+    required: no
+    conformance: baseline
+    section: "8"
+    page: 35
+    description: >
+      Manufacturer of the scanner, video digitizer, or other equipment used to generate the
+      image. Synthetic images should not include this field.
+    interacts_with: [272, 305]
+  - code: 272
+    hex: "0x0110"
+    name: Model
+    types: [ASCII]
+    count: "N"
+    default: null
+    required: no
+    conformance: baseline
+    section: "8"
+    page: 35
+    description: >
+      The model name or number of the scanner, video digitizer, or other equipment used to
+      generate the image.
+    interacts_with: [271, 305]
+  - code: 273
+    hex: "0x0111"
+    name: StripOffsets
+    types: [SHORT, LONG]
+    count: "StripsPerImage (or SamplesPerPixel*StripsPerImage for PlanarConfiguration=2)"
+    default: null
+    required: yes
+    conformance: baseline
+    section: "8"
+    page: 40
+    description: >
+      For each strip, the byte offset of that strip relative to the beginning of the file.
+      The only way for a reader to find the image data (unless TileOffsets is used).
+    interacts_with: [278, 279, 284, 277]
+  - code: 274
+    hex: "0x0112"
+    name: Orientation
+    types: [SHORT]
+    count: "1"
+    default: 1
+    required: no
+    conformance: baseline
+    section: "8"
+    page: 36
+    description: >
+      The orientation of the image with respect to rows and columns. Support for values
+      other than 1 is not a Baseline requirement.
+    values:
+      1: "0th row = visual top, 0th column = visual left"
+      2: "0th row = visual top, 0th column = visual right"
+      3: "0th row = visual bottom, 0th column = visual right"
+      4: "0th row = visual bottom, 0th column = visual left"
+      5: "0th row = visual left, 0th column = visual top"
+      6: "0th row = visual right, 0th column = visual top"
+      7: "0th row = visual right, 0th column = visual bottom"
+      8: "0th row = visual left, 0th column = visual bottom"
+  - code: 277
+    hex: "0x0115"
+    name: SamplesPerPixel
+    types: [SHORT]
+    count: "1"
+    default: 1
+    required: conditional
+    conformance: baseline
+    section: "8"
+    page: 39
+    description: >
+      The number of components per pixel. Usually 1 for bilevel, grayscale, palette-color;
+      usually 3 for RGB. Required (value 3 or more) for RGB images.
+    interacts_with: [258, 262, 338]
+  - code: 278
+    hex: "0x0116"
+    name: RowsPerStrip
+    types: [SHORT, LONG]
+    count: "1"
+    default: 4294967295
+    required: yes
+    conformance: baseline
+    section: "8"
+    page: 39
+    description: >
+      The number of rows in each strip (except possibly the last). Default 2**32-1 means the
+      entire image is one strip. Readers must handle values 1 to 2**32-1.
+    interacts_with: [257, 273, 279]
+  - code: 279
+    hex: "0x0117"
+    name: StripByteCounts
+    types: [SHORT, LONG]
+    count: "StripsPerImage (or SamplesPerPixel*StripsPerImage for PlanarConfiguration=2)"
+    default: null
+    required: yes
+    conformance: baseline
+    section: "8"
+    page: 40
+    description: >
+      For each strip, the number of bytes in the strip after any compression. Required for
+      Baseline TIFF files.
+    interacts_with: [273, 278, 284, 277]
+  - code: 280
+    hex: "0x0118"
+    name: MinSampleValue
+    types: [SHORT]
+    count: "SamplesPerPixel"
+    default: 0
+    required: no
+    conformance: baseline
+    section: "8"
+    page: 35
+    description: >
+      The minimum component value used.
+    interacts_with: [281, 277]
+  - code: 281
+    hex: "0x0119"
+    name: MaxSampleValue
+    types: [SHORT]
+    count: "SamplesPerPixel"
+    default: "2**BitsPerSample - 1"
+    required: no
+    conformance: baseline
+    section: "8"
+    page: 35
+    description: >
+      The maximum component value used. For statistical purposes only; must not affect
+      visual appearance or interpretation of other fields.
+    interacts_with: [280, 277, 258]
+  - code: 282
+    hex: "0x011A"
+    name: XResolution
+    types: [RATIONAL]
+    count: "1"
+    default: null
+    required: yes
+    conformance: baseline
+    section: "8"
+    page: 41
+    description: >
+      The number of pixels per ResolutionUnit in the ImageWidth (typically horizontal)
+      direction. No default.
+    interacts_with: [283, 296]
+  - code: 283
+    hex: "0x011B"
+    name: YResolution
+    types: [RATIONAL]
+    count: "1"
+    default: null
+    required: yes
+    conformance: baseline
+    section: "8"
+    page: 41
+    description: >
+      The number of pixels per ResolutionUnit in the ImageLength (typically vertical)
+      direction. No default.
+    interacts_with: [282, 296]
+  - code: 284
+    hex: "0x011C"
+    name: PlanarConfiguration
+    types: [SHORT]
+    count: "1"
+    default: 1
+    required: no
+    conformance: baseline
+    section: "8"
+    page: 38
+    description: >
+      How the components of each pixel are stored. Value 2 (planar) is an extension not
+      required of Baseline readers. Irrelevant if SamplesPerPixel is 1.
+    values:
+      1: "Chunky format: component values for each pixel stored contiguously (e.g. RGBRGB)"
+      2: "Planar format: components stored in separate component planes"
+    interacts_with: [258, 277, 273, 279]
+  - code: 288
+    hex: "0x0120"
+    name: FreeOffsets
+    types: [LONG]
+    count: "N"
+    default: null
+    required: no
+    conformance: extension
+    section: "8"
+    page: 33
+    description: >
+      For each string of contiguous unused bytes in a TIFF file, the byte offset of the
+      string. Not recommended for general interchange.
+    interacts_with: [289]
+  - code: 289
+    hex: "0x0121"
+    name: FreeByteCounts
+    types: [LONG]
+    count: "N"
+    default: null
+    required: no
+    conformance: extension
+    section: "8"
+    page: 33
+    description: >
+      For each string of contiguous unused bytes in a TIFF file, the number of bytes in the
+      string. Not recommended for general interchange.
+    interacts_with: [288]
+  - code: 290
+    hex: "0x0122"
+    name: GrayResponseUnit
+    types: [SHORT]
+    count: "1"
+    default: 2
+    required: no
+    conformance: baseline
+    section: "8"
+    page: 33
+    description: >
+      The precision of the information in GrayResponseCurve. Default 2; value 3 recommended
+      for greater accuracy.
+    values:
+      1: "tenths of a unit"
+      2: "hundredths of a unit"
+      3: "thousandths of a unit"
+      4: "ten-thousandths of a unit"
+      5: "hundred-thousandths of a unit"
+    interacts_with: [291]
+  - code: 291
+    hex: "0x0123"
+    name: GrayResponseCurve
+    types: [SHORT]
+    count: "2**BitsPerSample"
+    default: null
+    required: no
+    conformance: baseline
+    section: "8"
+    page: 33
+    description: >
+      For grayscale data, the optical density of each possible pixel value. The 0th value
+      corresponds to the optical density of a pixel of value 0.
+    interacts_with: [290, 262, 258]
+  - code: 296
+    hex: "0x0128"
+    name: ResolutionUnit
+    types: [SHORT]
+    count: "1"
+    default: 2
+    required: yes
+    conformance: baseline
+    section: "8"
+    page: 38
+    description: >
+      The unit of measurement for XResolution and YResolution. Readers must handle all three
+      values.
+    values:
+      1: "No absolute unit of measurement"
+      2: "Inch"
+      3: "Centimeter"
+    interacts_with: [282, 283]
+  - code: 305
+    hex: "0x0131"
+    name: Software
+    types: [ASCII]
+    count: "N"
+    default: null
+    required: no
+    conformance: baseline
+    section: "8"
+    page: 39
+    description: >
+      Name and version number of the software package(s) used to create the image.
+    interacts_with: [271, 272]
+  - code: 306
+    hex: "0x0132"
+    name: DateTime
+    types: [ASCII]
+    count: "20"
+    default: null
+    required: no
+    conformance: baseline
+    section: "8"
+    page: 31
+    description: >
+      Date and time of image creation in the format "YYYY:MM:DD HH:MM:SS" (24-hour clock,
+      one space between date and time); 20 bytes including the terminating NUL.
+  - code: 315
+    hex: "0x013B"
+    name: Artist
+    types: [ASCII]
+    count: "N"
+    default: null
+    required: no
+    conformance: baseline
+    section: "8"
+    page: 28
+    description: >
+      Person who created the image. Some older TIFF files used this tag for Copyright
+      information.
+  - code: 316
+    hex: "0x013C"
+    name: HostComputer
+    types: [ASCII]
+    count: "N"
+    default: null
+    required: no
+    conformance: baseline
+    section: "8"
+    page: 33
+    description: >
+      The computer and/or operating system in use at the time of image creation.
+    interacts_with: [271, 272, 305]
+  - code: 320
+    hex: "0x0140"
+    name: ColorMap
+    types: [SHORT]
+    count: "3 * (2**BitsPerSample)"
+    default: null
+    required: conditional
+    conformance: baseline
+    section: "8"
+    page: 29
+    description: >
+      A Red-Green-Blue color map (lookup table) for palette-color images. All Red values
+      first, then all Green, then all Blue. Value width is 16 bits; 0 = min intensity,
+      65535 = max. Must be included in all palette-color images. No default.
+    interacts_with: [258, 262]
+  - code: 338
+    hex: "0x0152"
+    name: ExtraSamples
+    types: [SHORT]
+    count: "m (number of extra components per pixel)"
+    default: null
+    required: conditional
+    conformance: baseline
+    section: "8"
+    page: 31
+    description: >
+      Description of extra components per pixel beyond those implied by
+      PhotometricInterpretation. Must be present if there are extra samples; default is no
+      extra samples.
+    values:
+      0: "Unspecified data"
+      1: "Associated alpha data (with pre-multiplied color)"
+      2: "Unassociated alpha data (soft matte)"
+    interacts_with: [277, 262, 258]
+  - code: 33432
+    hex: "0x8298"
+    name: Copyright
+    types: [ASCII]
+    count: "N"
+    default: null
+    required: no
+    conformance: baseline
+    section: "8"
+    page: 31
+    description: >
+      Copyright notice of the person or organization that claims the copyright to the image,
+      including any dates and statements of claims.
+dependencies:
+  - id: T6B-DEP-001
+    requirement: T6B-026
+    when: "Type and Count of a field yield a value that is 4 bytes or smaller"
+    then: "The Value is stored inline in the last 4 bytes (Value Offset) of the IFD entry, left-justified; otherwise Value Offset points to the value elsewhere in the file"
+    kind: constrains-value
+    tags: []
+  - id: T6B-DEP-002
+    requirement: T6B-033
+    when: "ImageWidth(256) > 65535 or ImageLength(257) > 65535"
+    then: "ImageWidth/ImageLength must use the LONG field type instead of SHORT"
+    kind: constrains-value
+    tags: [256, 257]
+  - id: T6B-DEP-003
+    requirement: T6B-044
+    when: "image class == Baseline bilevel"
+    then: "ImageWidth(256), ImageLength(257), Compression(259 in {1,2,32773}), PhotometricInterpretation(262 in {0,1}), StripOffsets(273), RowsPerStrip(278), StripByteCounts(279), XResolution(282), YResolution(283), ResolutionUnit(296 in {1,2,3}) are required (defaulted fields may be omitted)"
+    kind: requires
+    tags: [256, 257, 259, 262, 273, 278, 279, 282, 283, 296]
+  - id: T6B-DEP-004
+    requirement: T6B-047
+    when: "image class == Baseline grayscale"
+    then: "as bilevel plus BitsPerSample(258 in {4,8}); Compression(259) restricted to {1,32773}"
+    kind: requires
+    tags: [256, 257, 258, 259, 262, 273, 278, 279, 282, 283, 296]
+  - id: T6B-DEP-005
+    requirement: T6B-050
+    when: "image class == Baseline palette-color"
+    then: "as grayscale plus ColorMap(320); PhotometricInterpretation(262) == 3; SamplesPerPixel(277) == 1"
+    kind: requires
+    tags: [256, 257, 258, 259, 262, 273, 278, 279, 282, 283, 296, 320]
+  - id: T6B-DEP-006
+    requirement: T6B-053
+    when: "image class == Baseline RGB"
+    then: "requires SamplesPerPixel(277 >= 3); BitsPerSample(258) == 8,8,8; PhotometricInterpretation(262) == 2; no ColorMap; Compression(259) in {1,32773}"
+    kind: requires
+    tags: [256, 257, 258, 259, 262, 273, 277, 278, 279, 282, 283, 296]
+  - id: T6B-DEP-007
+    requirement: T6B-096
+    when: "PhotometricInterpretation(262) == 3 (palette color)"
+    then: "ColorMap(320) must be present and SamplesPerPixel(277) must be 1"
+    kind: requires
+    tags: [262, 320, 277]
+  - id: T6B-DEP-008
+    requirement: T6B-097
+    when: "PhotometricInterpretation(262) == 4 (transparency mask)"
+    then: "SamplesPerPixel(277) == 1 and BitsPerSample(258) == 1; PackBits compression recommended"
+    kind: requires
+    tags: [262, 277, 258]
+  - id: T6B-DEP-009
+    requirement: T6B-093
+    when: "NewSubfileType(254) bit 2 == 1 (transparency mask)"
+    then: "PhotometricInterpretation(262) must be 4"
+    kind: requires
+    tags: [254, 262]
+  - id: T6B-DEP-010
+    requirement: T6B-081
+    when: "Compression(259) == 2 (CCITT Group 3 1D)"
+    then: "BitsPerSample(258) must be 1 (defined only for bilevel images)"
+    kind: constrains-value
+    tags: [259, 258]
+  - id: T6B-DEP-011
+    requirement: T6B-079
+    when: "Compression(259) == 1 (uncompressed)"
+    then: "samples stored as SHORT if BitsPerSample==16 for all samples, LONG if BitsPerSample==32 for all, else BYTE; each row padded to the next boundary of that type"
+    kind: constrains-value
+    tags: [259, 258]
+  - id: T6B-DEP-012
+    requirement: T6B-076
+    when: "BitsPerSample(258) is written"
+    then: "count of BitsPerSample == SamplesPerPixel(277); all values must be written even if identical"
+    kind: constrains-value
+    tags: [258, 277]
+  - id: T6B-DEP-013
+    requirement: T6B-049
+    when: "ColorMap(320) is present"
+    then: "count of ColorMap == 3 * (2**BitsPerSample); values are 2**BitsPerSample Reds, then Greens, then Blues"
+    kind: constrains-value
+    tags: [320, 258]
+  - id: T6B-DEP-014
+    requirement: T6B-102
+    when: "computing number of strips"
+    then: "StripsPerImage = floor((ImageLength(257) + RowsPerStrip(278) - 1) / RowsPerStrip(278)); this equals the count of StripOffsets(273) and StripByteCounts(279) for PlanarConfiguration==1"
+    kind: constrains-value
+    tags: [257, 278, 273, 279]
+  - id: T6B-DEP-015
+    requirement: T6B-105
+    when: "PlanarConfiguration(284) == 2"
+    then: "count of StripOffsets(273) and StripByteCounts(279) == SamplesPerPixel(277) * StripsPerImage"
+    kind: constrains-value
+    tags: [284, 273, 279, 277]
+  - id: T6B-DEP-016
+    requirement: T6B-084
+    when: "ExtraSamples(338) is present"
+    then: "SamplesPerPixel(277) exceeds the value implied by PhotometricInterpretation(262) by m; ExtraSamples has m values; extra components stored last, sized by BitsPerSample(258); readers must not infer SamplesPerPixel from PhotometricInterpretation"
+    kind: modifies-meaning
+    tags: [338, 277, 262, 258]
+  - id: T6B-DEP-017
+    requirement: T6B-085
+    when: "ExtraSamples(338) contains value 1 (associated alpha)"
+    then: "it must not also contain value 2 (unassociated alpha); the combination is undefined"
+    kind: forbids
+    tags: [338]
+  - id: T6B-DEP-018
+    requirement: T6B-091
+    when: "MaxSampleValue(281) is absent"
+    then: "default MaxSampleValue = 2**BitsPerSample(258) - 1"
+    kind: selects-default
+    tags: [281, 258]
+  - id: T6B-DEP-019
+    requirement: T6B-091
+    when: "MaxSampleValue(281) or MinSampleValue(280) is present"
+    then: "count == SamplesPerPixel(277)"
+    kind: constrains-value
+    tags: [281, 280, 277]
+  - id: T6B-DEP-020
+    requirement: T6B-077
+    when: "Threshholding(263) != 2"
+    then: "CellLength(265) should not be present"
+    kind: forbids
+    tags: [263, 265]
+  - id: T6B-DEP-021
+    requirement: T6B-099
+    when: "SamplesPerPixel(277) == 1"
+    then: "PlanarConfiguration(284) is irrelevant and need not be included"
+    kind: constrains-value
+    tags: [277, 284]
+  - id: T6B-DEP-022
+    requirement: T6B-120
+    when: "Compression(259) == 2 and PhotometricInterpretation(262) == 1 (BlackIsZero)"
+    then: "the reader must reverse the meaning of CCITT white and black runs when displaying/printing"
+    kind: modifies-meaning
+    tags: [259, 262]
+  - id: T6B-DEP-023
+    requirement: T6B-069
+    when: "SampleFormat field is present and != 1"
+    then: "a Baseline reader that cannot handle the value must terminate the import process gracefully"
+    kind: modifies-meaning
+    tags: []
+  - id: T6B-DEP-024
+    requirement: T6B-054
+    when: "ExtraSamples are present in an RGB image"
+    then: "BitsPerSample(258) values for the extra samples must be included in addition to the 8,8,8 for the main components"
+    kind: requires
+    tags: [258, 338]
+  - id: T6B-DEP-025
+    requirement: T6B-098
+    when: "PhotometricInterpretation(262) == 2 (RGB) and PlanarConfiguration(284) == 2"
+    then: "StripOffsets(273) for the component planes are ordered Red plane, Green plane, Blue plane"
+    kind: constrains-value
+    tags: [262, 284, 273]

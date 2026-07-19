@@ -1,0 +1,538 @@
+document: BTF
+title: "BigTIFF Design"
+date: null
+requirements:
+  - id: BTF-001
+    section: "Introduction"
+    heading: "BigTIFF Design"
+    level: INFO
+    actor: file
+    category: structure
+    conformance: extension
+    statement: >
+      The classic TIFF file format uses 32-bit offsets and, as such, is limited to
+      4 gigabytes in file size. The BigTIFF design defines a 64-bit (larger than 4GB)
+      TIFF format specification to overcome this limitation.
+    notes: >
+      Background/motivation statement, not itself a normative rule. Document states
+      the design is based on a proposal by Steve Carlsen of Adobe, with input from
+      other parties.
+
+  - id: BTF-002
+    section: "Overview of BigTIFF Extension"
+    heading: "Overview of BigTIFF Extension"
+    level: MUST
+    actor: file
+    category: structure
+    conformance: extension
+    statement: >
+      In a BigTIFF file, the Version ID field in header bytes 2-3 (which is decimal 42
+      in classic TIFF) must be the decimal value 43.
+    notes: "Restated in tabular form in the 'TIFF and BigTIFF File Header' section (see BTF-022)."
+
+  - id: BTF-003
+    section: "Overview of BigTIFF Extension"
+    heading: "Overview of BigTIFF Extension"
+    level: MUST
+    actor: file
+    category: structure
+    conformance: extension
+    statement: >
+      In a BigTIFF file, header bytes 4-5 must contain the decimal number 8, indicating
+      the byte size of offsets used throughout the file.
+    notes: "Restated in tabular form in the 'TIFF and BigTIFF File Header' section (see BTF-022)."
+
+  - id: BTF-004
+    section: "Overview of BigTIFF Extension"
+    heading: "Overview of BigTIFF Extension"
+    level: SHOULD
+    actor: reader
+    category: behavior
+    conformance: extension
+    statement: >
+      If header bytes 4-5 of a BigTIFF file contain a value other than decimal 8
+      (the bytesize-of-offsets field), a reader should give up processing the file.
+    notes: >
+      Source wording is "a reader should give up" (SHOULD-level wording), but this
+      describes a hard failure/give-up condition analogous to a MUST-level reader
+      obligation; extracted verbatim as SHOULD per the document's own wording.
+
+  - id: BTF-005
+    section: "Overview of BigTIFF Extension"
+    heading: "Overview of BigTIFF Extension"
+    level: INFO
+    actor: file
+    category: structure
+    conformance: extension
+    statement: >
+      The bytesize-of-offsets field (header bytes 4-5, value 8 in current BigTIFF)
+      exists to provide a way to move to 16-byte pointers in a future revision.
+    notes: "Design rationale, not a testable rule."
+
+  - id: BTF-006
+    section: "Overview of BigTIFF Extension"
+    heading: "Overview of BigTIFF Extension"
+    level: MUST
+    actor: file
+    category: structure
+    conformance: extension
+    statement: >
+      In a BigTIFF file, header bytes 6-7 are reserved and must be zero.
+    notes: "Restated in tabular form in the 'TIFF and BigTIFF File Header' section (see BTF-022)."
+
+  - id: BTF-007
+    section: "Overview of BigTIFF Extension"
+    heading: "Overview of BigTIFF Extension"
+    level: SHOULD
+    actor: reader
+    category: behavior
+    conformance: extension
+    statement: >
+      If header bytes 6-7 of a BigTIFF file (the reserved field) are not zero, a reader
+      should give up processing the file.
+    notes: >
+      Source wording is "a reader should give up" (SHOULD-level wording); same
+      give-up pattern as BTF-004.
+
+  - id: BTF-008
+    section: "Overview of BigTIFF Extension"
+    heading: "Overview of BigTIFF Extension"
+    level: MUST
+    actor: file
+    category: structure
+    conformance: extension
+    statement: >
+      In a BigTIFF file, header bytes 8-15 contain the 8-byte offset to the first IFD
+      (Image File Directory).
+    notes: "Restated in tabular form in the 'TIFF and BigTIFF File Header' section (see BTF-022)."
+
+  - id: BTF-009
+    section: "Overview of BigTIFF Extension"
+    heading: "Overview of BigTIFF Extension"
+    level: MUST
+    actor: file
+    category: structure
+    conformance: extension
+    statement: >
+      In a BigTIFF IFD entry, the Value/Offset field is 8 bytes long and, per this
+      overview section, takes up bytes 8-15 of the IFD entry.
+    notes: >
+      AMBIGUITY: this overview statement conflicts with the detailed "BigTIFF Tag
+      Structure" table later in the document (see BTF-025), which places the 8-byte
+      Value/Offset field at byte offset 12 (bytes 12-19) of the 20-byte entry, after
+      a 2-byte tag code, 2-byte datatype, and 8-byte count field. The document does
+      not reconcile this discrepancy; both statements are extracted as given.
+
+  - id: BTF-010
+    section: "Overview of BigTIFF Extension"
+    heading: "Overview of BigTIFF Extension"
+    level: MUST
+    actor: file
+    category: data-layout
+    conformance: extension
+    statement: >
+      In a BigTIFF IFD entry, if the tag's value is less than or equal to 8 bytes in
+      size, it must be stored directly in the Value/Offset field (inlined) rather than
+      elsewhere in the file with an offset pointer.
+    notes: "Restated with classic-TIFF comparison in BTF-026."
+
+  - id: BTF-011
+    section: "Overview of BigTIFF Extension"
+    heading: "Overview of BigTIFF Extension"
+    level: MUST
+    actor: file
+    category: structure
+    conformance: extension
+    statement: >
+      In a BigTIFF file, all values (tag data written outside the IFD entry and pointed
+      to by an offset) must begin at an 8-byte-aligned file address.
+    notes: "This is the BigTIFF 8-byte alignment rule."
+
+  - id: BTF-012
+    section: "Overview of BigTIFF Extension"
+    heading: "Overview of BigTIFF Extension"
+    level: MUST
+    actor: file
+    category: structure
+    conformance: extension
+    statement: >
+      At the end of a BigTIFF IFD, there is an 8-byte offset to the Next_IFD (or 0 if
+      there is no next IFD).
+    notes: "The '0 if no next IFD' detail is given explicitly in the IFD structure table; see BTF-023."
+
+  - id: BTF-013
+    section: "Overview of BigTIFF Extension"
+    heading: "Overview of BigTIFF Extension"
+    level: MUST
+    actor: file
+    category: structure
+    conformance: extension
+    statement: >
+      A BigTIFF IFD begins with an 8-byte count of the number of directory entries,
+      instead of the 2-byte count used in classic TIFF, in order to keep IFD entries
+      8-byte-aligned.
+    notes: null
+
+  - id: BTF-014
+    section: "Overview of BigTIFF Extension"
+    heading: "Overview of BigTIFF Extension"
+    level: MUST
+    actor: file
+    category: data-layout
+    conformance: extension
+    statement: >
+      BigTIFF adds a new TIFFDataType, TIFF_LONG8 (numeric type code 16), defined as
+      an 8-byte (64-bit) unsigned integer.
+    notes: "Reiterated with the same definition in the 'Other miscellaneous details' section."
+
+  - id: BTF-015
+    section: "Overview of BigTIFF Extension"
+    heading: "Overview of BigTIFF Extension"
+    level: MUST
+    actor: file
+    category: data-layout
+    conformance: extension
+    statement: >
+      BigTIFF adds a new TIFFDataType, TIFF_SLONG8 (numeric type code 17), defined as
+      an 8-byte (64-bit) signed integer.
+    notes: "Reiterated with the same definition in the 'Other miscellaneous details' section."
+
+  - id: BTF-016
+    section: "Overview of BigTIFF Extension"
+    heading: "Overview of BigTIFF Extension"
+    level: MUST
+    actor: file
+    category: data-layout
+    conformance: extension
+    statement: >
+      BigTIFF adds a new TIFFDataType, TIFF_IFD8 (numeric type code 18), defined as a
+      new 8-byte (64-bit) unsigned IFD offset type.
+    notes: "Reiterated with the same definition in the 'Other miscellaneous details' section."
+
+  - id: BTF-017
+    section: "Overview of BigTIFF Extension"
+    heading: "Overview of BigTIFF Extension"
+    level: MAY
+    actor: file
+    category: tag
+    conformance: extension
+    tags: [273, 279, 324, 325]
+    statement: >
+      In BigTIFF, the StripOffsets (273), TileOffsets (324), and the byte-count tags
+      (StripByteCounts (279) and TileByteCounts (325)) may use the datatype LONG8 (16),
+      or the traditionally allowed LONG or SHORT datatypes.
+    notes: >
+      Shorthand overview statement; restated with explicit tag names and codes and
+      more detail in the 'Other miscellaneous details' section (see BTF-028).
+
+  - id: BTF-018
+    section: "Overview of BigTIFF Extension"
+    heading: "Overview of BigTIFF Extension"
+    level: INFO
+    actor: file
+    category: metadata
+    conformance: extension
+    statement: >
+      The proposed file extension for BigTIFF files is .tf8 or .btf, and the format is
+      to be called "BigTIFF".
+    notes: >
+      Compare with BTF-027 in 'Other miscellaneous details', which lists 'tif', 'tf8',
+      and 'btf' as suggested extensions -- an inconsistent/expanded set relative to this
+      statement.
+
+  - id: BTF-019
+    section: "Overview of BigTIFF Extension"
+    heading: "Overview of BigTIFF Extension"
+    level: MUST
+    actor: both
+    category: structure
+    conformance: extension
+    statement: >
+      Other than the specific differences enumerated for BigTIFF (header fields, IFD
+      layout, tag entry layout, alignment, inlining threshold, and the new LONG8/SLONG8/IFD8
+      data types), BigTIFF is identical to, and inherits all semantics of, classic
+      ("original") TIFF, i.e. the TIFF 6.0 specification.
+    notes: "This is the document's blanket 'inherits classic TIFF 6.0 semantics' requirement."
+
+  - id: BTF-020
+    section: "TIFF and BigTIFF File Header"
+    heading: "TIFF and BigTIFF File Header"
+    level: INFO
+    actor: file
+    category: structure
+    conformance: extension
+    statement: >
+      The offset to the first IFD (header bytes 8-15 in BigTIFF; header bytes 4-7 as
+      UInt32 in classic TIFF) can point to an IFD located anywhere in the file; this
+      holds for both classic TIFF and BigTIFF.
+    notes: null
+
+  - id: BTF-021
+    section: "TIFF and BigTIFF File Header"
+    heading: "TIFF and BigTIFF File Header"
+    level: MUST
+    actor: file
+    category: structure
+    conformance: extension
+    statement: >
+      Every 'page' in a multi-page TIFF file, whether classic TIFF or BigTIFF, is
+      represented by exactly one IFD (Image File Directory).
+    notes: null
+
+  - id: BTF-022
+    section: "TIFF and BigTIFF File Header"
+    heading: "TIFF and BigTIFF File Header"
+    level: MUST
+    actor: file
+    category: structure
+    conformance: extension
+    statement: >
+      The complete BigTIFF file header layout is: byte offset 0, UInt16, byte-order
+      indication; byte offset 2, UInt16, version number, always 43 for BigTIFF; byte
+      offset 4, UInt16, bytesize of offsets, always 8 in BigTIFF; byte offset 6, UInt16,
+      reserved, always 0; byte offset 8, UInt64, offset to the first IFD.
+    notes: >
+      Consolidated tabular restatement of BTF-002, BTF-003, BTF-006, and BTF-008.
+      For comparison, the classic TIFF header is: offset 0 UInt16 byte-order indication;
+      offset 2 UInt16 version number (always 42); offset 4 UInt32 offset to first IFD.
+
+  - id: BTF-023
+    section: "TIFF and BigTIFF Image File Directory Structure"
+    heading: "TIFF and BigTIFF Image File Directory Structure"
+    level: MUST
+    actor: file
+    category: structure
+    conformance: extension
+    statement: >
+      In both classic TIFF and BigTIFF, the offset-to-next-IFD field at the end of an
+      IFD contains the offset to the next IFD if one exists, or 0 if there is no next IFD.
+    notes: >
+      In classic TIFF this field is a UInt32 located at byte offset 2 + (number of tags)*12
+      within the IFD; in BigTIFF it is a UInt64 located at byte offset 8 + (number of
+      tags)*20 within the IFD.
+
+  - id: BTF-024
+    section: "TIFF and BigTIFF Tag Structure"
+    heading: "TIFF and BigTIFF Tag Structure"
+    level: SHOULD
+    actor: writer
+    category: structure
+    conformance: extension
+    statement: >
+      The tags in an IFD should be sorted by tag code, in both classic TIFF and BigTIFF.
+    notes: "Explicit tag sort-order requirement."
+
+  - id: BTF-025
+    section: "TIFF and BigTIFF Tag Structure"
+    heading: "TIFF and BigTIFF Tag Structure"
+    level: MUST
+    actor: file
+    category: structure
+    conformance: extension
+    statement: >
+      A BigTIFF tag structure (IFD entry) occupies exactly 20 bytes, laid out as:
+      byte offset 0, UInt16, tag identifying code; byte offset 2, UInt16, datatype of
+      tag data; byte offset 4, UInt64, number of values; byte offset 12, either
+      (value-count * tag-data-datatype size) of tag data, or a UInt64 offset to the tag
+      data, occupying 8 bytes.
+    notes: >
+      AMBIGUITY: this places the 8-byte Value/Offset field at byte offset 12 (bytes
+      12-19) of the entry, which conflicts with the Overview section's statement that
+      Value/Offset fields "take up bytes 8-15 in an IFD entry" (see BTF-009). Both are
+      extracted as stated in the source document. For comparison, the classic TIFF tag
+      structure occupies 12 bytes: offset 0 UInt16 tag code, offset 2 UInt16 datatype,
+      offset 4 UInt32 number of values, offset 8 tag data or UInt32 offset to tag data.
+
+  - id: BTF-026
+    section: "TIFF and BigTIFF Tag Structure"
+    heading: "TIFF and BigTIFF Tag Structure"
+    level: MUST
+    actor: file
+    category: data-layout
+    conformance: extension
+    statement: >
+      The same tag-data 'inlining' rule applies to both classic TIFF and BigTIFF, only
+      the threshold size differs: in classic TIFF, tag data is written inside the tag
+      structure in the IFD if its size is less than or equal to 4 bytes (otherwise it is
+      written elsewhere in the file and pointed to by an offset); in BigTIFF, tag data
+      is written inside the tag structure in the IFD if its size is less than or equal
+      to 8 bytes.
+    notes: "Restates the BigTIFF-specific portion already given in BTF-010, with the classic-TIFF threshold added for comparison."
+
+  - id: BTF-027
+    section: "Other miscellaneous details"
+    heading: "Other miscellaneous details"
+    level: INFO
+    actor: file
+    category: metadata
+    conformance: extension
+    statement: >
+      Amongst the suggested file extensions for BigTIFF files are 'tif', 'tf8', and 'btf'.
+    notes: >
+      INFO-level file extension recommendation. Compare with BTF-018 in the Overview
+      section, which states only .tf8 or .btf are proposed (without 'tif'); the
+      document does not reconcile the two lists.
+
+  - id: BTF-028
+    section: "Other miscellaneous details"
+    heading: "Other miscellaneous details"
+    level: MAY
+    actor: file
+    category: tag
+    conformance: extension
+    tags: [273, 279, 324, 325]
+    statement: >
+      The StripOffsets (273), StripByteCounts (279), TileOffsets (324), and TileByteCounts
+      (325) tags are allowed to have the datatype TIFF_LONG8 (16) in BigTIFF. The old
+      datatypes TIFF_LONG and TIFF_SHORT, which were allowed in the TIFF 6.0 specification,
+      remain valid in BigTIFF as well.
+    notes: >
+      Detailed/authoritative version of the shorthand statement in BTF-017, now naming
+      all four tags explicitly with their decimal codes.
+
+  - id: BTF-029
+    section: "Other miscellaneous details"
+    heading: "Other miscellaneous details"
+    level: MAY
+    actor: file
+    category: tag
+    conformance: extension
+    tags: [330]
+    statement: >
+      Tags that point to other IFDs, such as the SubIFDs tag (330), are allowed to have
+      the datatype TIFF_IFD8 (18) in BigTIFF. The old datatype TIFF_IFD, and TIFF_LONG,
+      remain valid as well.
+    notes: "SubIFDs (330) is given as the example IFD-pointer tag."
+
+  - id: BTF-030
+    section: "Other miscellaneous details"
+    heading: "Other miscellaneous details"
+    level: SHOULD-NOT
+    actor: writer
+    category: tag
+    conformance: extension
+    tags: [330]
+    statement: >
+      Using the TIFF_LONG datatype for IFD-pointer tags (such as SubIFDs (330)) is
+      described as "hardly recommendable"; although still valid, it is discouraged in
+      favor of TIFF_IFD or, in BigTIFF, TIFF_IFD8 (18).
+    notes: "Document's own editorial discouragement, extracted as a SHOULD-NOT-level writer guidance."
+
+tags:
+  - code: 273
+    hex: "0x0111"
+    name: StripOffsets
+    types: [SHORT, LONG, LONG8]
+    count: "StripsPerImage"
+    default: null
+    required: conditional
+    conformance: extension
+    section: "Other miscellaneous details"
+    description: >
+      Offsets to strip data. In BigTIFF this tag may additionally use the new LONG8
+      (16) datatype for 64-bit offsets; the classic LONG and SHORT datatypes defined
+      by TIFF 6.0 remain valid.
+    interacts_with: [279]
+
+  - code: 279
+    hex: "0x0117"
+    name: StripByteCounts
+    types: [SHORT, LONG, LONG8]
+    count: "StripsPerImage"
+    default: null
+    required: conditional
+    conformance: extension
+    section: "Other miscellaneous details"
+    description: >
+      Byte counts for strip data. In BigTIFF this tag may additionally use the new
+      LONG8 (16) datatype for 64-bit byte counts; the classic LONG and SHORT datatypes
+      defined by TIFF 6.0 remain valid.
+    interacts_with: [273]
+
+  - code: 324
+    hex: "0x0144"
+    name: TileOffsets
+    types: [SHORT, LONG, LONG8]
+    count: "TilesPerImage"
+    default: null
+    required: conditional
+    conformance: extension
+    section: "Other miscellaneous details"
+    description: >
+      Offsets to tile data. In BigTIFF this tag may additionally use the new LONG8 (16)
+      datatype for 64-bit offsets; the classic LONG and SHORT datatypes remain valid
+      per this document's blanket statement.
+    interacts_with: [325]
+    notes: >
+      This document generalizes TileOffsets together with StripOffsets/ByteCounts as
+      allowing SHORT or LONG "traditionally"; note that TIFF 6.0 itself defines
+      TileOffsets as LONG-only (no SHORT), so this document's blanket statement is an
+      approximation not fully precise per-tag.
+
+  - code: 325
+    hex: "0x0145"
+    name: TileByteCounts
+    types: [SHORT, LONG, LONG8]
+    count: "TilesPerImage"
+    default: null
+    required: conditional
+    conformance: extension
+    section: "Other miscellaneous details"
+    description: >
+      Byte counts for tile data. In BigTIFF this tag may additionally use the new
+      LONG8 (16) datatype for 64-bit byte counts; the classic LONG and SHORT datatypes
+      remain valid.
+    interacts_with: [324]
+
+  - code: 330
+    hex: "0x014A"
+    name: SubIFDs
+    types: [LONG, IFD, IFD8]
+    count: "N"
+    default: null
+    required: no
+    conformance: extension
+    section: "Other miscellaneous details"
+    description: >
+      Example of a tag whose value(s) point to other IFDs. In BigTIFF this tag may
+      additionally use the new IFD8 (18) datatype for 64-bit IFD offsets; the legacy
+      IFD datatype remains valid, and the legacy LONG datatype remains technically
+      valid but is described by this document as "hardly recommendable".
+
+dependencies:
+  - id: BTF-DEP-001
+    requirement: BTF-003
+    when: "Header Version ID (header bytes 2-3) == 43 (BigTIFF)"
+    then: >
+      Header bytes 4-5 (bytesize of offsets) must equal 8; header bytes 6-7 must be
+      zero (reserved); the IFD entry count field is 8 bytes wide; IFD entries are 20
+      bytes each; the offset-to-next-IFD field is 8 bytes; the tag Value/Offset field
+      is 8 bytes wide with an inlining threshold of 8 bytes; all out-of-line values
+      must begin at an 8-byte-aligned file address.
+    kind: modifies-meaning
+    tags: []
+
+  - id: BTF-DEP-002
+    requirement: BTF-004
+    when: "BigTIFF header bytes 4-5 (bytesize of offsets) != 8, OR header bytes 6-7 (reserved) != 0"
+    then: "A reader should give up parsing the file."
+    kind: forbids
+    tags: []
+
+  - id: BTF-DEP-003
+    requirement: BTF-028
+    when: "File is BigTIFF (Version ID == 43)"
+    then: >
+      StripOffsets(273), StripByteCounts(279), TileOffsets(324), and TileByteCounts(325)
+      may use datatype LONG8 (16) in addition to the classic LONG and SHORT datatypes.
+    kind: constrains-value
+    tags: [273, 279, 324, 325]
+
+  - id: BTF-DEP-004
+    requirement: BTF-029
+    when: "File is BigTIFF (Version ID == 43) and a tag's value points to another IFD (e.g. SubIFDs(330))"
+    then: >
+      The tag may use datatype IFD8 (18) in addition to the classic IFD datatype; the
+      classic LONG datatype remains valid but is discouraged.
+    kind: constrains-value
+    tags: [330]

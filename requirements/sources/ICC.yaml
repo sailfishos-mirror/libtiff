@@ -1,0 +1,401 @@
+document: ICC
+title: "Image technology colour management — Architecture, profile format, and data structure (ICC.1:2022-05, Profile version 4.4.0.0, revision of ICC.1:2010)"
+date: "2022-05"
+requirements:
+  - id: ICC-001
+    section: "1"
+    heading: "Scope"
+    page: 1
+    level: INFO
+    actor: file
+    category: metadata
+    conformance: ICC
+    statement: >
+      ICC.1:2022-05 specifies the ICC colour profile format and the architecture within which it
+      operates, including the required reference colour spaces and the profile data structures
+      (tags). It is a colorimetry/CMM specification; only the parts governing the profile's
+      container-level structure (header, size, signature, byte order) and its use as an embedded
+      object in files such as TIFF are TIFF-relevant.
+    notes: >
+      Scope-discipline entry per extraction brief addendum item 4: internal colorimetric
+      processing (PCS transforms, tag types used for LUTs/curves, chromatic adaptation, etc.)
+      is out of scope for this extraction and is not itemised further.
+
+  - id: ICC-002
+    section: "0.7"
+    heading: "Embedded profiles"
+    page: "xii"
+    level: INFO
+    actor: file
+    category: metadata
+    conformance: ICC
+    statement: >
+      In addition to defining a cross-platform colour profile format, this document describes the
+      convention for embedding ICC profiles within graphics documents and images so that colour
+      data can be moved between systems without requiring the destination system to already have
+      the profile. However, ICC.1:2022-05 states that the embedding convention itself ("Embedding
+      profiles") is described in ICC Technical Note 10-2021 [21], an external document, not
+      normatively defined within this specification's own text.
+    notes: >
+      This is the key scoping fact for TIFF extraction: ICC.1:2022-05 does not itself contain the
+      TIFF ICCProfile tag definition (tag 34675, historically named InterColorProfile). See
+      ICC-021 below (Annex B) for confirmation. The tag-level embedding rules for TIFF must be
+      sourced from another document (e.g. Adobe's TIFF Technical Note on ICC profiles, or the TIFF
+      6.0 spec / an EP-related technote), not from this document.
+
+  - id: ICC-003
+    section: "7.1.1"
+    heading: "Profile requirements — General"
+    page: 18
+    level: MUST
+    actor: file
+    category: structure
+    conformance: ICC
+    statement: >
+      An ICC profile shall consist of exactly three elements, in this order, combined as a single
+      file: (a) a 128-byte profile header (see ICC-007), (b) a profile tag table, and (c) the
+      profile's tagged element data. When an ICC profile is embedded in a carrier tag (such as a
+      TIFF ICCProfile tag), the embedded byte sequence is this same three-part structure verbatim.
+    notes: "Applies to the profile object itself, independent of the container format."
+
+  - id: ICC-004
+    section: "7.1"
+    heading: "Profile requirements — General"
+    page: 18
+    level: MUST
+    actor: file
+    category: data-layout
+    conformance: ICC
+    statement: >
+      All ICC profile data (header, tag table, and tagged element data) shall be encoded as
+      big-endian. This is a blanket, unconditional rule with no stated exception; when an ICC
+      profile is embedded inside a TIFF file, the embedded profile bytes remain big-endian
+      regardless of the TIFF file's own byte-order marker (the "II"/"MM" indicator in the TIFF
+      header), since the ICC profile is opaque, self-describing binary data copied verbatim into
+      the carrier tag.
+    notes: >
+      The document itself only states the blanket big-endian rule (7.1 a, reiterated as a NOTE
+      under Clause 4: "As defined in 7.1, all profile data is encoded as big-endian"); it does not
+      explicitly discuss TIFF byte-order markers. The interpretation that this holds independent
+      of a TIFF container's byte order follows directly from the profile being an opaque
+      big-endian binary blob, but is a reasonable inference rather than a verbatim TIFF-specific
+      statement in this document.
+
+  - id: ICC-005
+    section: "7.1"
+    heading: "Profile requirements — General"
+    page: 18
+    level: MUST
+    actor: file
+    category: structure
+    conformance: ICC
+    statement: >
+      The first set of tagged element data shall immediately follow the profile tag table.
+    notes: null
+
+  - id: ICC-006
+    section: "7.1"
+    heading: "Profile requirements — General"
+    page: 18
+    level: MUST
+    actor: file
+    category: structure
+    conformance: ICC
+    statement: >
+      All tagged element data, including the last, shall be padded by no more than three trailing
+      pad bytes to reach a 4-byte boundary, and all pad bytes shall be NULL (0x00). This implies
+      the total tagged-element-data length is always a multiple of four bytes.
+    notes: null
+
+  - id: ICC-007
+    section: "7.2.1"
+    heading: "Profile header — General requirements"
+    page: 19
+    level: MUST
+    actor: file
+    category: structure
+    conformance: ICC
+    statement: >
+      The ICC profile header is fixed at exactly 128 bytes in length and contains 18 defined
+      fields at fixed byte offsets (Table 17): profile size (bytes 0-3), preferred CMM type
+      (4-7), profile version number (8-11), profile/device class (12-15), data colour space
+      (16-19), PCS (20-23), creation date/time (24-35), 'acsp' profile file signature (36-39),
+      primary platform (40-43), profile flags (44-47), device manufacturer (48-51), device model
+      (52-55), device attributes (56-63), rendering intent (64-67), PCS illuminant XYZ (68-79),
+      profile creator (80-83), profile ID (84-99), and reserved (100-127, must be zero).
+    notes: "This is the header layout a validator checks against embedded/carried profile bytes."
+
+  - id: ICC-008
+    section: "7.2.2"
+    heading: "Profile header — Profile size field"
+    page: 19
+    level: MUST
+    actor: file
+    category: structure
+    conformance: ICC
+    statement: >
+      The profile size field (header bytes 0-3, a UInt32Number) shall contain the exact total
+      size, in bytes, obtained by combining the 128-byte profile header, the profile tag table,
+      and the tagged element data (including the pad bytes for the last tag). This value is the
+      authoritative length of the complete profile byte stream.
+    notes: >
+      Validation surface: when a profile is embedded in a carrier tag whose value is the raw
+      profile bytes (e.g. a TIFF tag with count = profile size), the tag's byte count should equal
+      this header field's value. ICC.1:2022-05 does not itself state this cross-check against a
+      TIFF tag's count (it does not mention TIFF tag 34675 at all — see ICC-002/ICC-021); the
+      cross-check is a natural consequence of this field's definition, to be enforced by whichever
+      document defines the actual carrier tag.
+
+  - id: ICC-009
+    section: "7.2.4"
+    heading: "Profile header — Profile version field"
+    page: 19
+    level: MUST
+    actor: file
+    category: metadata
+    conformance: ICC
+    statement: >
+      The profile version field (header bytes 8-11) shall encode the profile's ICC specification
+      version as binary-coded decimal: byte 8 is the major version, byte 9's two 4-bit nibbles are
+      the minor version and bug-fix version; bytes 10-11 are reserved and shall be zero. Profiles
+      conforming to ICC.1:2022-05 are version "4.4.0.0", encoded as 0x04400000.
+    notes: null
+
+  - id: ICC-010
+    section: "7.2.5"
+    heading: "Profile header — Profile/device class field"
+    page: 20
+    level: MUST
+    actor: file
+    category: metadata
+    conformance: ICC
+    statement: >
+      The profile/device class field (header bytes 12-15) shall contain one of the following
+      4-character signatures (Table 18): 'scnr' (Input device profile), 'mntr' (Display device
+      profile), 'prtr' (Output device profile), 'link' (DeviceLink profile), 'spac' (ColorSpace
+      profile), 'abst' (Abstract profile), or 'nmcl' (NamedColor profile).
+    values:
+      "scnr": "Input device profile"
+      "mntr": "Display device profile"
+      "prtr": "Output device profile"
+      "link": "DeviceLink profile"
+      "spac": "ColorSpace profile"
+      "abst": "Abstract profile"
+      "nmcl": "NamedColor profile"
+    notes: null
+
+  - id: ICC-011
+    section: "7.2.6"
+    heading: "Profile header — Data colour space field"
+    page: 20
+    level: MUST
+    actor: file
+    category: color
+    conformance: ICC
+    statement: >
+      The data colour space field (header bytes 16-19) shall contain the 4-character signature
+      (Table 19) of the data colour space on the device side of the profile transform, e.g. 'XYZ ',
+      'Lab ', 'Luv ', 'YCbr', 'Yxy ', 'RGB ', 'GRAY', 'HSV ', 'HLS ', 'CMYK', 'CMY ', or an 'nCLR'
+      style N-colour signature; signatures are left-justified within the 4-byte field.
+    notes: "Full 24-entry table not enumerated here per scope discipline (colorimetric internals)."
+
+  - id: ICC-012
+    section: "7.2.7"
+    heading: "Profile header — PCS field"
+    page: 21
+    level: MUST
+    actor: file
+    category: color
+    conformance: ICC
+    statement: >
+      The PCS field (header bytes 20-23) shall contain either the PCSXYZ or PCSLAB signature
+      (from Table 19) for all profile classes except DeviceLink; for a DeviceLink profile
+      (profile/device class field = 'link'), the PCS field shall instead contain the appropriate
+      data colour space signature from Table 19 rather than a PCS signature.
+    notes: "Restated in dependency ICC-DEP-001."
+
+  - id: ICC-013
+    section: "7.2.9"
+    heading: "Profile header — Profile file signature field"
+    page: 21
+    level: MUST
+    actor: file
+    category: structure
+    conformance: ICC
+    statement: >
+      The profile file signature field (header bytes 36-39) shall contain the value "acsp"
+      (0x61637370) as the profile file signature. This is the primary magic-number check for
+      identifying a byte sequence as an ICC profile.
+    notes: null
+
+  - id: ICC-014
+    section: "7.2.11"
+    heading: "Profile header — Profile flags field"
+    page: 22
+    level: MUST
+    actor: file
+    category: metadata
+    conformance: ICC
+    statement: >
+      In the profile flags field (header bytes 44-47), bit position 0 (1 bit) shall record whether
+      the profile is embedded in a file (0 = not embedded, 1 = embedded in file), and bit position
+      1 (1 bit) shall record whether the profile cannot be used independently of the embedded
+      colour data (1 = true, 0 = false). The least-significant 16 bits of the field are reserved
+      for the ICC; bits 4-31 of the flags field generally and other unused bits are reserved.
+    notes: "Table 21. This is the only profile-header-level indicator of embedding status."
+
+  - id: ICC-015
+    section: "7.2.11"
+    heading: "Profile header — Profile flags field"
+    page: 22
+    level: INFO
+    actor: file
+    category: metadata
+    conformance: ICC
+    statement: >
+      ICC.1:2022-05 states, in the discussion of the profile flags field, that "Annex B describes
+      embedding device profiles within EPS, TIFF and JFIF image files" — i.e. TIFF is explicitly
+      named as one of the image file formats for which an ICC-profile-embedding convention exists.
+    notes: >
+      This is the only place in the running text that names TIFF explicitly. As found (see
+      ICC-021), Annex B in this edition contains no actual TIFF-specific content, only a pointer
+      to ICC Technical Note 10-2021.
+
+  - id: ICC-016
+    section: "7.2.15"
+    heading: "Profile header — Rendering intent field"
+    page: 23
+    level: MUST
+    actor: file
+    category: color
+    conformance: ICC
+    statement: >
+      The rendering intent field (header bytes 64-67) is a UInt32Number whose least-significant 16
+      bits encode the rendering intent and whose most-significant 16 bits shall be zero. Defined
+      values (Table 23): 0 = Perceptual, 1 = Media-relative colorimetric, 2 = Saturation, 3 =
+      ICC-absolute colorimetric.
+    values:
+      0: "Perceptual"
+      1: "Media-relative colorimetric"
+      2: "Saturation"
+      3: "ICC-absolute colorimetric"
+    notes: >
+      The field specifies the intent for combining this profile with the next profile in a
+      sequence; the document notes the value may have no meaning until the profile is actually
+      used/embedded (rendering intent is often set dynamically at embedding time).
+
+  - id: ICC-017
+    section: "7.2.16"
+    heading: "Profile header — PCS illuminant field"
+    page: 23
+    level: INFO
+    actor: file
+    category: color
+    conformance: ICC
+    statement: >
+      The PCS illuminant field (header bytes 68-79) shall contain the nCIEXYZ values of the PCS
+      illuminant, encoded as an XYZNumber; when rounded to four decimals these values shall be
+      X = 0.9642, Y = 1.0, Z = 0.8249 — the nCIEXYZ values of CIE illuminant D50.
+    notes: "Included as a brief INFO entry per extraction-brief scope discipline (D50 math)."
+
+  - id: ICC-018
+    section: "7.2.18"
+    heading: "Profile header — Profile ID field"
+    page: 23
+    level: MUST
+    actor: writer
+    category: metadata
+    conformance: ICC
+    statement: >
+      If the profile ID field (header bytes 84-99) is not all-zero, it shall hold an MD5
+      fingerprint (per RFC 1321) computed over the entire profile (whose length is given by the
+      profile size field), with the profile flags field (bytes 44-47), the rendering intent field
+      (bytes 64-67), and the profile ID field itself (bytes 84-99) all temporarily set to zero
+      during the computation. An all-zero profile ID field indicates no profile ID has been
+      calculated.
+    notes: null
+
+  - id: ICC-019
+    section: "7.2.18"
+    heading: "Profile header — Profile ID field"
+    page: 23
+    level: SHOULD
+    actor: writer
+    category: metadata
+    conformance: ICC
+    statement: >
+      Profile creators should compute and record a profile ID (see ICC-018) when creating a
+      profile.
+    notes: null
+
+  - id: ICC-020
+    section: "7.2.19"
+    heading: "Profile header — Reserved field"
+    page: 23
+    level: MUST
+    actor: file
+    category: structure
+    conformance: ICC
+    statement: >
+      The reserved field (header bytes 100-127, 28 bytes) is reserved for future ICC definition
+      and shall be set to zero.
+    notes: null
+
+  - id: ICC-021
+    section: "Annex B / B.1"
+    heading: "Embedding profiles — General"
+    page: 83
+    level: INFO
+    actor: file
+    category: metadata
+    conformance: ICC
+    statement: >
+      Annex B ("Embedding profiles") of ICC.1:2022-05 is informative and, in this edition,
+      consists only of a single pointer statement: "Guidelines on embedding ICC profiles in media
+      objects is given in ICC Technical Note 10-21 Embedding Profiles [21]." The foreword confirms
+      this is a change from earlier editions: "Informative Annex B content on embedding profiles
+      has been replaced with a reference to an ICC Technical Note." No TIFF-specific tag number,
+      tag name, TIFF data type, or per-IFD placement rule for an embedded ICC profile appears
+      anywhere in the body text of ICC.1:2022-05.
+    notes: >
+      Confirms the finding in ICC-002: extraction of TIFF tag 34675 ("ICCProfile" /
+      historically "InterColorProfile"), its TIFF type (UNDEFINED), its count (= profile size),
+      one-profile-per-IFD rule, or any interaction with PhotometricInterpretation (262) cannot be
+      sourced from this document — that content is not present in ICC.1:2022-05. It would need to
+      come from ICC Technical Note 10-2021 "Embedding ICC profiles" (referenced as [21] but not
+      part of this source text) or from a TIFF-side document (e.g. an Adobe TIFF technical note).
+      No requirement or tag entry for 34675 has been fabricated for this file.
+
+  - id: ICC-022
+    section: "Bibliography"
+    heading: "Bibliography"
+    page: 111
+    level: INFO
+    actor: file
+    category: metadata
+    conformance: ICC
+    statement: >
+      ICC.1:2022-05's bibliography lists "[12] TIFF 6.0 Specification, Adobe Systems Incorporated"
+      as a related, non-normatively-referenced document, and "[21] ICC Technical Note 10-2021
+      Embedding ICC profiles (2021)" as the document actually describing profile embedding
+      (including in TIFF); "[20] ICC Technical Note 04-2018 Embedding an ICC.2 (iccMAX) profile in
+      an ICC.1 profile" is also listed, covering embedding one profile inside another (not
+      TIFF-related).
+    notes: null
+
+tags: []
+
+dependencies:
+  - id: ICC-DEP-001
+    requirement: ICC-012
+    when: "Profile/device class field (header bytes 12-15) == 'link' (DeviceLink profile)"
+    then: "PCS field (header bytes 20-23) shall contain the appropriate data colour space signature from Table 19, not a PCSXYZ/PCSLAB PCS signature"
+    kind: constrains-value
+    tags: []
+
+  - id: ICC-DEP-002
+    requirement: ICC-014
+    when: "Profile flags field (header bytes 44-47) bit 0 == 1"
+    then: "the profile is embedded in a file (e.g. as the payload of a TIFF ICCProfile-style carrier tag); bit 1 additionally indicates whether the profile cannot be used independently of the embedded colour data"
+    kind: modifies-meaning
+    tags: []

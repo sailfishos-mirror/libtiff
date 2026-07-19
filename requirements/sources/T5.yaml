@@ -1,0 +1,2684 @@
+document: T5
+title: "TIFF Revision 5.0"
+date: "8/8/88 (August 8, 1988)"
+requirements:
+  - id: T5-001
+    section: "Abstract"
+    heading: "Abstract"
+    level: INFO
+    actor: file
+    category: metadata
+    conformance: extension
+    statement: >
+      The recommended file extension for TIFF files on MS-DOS, UNIX, and OS/2 is ".TIF".
+      The recommended Macintosh filetype is "TIFF".
+    notes: Purely a naming convention recommendation, not a file-format rule.
+
+  - id: T5-002
+    section: "Abstract"
+    heading: "Abstract"
+    level: INFO
+    actor: file
+    category: structure
+    conformance: baseline
+    statement: >
+      A TIFF file is a sequence of 8-bit bytes numbered from 0 to N. The largest possible
+      TIFF file is 2**32 bytes in length, since TIFF uses byte offsets (pointers) that are
+      32-bit quantities.
+
+  - id: T5-003
+    section: "1"
+    heading: "Image file header"
+    level: MUST
+    actor: file
+    category: structure
+    conformance: baseline
+    statement: >
+      A TIFF file begins with an 8-byte image file header. Bytes 0-1 specify the byte order
+      used within the file; the only legal values are "II" (hex 4949) meaning byte order is
+      always least-significant-to-most-significant for both 16-bit and 32-bit integers, or
+      "MM" (hex 4D4D) meaning byte order is always most-significant-to-least-significant.
+      Character strings are stored in sequential byte locations regardless of byte order.
+
+  - id: T5-004
+    section: "1"
+    heading: "Image file header"
+    level: SHOULD
+    actor: reader
+    category: structure
+    conformance: baseline
+    statement: >
+      All TIFF readers should support both the "II" and "MM" byte orders defined in bytes 0-1
+      of the image file header.
+    notes: >
+      Appendix G restates this as a MUST for readers claiming any TIFF Class (TIFF X)
+      conformance (see T5-105). This entry captures the weaker main-body wording.
+
+  - id: T5-005
+    section: "1"
+    heading: "Image file header"
+    level: MUST
+    actor: file
+    category: structure
+    conformance: baseline
+    statement: >
+      Bytes 2-3 of the image file header contain the TIFF "version number", which must be 42
+      (2A hex). This number is distinct from the specification revision number and has never
+      changed. If a reader ever encounters a different value, it means TIFF has changed so
+      radically that the reader should give up immediately.
+
+  - id: T5-006
+    section: "1"
+    heading: "Image file header"
+    level: MUST
+    actor: both
+    category: structure
+    conformance: baseline
+    statement: >
+      Bytes 4-7 of the image file header contain the byte offset (from the beginning of the
+      file) of the first Image File Directory (IFD). The IFD may be located anywhere in the
+      file after the header (including after the image data it describes) but must begin on a
+      word (even-byte) boundary. Readers must simply follow the pointers, wherever they lead.
+
+  - id: T5-007
+    section: "1"
+    heading: "Image file directory"
+    level: MUST
+    actor: file
+    category: structure
+    conformance: baseline
+    statement: >
+      An Image File Directory (IFD) consists of a 2-byte count of the number of directory
+      entries (fields), followed by that many 12-byte field entries, followed by a 4-byte
+      offset of the next IFD (or 0 if there is no next IFD). Writers must write the 4 bytes of
+      0 after the last IFD.
+
+  - id: T5-008
+    section: "1"
+    heading: "Image file directory"
+    level: MUST
+    actor: file
+    category: structure
+    conformance: baseline
+    statement: >
+      Each 12-byte IFD entry has the format: bytes 0-1 = Tag, bytes 2-3 = field Type, bytes
+      4-7 = Length/Count (expressed in units of the data type, not bytes), bytes 8-11 = Value
+      Offset (the file offset of the value, or the value itself if it fits in 4 bytes).
+
+  - id: T5-009
+    section: "1"
+    heading: "Image file directory"
+    level: MUST
+    actor: file
+    category: structure
+    conformance: baseline
+    statement: >
+      When a field's Value Offset is a genuine pointer (the value does not fit in 4 bytes),
+      the Value is expected to begin on a word boundary, so the Value Offset must be an even
+      number and may point anywhere in the file, including after the image data.
+
+  - id: T5-010
+    section: "1"
+    heading: "Image file directory"
+    level: MUST
+    actor: file
+    category: structure
+    conformance: baseline
+    statement: >
+      If a field's value fits into 4 bytes or fewer, the 4-byte Value Offset slot contains the
+      value itself instead of a pointer, saving time and space. Whether a value fits is
+      determined from its Type and Length. If the value is less than 4 bytes, it is
+      left-justified within the 4-byte slot (stored in the lower-numbered bytes).
+
+  - id: T5-011
+    section: "1"
+    heading: "Image file directory"
+    level: MUST
+    actor: file
+    category: structure
+    conformance: baseline
+    statement: >
+      The entries in an IFD must be sorted in ascending order by Tag. This is not necessarily
+      the order in which fields are described in the specification text.
+
+  - id: T5-012
+    section: "1"
+    heading: "Image file directory"
+    level: INFO
+    actor: file
+    category: structure
+    conformance: baseline
+    statement: >
+      The Values to which directory entries point need not be stored in any particular order
+      in the file.
+
+  - id: T5-013
+    section: "1"
+    heading: "Image file directory"
+    level: MUST
+    actor: file
+    category: structure
+    conformance: baseline
+    statement: >
+      TIFF 5.0 defines five data types with associated lengths: 1 = BYTE (8-bit unsigned
+      integer); 2 = ASCII (8-bit bytes storing ASCII codes, the last byte must be null); 3 =
+      SHORT (16-bit unsigned integer); 4 = LONG (32-bit unsigned integer); 5 = RATIONAL (two
+      LONGs: numerator then denominator of a fraction). The field Length/Count is expressed in
+      units of the data type (e.g. a single SHORT has Length 1, not 2 bytes).
+
+  - id: T5-014
+    section: "1"
+    heading: "Image file directory"
+    level: MUST
+    actor: file
+    category: tag
+    conformance: baseline
+    statement: >
+      For an ASCII field, the Length includes the terminating null byte. If padding is
+      required for alignment, the Length does not include the pad byte. There is no separate
+      "count byte" as in Pascal-style strings.
+
+  - id: T5-015
+    section: "1"
+    heading: "Image file directory"
+    level: SHOULD
+    actor: reader
+    category: tag
+    conformance: baseline
+    statement: >
+      Readers should check a field's Type to ensure it is what they expect. TIFF allows more
+      than one valid type for some fields; for example ImageWidth(256) and ImageLength(257)
+      may be either SHORT or LONG, to accommodate images with more than 64K rows or columns
+      without adding parallel LONG-only tags.
+    tags: [256, 257]
+
+  - id: T5-016
+    section: "1"
+    heading: "Image file directory"
+    level: INFO
+    actor: file
+    category: structure
+    conformance: baseline
+    statement: >
+      A TIFF file may contain more than one IFD. Each IFD is said to define a "subfile". One
+      potential use of a subsequent subfile is to describe a "sub-image", such as a reduced
+      resolution version of the main image.
+
+  - id: T5-017
+    section: "3"
+    heading: "The Fields"
+    level: MUST
+    actor: reader
+    category: tag
+    conformance: baseline
+    statement: >
+      Readers must assume a field's documented default value if that field's tag does not
+      appear in the IFD.
+
+  - id: T5-018
+    section: "3"
+    heading: "The Fields"
+    level: INFO
+    actor: writer
+    category: tag
+    conformance: baseline
+    statement: >
+      A field documented as having "no default" does not mean writers should ignore the tag;
+      it means no default value is defined. If a writer believes readers care about the
+      field's value, the writer should write the field explicitly (for example, omitting
+      PhotometricInterpretation(262) causes some readers to display the image correctly and
+      others to display it inverted).
+    tags: [262]
+
+  - id: T5-019
+    section: "2"
+    heading: "Definitions"
+    level: INFO
+    actor: file
+    category: data-layout
+    conformance: baseline
+    statement: >
+      An image is defined as a rectangular array of "pixels", each of which consists of one
+      or more "samples". Monochromatic data has one sample per pixel (sample and pixel are
+      interchangeable terms in that case); RGB color data contains three samples per pixel.
+
+  - id: T5-020
+    section: "3"
+    heading: "The Fields"
+    level: INFO
+    actor: file
+    category: metadata
+    conformance: baseline
+    statement: >
+      Fields are grouped into categories in the body of the specification: Basic Fields,
+      Informational Fields, Facsimile Fields, Document Storage and Retrieval Fields, and No
+      Longer Recommended fields.
+
+  - id: T5-021
+    section: "3"
+    heading: "BitsPerSample"
+    level: SHOULD
+    actor: writer
+    category: tag
+    conformance: baseline
+    tags: [258, 277]
+    statement: >
+      BitsPerSample(258) allows a different bit depth per sample. Even when all samples of a
+      pixel share the same bit depth (e.g. 8,8,8 for RGB), the writer should include all
+      SamplesPerPixel(277) entries rather than writing a single value; writing "8" when "8,8,8"
+      is meant sets a bad precedent for other fields.
+
+  - id: T5-022
+    section: "3"
+    heading: "ColorMap"
+    level: MUST
+    actor: writer
+    category: color
+    conformance: baseline
+    tags: [320, 262]
+    statement: >
+      ColorMap(320) has no default value and must be included in all palette color images
+      (PhotometricInterpretation(262) = 3).
+
+  - id: T5-023
+    section: "3"
+    heading: "ColorMap"
+    level: MUST
+    actor: file
+    category: data-layout
+    conformance: baseline
+    tags: [320, 258]
+    statement: >
+      ColorMap(320) contains 3 * 2**BitsPerSample(258) SHORT values, stored as three
+      sequentially concatenated subcurves (Red, then Green, then Blue), each of length
+      2**BitsPerSample. Each entry is a 16-bit value where 0 represents minimum intensity and
+      65535 represents maximum intensity; black is (0,0,0) and white is (65535,65535,65535).
+      A palette pixel value is used as a common index into all three subcurves to retrieve an
+      RGB triplet.
+
+  - id: T5-024
+    section: "3"
+    heading: "ColorResponseCurves"
+    level: INFO
+    actor: both
+    category: color
+    conformance: extension
+    tags: [301, 320]
+    statement: >
+      ColorResponseCurves(301) may be used together with ColorMap(320) to further refine the
+      meaning of the RGB triplets in ColorMap, although the ColorResponseCurves default
+      (curves based on the NTSC recommended gamma of 2.2) should be sufficient in most cases.
+
+  - id: T5-025
+    section: "3"
+    heading: "Compression"
+    level: MUST
+    actor: writer
+    category: compression
+    conformance: baseline
+    tags: [259, 258]
+    statement: >
+      Compression(259) = 1 means no compression, but data is packed into bytes as tightly as
+      possible, with no unused bits except at the end of a row. Samples are stored as an array
+      of BYTE (BitsPerSample(258) <= 8), SHORT (8 < BitsPerSample <= 16), or LONG
+      (16 < BitsPerSample <= 32); the byte ordering of data wider than 8 bits must be
+      consistent with the byte order declared in the TIFF header ("II" = least-significant
+      byte first, "MM" = most-significant byte first).
+
+  - id: T5-026
+    section: "3"
+    heading: "Compression"
+    level: MUST
+    actor: file
+    category: data-layout
+    conformance: baseline
+    tags: [259, 256, 277, 258, 284]
+    statement: >
+      For Compression(259) = 1, rows are required to begin on byte boundaries. The number of
+      bytes per row is (ImageWidth(256) * SamplesPerPixel(277) * BitsPerSample(258) + 7) / 8
+      (integer arithmetic) for PlanarConfiguration(284) = 1, and
+      (ImageWidth * BitsPerSample + 7) / 8 for PlanarConfiguration = 2.
+
+  - id: T5-027
+    section: "3"
+    heading: "Compression"
+    level: MUST
+    actor: writer
+    category: compression
+    conformance: extension
+    tags: [259, 258]
+    statement: >
+      Compression(259) = 2 selects CCITT Group 3 1-Dimensional Modified Huffman run-length
+      encoding (see Appendix B). BitsPerSample(258) must be 1, since this compression type is
+      defined only for bilevel images.
+
+  - id: T5-028
+    section: "3"
+    heading: "Compression"
+    level: MUST
+    actor: reader
+    category: compression
+    conformance: extension
+    tags: [259, 262]
+    statement: >
+      When decompressing Compression(259) = 2 data, white runs must be translated to 0's and
+      black runs to 1's; the normal PhotometricInterpretation(262) for this compression type is
+      therefore 0 (WhiteIsZero). If a reader encounters PhotometricInterpretation = 1
+      (BlackIsZero) with Compression = 2, the image should be displayed and printed with black
+      and white reversed.
+
+  - id: T5-029
+    section: "3"
+    heading: "Compression (facsimile)"
+    level: MUST
+    actor: file
+    category: compression
+    conformance: extension
+    tags: [259, 292]
+    statement: >
+      Compression(259) = 3 selects facsimile-compatible CCITT Group 3 coding (CCITT
+      Recommendation T.4). Each strip must begin on a byte boundary; rows other than the first
+      row of a strip are not required to begin on a byte boundary. Data is stored as bytes,
+      not words; byte-reversal is not allowed. See Group3Options(292) for 1D vs 2D coding
+      options.
+
+  - id: T5-030
+    section: "3"
+    heading: "Compression (facsimile)"
+    level: MUST
+    actor: file
+    category: compression
+    conformance: extension
+    tags: [259, 293]
+    statement: >
+      Compression(259) = 4 selects facsimile-compatible CCITT Group 4 coding (CCITT
+      Recommendation T.6). Each strip must begin on a byte boundary; rows other than the first
+      row of a strip are not required to begin on a byte boundary. Data is stored as bytes, not
+      words. See Group4Options(293) for Group 4 options.
+
+  - id: T5-031
+    section: "3"
+    heading: "Compression"
+    level: INFO
+    actor: file
+    category: compression
+    conformance: baseline
+    tags: [259]
+    statement: >
+      Compression(259) = 5 selects LZW compression, intended for grayscale, palette
+      (mapped) color, and full color images (see Appendix F).
+
+  - id: T5-032
+    section: "3"
+    heading: "Compression"
+    level: INFO
+    actor: file
+    category: compression
+    conformance: baseline
+    tags: [259]
+    statement: >
+      Compression(259) = 32773 selects PackBits, a simple byte-oriented run-length scheme for
+      1-bit images (see Appendix C).
+
+  - id: T5-033
+    section: "3"
+    heading: "Compression"
+    level: INFO
+    actor: file
+    category: compression
+    conformance: baseline
+    tags: [259, 273]
+    statement: >
+      Data compression applies only to raster image data, as pointed to by StripOffsets(273).
+      All other TIFF information (header, IFD, other field values) is unaffected by the
+      Compression(259) setting.
+
+  - id: T5-034
+    section: "3"
+    heading: "GrayResponseCurve / GrayResponseUnit"
+    level: INFO
+    actor: file
+    category: color
+    conformance: extension
+    tags: [291, 258]
+    statement: >
+      GrayResponseCurve(291) contains 2**BitsPerSample(258) SHORT values acting as a lookup
+      table mapping each possible pixel value (0 through 2**BitsPerSample-1) to a specific
+      optical density value, in units defined by GrayResponseUnit(290).
+
+  - id: T5-035
+    section: "3"
+    heading: "GrayResponseUnit"
+    level: INFO
+    actor: writer
+    category: color
+    conformance: extension
+    tags: [290, 291]
+    statement: >
+      GrayResponseUnit(290) values are: 1 = tenths of a unit, 2 = hundredths, 3 = thousandths,
+      4 = ten-thousandths, 5 = hundred-thousandths, and it modifies the interpretation of
+      GrayResponseCurve(291). The default is 2 for historical reasons, but 3 is recommended for
+      greater accuracy.
+
+  - id: T5-036
+    section: "3"
+    heading: "GrayResponseCurve"
+    level: MAY
+    actor: reader
+    category: color
+    conformance: extension
+    tags: [291]
+    statement: >
+      It is permissible to have a GrayResponseCurve(291) even for bilevel (1-bit) images (it
+      will have 2 values), but TIFF B readers are not required to pay attention to
+      GrayResponseCurve in TIFF B files.
+    notes: Cross-references Appendix G, TIFF Class B.
+
+  - id: T5-037
+    section: "3"
+    heading: "GrayResponseCurve"
+    level: MUST
+    actor: reader
+    category: color
+    conformance: extension
+    tags: [291, 262]
+    statement: >
+      If both GrayResponseCurve(291) and PhotometricInterpretation(262) fields exist in an
+      IFD, the GrayResponseCurve values override the PhotometricInterpretation value for
+      interpretation purposes.
+    notes: >
+      The document nonetheless recommends writers write both fields with matching semantics
+      (SHOULD), since some applications do not yet honor GrayResponseCurve.
+
+  - id: T5-038
+    section: "3"
+    heading: "ImageLength / ImageWidth"
+    level: MUST
+    actor: writer
+    category: tag
+    conformance: baseline
+    tags: [256, 257]
+    statement: >
+      ImageWidth(256) and ImageLength(257) have no default value; both must be specified
+      explicitly for a well-formed image IFD.
+
+  - id: T5-039
+    section: "3"
+    heading: "NewSubfileType"
+    level: INFO
+    actor: file
+    category: structure
+    conformance: baseline
+    tags: [254, 262, 297]
+    statement: >
+      NewSubfileType(254) is a 32-bit set of flag bits (bit 0 = low-order bit; unused bits
+      expected to be 0). Bit 0 = 1 if the image is a reduced-resolution version of another
+      image in the same file. Bit 1 = 1 if the image is a single page of a multi-page image
+      (see PageNumber(297)). Bit 2 = 1 if the image defines a transparency mask for another
+      image in the same file. Default is 0.
+
+  - id: T5-040
+    section: "3"
+    heading: "NewSubfileType"
+    level: MUST
+    actor: file
+    category: image-class
+    conformance: baseline
+    tags: [254, 262]
+    statement: >
+      If NewSubfileType(254) bit 2 is set to 1 (the image is a transparency mask), then
+      PhotometricInterpretation(262) must be 4, designating a transparency mask.
+
+  - id: T5-041
+    section: "3"
+    heading: "PhotometricInterpretation"
+    level: INFO
+    actor: file
+    category: color
+    conformance: baseline
+    tags: [262, 258]
+    statement: >
+      PhotometricInterpretation(262) = 0 (for bilevel and grayscale images): 0 is imaged as
+      white, 2**BitsPerSample(258)-1 is imaged as black. This is the normal value for
+      Compression(259) = 2. If GrayResponseCurve(291) exists, it overrides this value.
+
+  - id: T5-042
+    section: "3"
+    heading: "PhotometricInterpretation"
+    level: INFO
+    actor: file
+    category: color
+    conformance: baseline
+    tags: [262, 258]
+    statement: >
+      PhotometricInterpretation(262) = 1 (for bilevel and grayscale images): 0 is imaged as
+      black, 2**BitsPerSample(258)-1 is imaged as white. If GrayResponseCurve(291) exists, it
+      overrides this value. If this value is specified together with Compression(259) = 2,
+      the image should display and print reversed.
+
+  - id: T5-043
+    section: "3"
+    heading: "PhotometricInterpretation"
+    level: MUST
+    actor: file
+    category: color
+    conformance: baseline
+    tags: [262, 284]
+    statement: >
+      PhotometricInterpretation(262) = 2 designates RGB. For PlanarConfiguration(284) = 1, the
+      three samples of each pixel are stored in the order Red, Green, Blue. For
+      PlanarConfiguration = 2, the StripOffsets(273) for the sample planes are stored in the
+      order Red plane, Green plane, Blue plane.
+
+  - id: T5-044
+    section: "3"
+    heading: "PhotometricInterpretation"
+    level: MUST
+    actor: file
+    category: color
+    conformance: baseline
+    tags: [262, 277, 320]
+    statement: >
+      PhotometricInterpretation(262) = 3 ("Palette color"): each pixel is a single sample used
+      as an index into ColorMap(320) to retrieve an RGB triplet. SamplesPerPixel(277) must be
+      1, and the color response curves (ColorMap) must be supplied.
+
+  - id: T5-045
+    section: "3"
+    heading: "PhotometricInterpretation"
+    level: MUST
+    actor: file
+    category: color
+    conformance: extension
+    tags: [262, 277, 258, 256, 257]
+    statement: >
+      PhotometricInterpretation(262) = 4 ("Transparency Mask") means the image defines an
+      irregularly shaped region of another image in the same TIFF file. SamplesPerPixel(277)
+      and BitsPerSample(258) must both be 1; PackBits compression is recommended; 1-bits define
+      the interior of the region and 0-bits define the exterior; the transparency mask image
+      must have the same ImageLength(257) and ImageWidth(256) as the main image.
+
+  - id: T5-046
+    section: "3"
+    heading: "PhotometricInterpretation"
+    level: SHOULD
+    actor: writer
+    category: color
+    conformance: baseline
+    tags: [262, 259]
+    statement: >
+      PhotometricInterpretation(262) has no default. Writers must write it explicitly if they
+      care whether the image is displayed/printed normal versus inverted.
+      PhotometricInterpretation = 1 is recommended for bilevel (except when Compression(259) =
+      2) and grayscale images, due to popular user interfaces for adjusting brightness and
+      contrast.
+
+  - id: T5-047
+    section: "3"
+    heading: "PlanarConfiguration"
+    level: INFO
+    actor: file
+    category: data-layout
+    conformance: baseline
+    tags: [284, 262]
+    statement: >
+      PlanarConfiguration(284) = 1 means sample values for each pixel are stored contiguously
+      (a single image plane); for RGB, data is stored RGBRGBRGB...
+      PhotometricInterpretation(262) determines the order of samples within the pixel.
+
+  - id: T5-048
+    section: "3"
+    heading: "PlanarConfiguration"
+    level: MUST
+    actor: file
+    category: data-layout
+    conformance: baseline
+    tags: [284, 273, 279, 277]
+    statement: >
+      PlanarConfiguration(284) = 2 means samples are stored in separate sample planes; the
+      values in StripOffsets(273) and StripByteCounts(279) are arranged as a 2-dimensional
+      array with SamplesPerPixel(277) rows and StripsPerImage columns (all columns of row 0
+      stored first, then row 1, and so on).
+
+  - id: T5-049
+    section: "3"
+    heading: "PlanarConfiguration"
+    level: SHOULD
+    actor: writer
+    category: tag
+    conformance: baseline
+    tags: [284, 277]
+    statement: >
+      If SamplesPerPixel(277) is 1, PlanarConfiguration(284) is irrelevant and should not be
+      included in the file. Default is 1.
+
+  - id: T5-050
+    section: "3"
+    heading: "Predictor"
+    level: INFO
+    actor: file
+    category: compression
+    conformance: extension
+    tags: [317, 259]
+    statement: >
+      Predictor(317) is to be used with Compression(259) = 5 (LZW). In the main body of TIFF
+      5.0 the only defined value is 1 = no prediction scheme used before coding. Default is 1.
+
+  - id: T5-051
+    section: "3"
+    heading: "ResolutionUnit"
+    level: INFO
+    actor: file
+    category: tag
+    conformance: baseline
+    tags: [296, 282, 283]
+    statement: >
+      ResolutionUnit(296) is used with XResolution(282) and YResolution(283). Values are: 1 =
+      no absolute unit of measurement (for images with a meaningful aspect ratio but no
+      meaningful absolute size), 2 = Inch, 3 = Centimeter. Default is 2.
+
+  - id: T5-052
+    section: "3"
+    heading: "RowsPerStrip"
+    level: MUST
+    actor: file
+    category: data-layout
+    conformance: baseline
+    tags: [278, 257]
+    statement: >
+      RowsPerStrip(278) and ImageLength(257) together determine the number of strips in the
+      image: StripsPerImage = (ImageLength + RowsPerStrip - 1) / RowsPerStrip, using integer
+      arithmetic.
+
+  - id: T5-053
+    section: "3"
+    heading: "RowsPerStrip"
+    level: SHOULD
+    actor: reader
+    category: data-layout
+    conformance: baseline
+    tags: [278, 273, 279]
+    statement: >
+      Either SHORT or LONG values may be used for RowsPerStrip(278), though earlier TIFF
+      specification revisions required LONG values and some software may not expect SHORT
+      values.
+
+  - id: T5-054
+    section: "3"
+    heading: "RowsPerStrip"
+    level: SHOULD
+    actor: writer
+    category: data-layout
+    conformance: baseline
+    tags: [278]
+    statement: >
+      RowsPerStrip(278) defaults to 2**32-1 (effectively infinity, i.e. the entire image as
+      one strip), but a single strip is not recommended. Writers should choose RowsPerStrip
+      such that each strip is about 8K bytes, even for uncompressed data, to simplify reader
+      buffering.
+
+  - id: T5-055
+    section: "3"
+    heading: "SamplesPerPixel"
+    level: INFO
+    actor: file
+    category: image-class
+    conformance: baseline
+    tags: [277, 258, 262]
+    statement: >
+      SamplesPerPixel(277) defaults to 1. SamplesPerPixel is 1 for bilevel, grayscale, and
+      palette color images, and 3 for RGB images.
+
+  - id: T5-056
+    section: "3"
+    heading: "StripOffsets / StripByteCounts"
+    level: MUST
+    actor: file
+    category: data-layout
+    conformance: baseline
+    tags: [273, 279, 284, 277]
+    statement: >
+      StripOffsets(273) and StripByteCounts(279) each have Count = StripsPerImage when
+      PlanarConfiguration(284) = 1, or SamplesPerPixel(277) * StripsPerImage when
+      PlanarConfiguration = 2.
+
+  - id: T5-057
+    section: "3"
+    heading: "StripOffsets"
+    level: MUST
+    actor: file
+    category: data-layout
+    conformance: baseline
+    tags: [273]
+    statement: >
+      StripOffsets(273) has no default. It is the only way for a reader to find the image
+      data, and hence must exist for every subfile IFD describing image data.
+
+  - id: T5-058
+    section: "3"
+    heading: "StripOffsets"
+    level: MUST
+    actor: reader
+    category: data-layout
+    conformance: baseline
+    tags: [273]
+    statement: >
+      Each strip has a file location independent of the locations of other strips; readers
+      must not assume that strip N+1 immediately follows strip N in the file, and must always
+      use the StripOffsets(273) values.
+
+  - id: T5-059
+    section: "3"
+    heading: "StripOffsets / RowsPerStrip"
+    level: SHOULD
+    actor: reader
+    category: data-layout
+    conformance: baseline
+    tags: [273, 278, 279, 256, 257]
+    statement: >
+      SHORT or LONG values may be used for StripOffsets(273), RowsPerStrip(278),
+      StripByteCounts(279), ImageWidth(256) and ImageLength(257), but earlier TIFF
+      specification revisions required LONG values for some of these and some software may not
+      expect SHORT values.
+
+  - id: T5-060
+    section: "3"
+    heading: "XResolution / YResolution"
+    level: MUST
+    actor: writer
+    category: tag
+    conformance: baseline
+    tags: [282, 283, 296]
+    statement: >
+      XResolution(282) and YResolution(283) are RATIONAL values giving pixels per
+      ResolutionUnit(296) in the X and Y directions respectively; neither has a default. It is
+      not mandatory that the image actually be printed at the size implied by these values.
+
+  - id: T5-061
+    section: "3"
+    heading: "DateTime"
+    level: MUST
+    actor: writer
+    category: metadata
+    conformance: extension
+    tags: [306]
+    statement: >
+      DateTime(306) must use the format "YYYY:MM:DD HH:MM:SS", with hours on a 24-hour clock
+      and one space character between the date and the time; the field is 20 bytes including
+      the terminating null.
+
+  - id: T5-062
+    section: "3"
+    heading: "Group3Options"
+    level: MUST
+    actor: writer
+    category: compression
+    conformance: extension
+    tags: [292, 278, 259]
+    statement: >
+      Group3Options(292) bit 0 = 1 selects 2-dimensional coding (else 1-dimensional is
+      assumed) for Compression(259) = 3. For 2-D coding, if more than one strip is specified,
+      each strip must begin with a 1-dimensionally coded line, i.e. RowsPerStrip(278) should
+      be a multiple of "Parameter K" as documented in the CCITT specification.
+
+  - id: T5-063
+    section: "3"
+    heading: "Group3Options"
+    level: INFO
+    actor: file
+    category: compression
+    conformance: extension
+    tags: [292]
+    statement: >
+      Group3Options(292) bit 1 = 1 if uncompressed mode is used.
+
+  - id: T5-064
+    section: "3"
+    heading: "Group3Options"
+    level: INFO
+    actor: file
+    category: compression
+    conformance: extension
+    tags: [292]
+    statement: >
+      Group3Options(292) bit 2 = 1 if fill bits have been added before EOL codes such that EOL
+      always ends on a byte boundary (an EOL sequence of a 1 byte preceded by a zero nibble:
+      xxxx-0000 0000-0001). Default Group3Options is 0 (basic 1-dimensional coding).
+
+  - id: T5-065
+    section: "3"
+    heading: "Group4Options"
+    level: MUST
+    actor: file
+    category: compression
+    conformance: extension
+    tags: [293, 259]
+    statement: >
+      For Compression(259) = 4 with 2-D coding, each strip is encoded as if it were a separate
+      image: each strip begins on a byte boundary, the first row of a strip is coded
+      independently of the previous row using horizontal codes (as if the previous row were
+      entirely white), and each strip ends with the 24-bit end-of-facsimile block (EOFB).
+      Group4Options(293) bit 1 = 1 if uncompressed mode is used (bit 0 is unused). Default
+      Group4Options is 0 (basic 2-dimensional binary compression). Gray scale and color coding
+      schemes for Group 4 were under study and not yet defined as of Revision 5.0.
+
+  - id: T5-066
+    section: "3"
+    heading: "PageNumber"
+    level: INFO
+    actor: file
+    category: metadata
+    conformance: extension
+    tags: [297]
+    statement: >
+      PageNumber(297) holds two SHORT values: the page number, then the total number of pages
+      in the document. Pages need not appear in numerical order. The first page is 0. No
+      default.
+
+  - id: T5-067
+    section: "3"
+    heading: "XPosition"
+    level: INFO
+    actor: file
+    category: metadata
+    conformance: extension
+    tags: [286, 296]
+    statement: >
+      XPosition(286) is the X offset of the left side of the image with respect to the left
+      side of the page, in ResolutionUnits(296). No default.
+
+  - id: T5-068
+    section: "3"
+    heading: "YPosition"
+    level: MUST
+    actor: file
+    category: metadata
+    conformance: extension
+    tags: [287, 296]
+    statement: >
+      YPosition(287) is the Y offset of the top of the image with respect to the top of the
+      page, in ResolutionUnits(296). In the TIFF coordinate scheme the positive Y direction is
+      down, so YPosition is always positive. No default.
+
+  - id: T5-069
+    section: "3"
+    heading: "CellLength / CellWidth"
+    level: INFO
+    actor: file
+    category: tag
+    conformance: extension
+    tags: [265, 264, 263]
+    statement: >
+      CellLength(265) and CellWidth(264) (both "No Longer Recommended") describe the
+      length/width, in 1-bit samples, of a dithering/halftoning matrix; CellLength assumes
+      Threshholding(263) = 2. Neither has a default. The document states these fields cannot
+      safely be used to reverse-engineer grayscale data from dithered/halftoned bilevel data.
+
+  - id: T5-070
+    section: "3"
+    heading: "FillOrder"
+    level: INFO
+    actor: writer
+    category: data-layout
+    conformance: extension
+    tags: [266]
+    statement: >
+      FillOrder(266) ("No Longer Recommended") describes the order of data values within a
+      byte: 1 = most significant bit filled first (default), 2 = least significant bit filled
+      first. FillOrder = 2 is recommended only for private (non-interchange) use.
+
+  - id: T5-071
+    section: "3"
+    heading: "FreeOffsets / FreeByteCounts"
+    level: MAY
+    actor: reader
+    category: structure
+    conformance: extension
+    tags: [288, 289]
+    statement: >
+      FreeOffsets(288) and FreeByteCounts(289) ("No Longer Recommended") record byte
+      offset/length of each "free block" in the file. TIFF readers can ignore both fields if
+      present. They do not constitute a remapping of the file's logical address space, and it
+      is not defined what should happen if they exist in more than one IFD.
+
+  - id: T5-072
+    section: "3"
+    heading: "MinSampleValue / MaxSampleValue"
+    level: MUST-NOT
+    actor: both
+    category: tag
+    conformance: extension
+    tags: [280, 281, 258, 277]
+    statement: >
+      MinSampleValue(280) and MaxSampleValue(281) ("No Longer Recommended"), each with Count =
+      SamplesPerPixel(277), record statistical minimum/maximum used sample values only; they
+      must not be used to affect the visual appearance of the displayed image, nor should
+      their values affect the interpretation of any other field. Default for MinSampleValue is
+      0; default for MaxSampleValue is 2**BitsPerSample(258) - 1.
+
+  - id: T5-073
+    section: "3"
+    heading: "SubfileType"
+    level: INFO
+    actor: file
+    category: structure
+    conformance: extension
+    tags: [255, 254, 256, 257, 273]
+    statement: >
+      SubfileType(255) ("No Longer Recommended", superseded by NewSubfileType(254)): 1 = full
+      resolution image data (ImageWidth(256), ImageLength(257), StripOffsets(273) required); 2
+      = reduced resolution image data (same required fields; assumed to be a reduced version
+      of the entire full-resolution image); 3 = single page of a multi-page image (see
+      PageNumber(297)). No default. Continued use is not recommended; writers should use
+      NewSubfileType instead.
+
+  - id: T5-074
+    section: "3"
+    heading: "Orientation"
+    level: SHOULD
+    actor: writer
+    category: tag
+    conformance: extension
+    tags: [274]
+    statement: >
+      Orientation(274) ("No Longer Recommended") has 8 enumerated values (1-8) describing
+      which visual edge of the image corresponds to row 0 and column 0. Default is 1 (0th row
+      = visual top, 0th column = visual left). This field is recommended for private
+      (non-interchange) use only, since on-the-fly rotation is costly for most readers and
+      users of desktop publishing applications do not expect permanent alteration of an
+      imported file.
+    values:
+      1: "0th row = visual top, 0th column = visual left"
+      2: "0th row = visual top, 0th column = visual right"
+      3: "0th row = visual bottom, 0th column = visual right"
+      4: "0th row = visual bottom, 0th column = visual left"
+      5: "0th row = visual left, 0th column = visual top"
+      6: "0th row = visual right, 0th column = visual top"
+      7: "0th row = visual right, 0th column = visual bottom"
+      8: "0th row = visual left, 0th column = visual bottom"
+
+  - id: T5-075
+    section: "3"
+    heading: "Threshholding"
+    level: INFO
+    actor: file
+    category: tag
+    conformance: extension
+    tags: [263, 258]
+    statement: >
+      Threshholding(263) ("No Longer Recommended"): 1 = bilevel "line art" scan
+      (BitsPerSample(258) must be 1); 2 = "dithered" scan of continuous tone data
+      (BitsPerSample must be 1); 3 = Error Diffused. Default is 1.
+
+  - id: T5-076
+    section: "4"
+    heading: "Private Fields"
+    level: MUST
+    actor: writer
+    category: structure
+    conformance: extension
+    statement: >
+      Tags numbered 32768 or higher are reserved for private, organization-specific use. Upon
+      request, the TIFF administrator will allocate and register a block of private tags
+      (normally in blocks of five) for an organization, to avoid conflicts with other
+      organizations; the requester need not disclose the intended use.
+
+  - id: T5-077
+    section: "4"
+    heading: "Private Fields"
+    level: MUST
+    actor: writer
+    category: structure
+    conformance: extension
+    tags: [259]
+    statement: >
+      Private enumerated values (e.g. a new Compression(259) scheme code) numbered 32768 or
+      higher are similarly reserved for private usage and can be allocated/registered by the
+      TIFF administrator on request to avoid conflicts.
+
+  - id: T5-078
+    section: "4"
+    heading: "Private Fields"
+    level: INFO
+    actor: file
+    category: structure
+    conformance: extension
+    statement: >
+      Tags and values allocated in the private number range are not prohibited from later
+      being included in a future revision of the TIFF specification; several such instances
+      exist in the specification already.
+
+  - id: T5-079
+    section: "4"
+    heading: "Private Fields"
+    level: MUST-NOT
+    actor: writer
+    category: structure
+    conformance: extension
+    statement: >
+      Implementors must not choose their own (unregistered) tag numbers, as doing so could
+      cause conflicts.
+
+  - id: T5-080
+    section: "5"
+    heading: "Image File Format Issues"
+    level: INFO
+    actor: writer
+    category: behavior
+    conformance: baseline
+    statement: >
+      The specification encourages reducing the proliferation of proprietary "Save As..."
+      image formats once major readers support the standard TIFF compression schemes, since
+      writers can then rely on TIFF plus compression to satisfy most needs.
+
+  - id: T5-081
+    section: "Appendix B"
+    heading: "Data Compression - Scheme 2 (Modified Huffman)"
+    level: MUST
+    actor: file
+    category: compression
+    conformance: extension
+    tags: [259]
+    statement: >
+      For Compression(259) = 2, a row of data is composed of a series of variable-length code
+      words, each representing a run length of all-white or all-black pixels, alternating
+      white/black. Every data line begins with a white run-length code word; if the actual
+      scan line begins with a black run, a white run length of zero is coded first, to keep the
+      decompressor's color synchronization.
+
+  - id: T5-082
+    section: "Appendix B"
+    heading: "Data Compression - Scheme 2 (Modified Huffman)"
+    level: MUST
+    actor: file
+    category: compression
+    conformance: extension
+    statement: >
+      Run lengths of 0-63 pixels are encoded with a single Terminating code word (separate
+      tables for white and black). Run lengths of 64-2623 pixels are encoded as a Make-up code
+      word (the largest tabulated run length not exceeding the required length) followed by a
+      Terminating code word for the remainder. Run lengths >= 2624 pixels are encoded as
+      repeated Make-up code words of 2560 until the remaining run is below 2560, then encoded
+      as above.
+
+  - id: T5-083
+    section: "Appendix B"
+    heading: "Data Compression - Scheme 2 (Modified Huffman)"
+    level: MUST
+    actor: file
+    category: compression
+    conformance: extension
+    tags: [259, 256]
+    statement: >
+      It is considered an unrecoverable error if the sum of the run lengths for a coded line
+      does not equal the value of the ImageWidth(256) field.
+
+  - id: T5-084
+    section: "Appendix B"
+    heading: "Data Compression - Scheme 2 (Modified Huffman)"
+    level: MUST
+    actor: file
+    category: compression
+    conformance: extension
+    statement: >
+      New rows always begin on the next available byte boundary. No EOL code words are used
+      (except the ignored bits at the end of the last byte of a row for padding); no fill bits
+      are used otherwise, and RTC (Return to Control) is not used.
+
+  - id: T5-085
+    section: "Appendix C"
+    heading: "Data Compression - Scheme 32773 (PackBits)"
+    level: MUST
+    actor: writer
+    category: compression
+    conformance: extension
+    tags: [259]
+    statement: >
+      For Compression(259) = 32773 (PackBits), each row must be packed separately; compression
+      must not cross row boundaries.
+
+  - id: T5-086
+    section: "Appendix C"
+    heading: "Data Compression - Scheme 32773 (PackBits)"
+    level: INFO
+    actor: file
+    category: compression
+    conformance: extension
+    tags: [259, 256]
+    statement: >
+      The number of uncompressed bytes per row for PackBits is defined to be
+      (ImageWidth(256) + 7) / 8. If the uncompressed bitmap must have an even number of bytes
+      per row, decompress into word-aligned buffers.
+
+  - id: T5-087
+    section: "Appendix C"
+    heading: "Data Compression - Scheme 32773 (PackBits)"
+    level: MUST
+    actor: reader
+    category: compression
+    conformance: extension
+    tags: [259]
+    statement: >
+      PackBits decode algorithm: read the next source byte as n. If 0 <= n <= 127, copy the
+      next n+1 bytes literally. If -127 <= n <= -1, copy the next single byte -n+1 times
+      (replicate run). If n = 128, no-op.
+
+  - id: T5-088
+    section: "Appendix C"
+    heading: "Data Compression - Scheme 32773 (PackBits)"
+    level: SHOULD
+    actor: writer
+    category: compression
+    conformance: extension
+    tags: [259]
+    statement: >
+      PackBits encoders should encode a 2-byte repeat run as a replicate run except when it is
+      preceded and followed by a literal run (in which case merge all three into one literal
+      run); 3-byte-or-longer repeats should always be encoded as replicate runs. If a run is
+      longer than 128 bytes, encode the remainder as one or more additional replicate runs.
+
+  - id: T5-089
+    section: "Appendix C"
+    heading: "Data Compression - Scheme 32773 (PackBits)"
+    level: MUST
+    actor: reader
+    category: compression
+    conformance: extension
+    tags: [259]
+    statement: >
+      When PackBits data is uncompressed, the result must be interpreted according to
+      Compression(259) = 1 (no compression) rules.
+
+  - id: T5-090
+    section: "Appendix D"
+    heading: "Appendix D"
+    level: INFO
+    actor: file
+    category: structure
+    conformance: extension
+    statement: >
+      Appendix D has been deleted. It formerly contained guidelines for passing TIFF files on
+      the Microsoft Windows Clipboard; this was judged a bad idea given the ever-increasing
+      size of scanned images. Applications are instead encouraged to use file-based mechanisms
+      to exchange TIFF data.
+
+  - id: T5-091
+    section: "Appendix F"
+    heading: "Data Compression - Scheme 5 (LZW)"
+    level: MUST
+    actor: writer
+    category: compression
+    conformance: baseline
+    tags: [259]
+    statement: >
+      For Compression(259) = 5 (LZW), each strip is compressed independently.
+
+  - id: T5-092
+    section: "Appendix F"
+    heading: "Data Compression - Scheme 5 (LZW)"
+    level: SHOULD
+    actor: writer
+    category: compression
+    conformance: baseline
+    tags: [278, 259]
+    statement: >
+      RowsPerStrip(278) should be chosen so that each strip contains about 8K bytes before LZW
+      compression, keeping strips small enough to buffer entirely in memory while still large
+      enough for near-optimal compression ratios.
+
+  - id: T5-093
+    section: "Appendix F"
+    heading: "Data Compression - Scheme 5 (LZW)"
+    level: MUST
+    actor: both
+    category: compression
+    conformance: baseline
+    tags: [259, 258]
+    statement: >
+      The "characters" that make up LZW input strings are always bytes of TIFF uncompressed
+      (Compression=1) format image data, regardless of BitsPerSample(258); e.g. if
+      BitsPerSample is 4, each 8-bit LZW character contains two 4-bit pixels; if BitsPerSample
+      is 16, each 16-bit pixel spans two 8-bit LZW characters.
+    notes: >
+      The document notes that an earlier draft (Draft 2 of Revision 5.0) used a character
+      depth equal to BitsPerSample, but this was rejected because BitsPerSample > 11 would
+      make the 12-bit-maximum code table too small; this rejected approach is not part of the
+      final 5.0 LZW scheme.
+
+  - id: T5-094
+    section: "Appendix F"
+    heading: "Data Compression - Scheme 5 (LZW)"
+    level: MUST
+    actor: both
+    category: compression
+    conformance: baseline
+    tags: [259]
+    statement: >
+      LZW uses variable-length codes: 9-bit codes initially, switching to 10-bit codes once
+      table entry 512 is added, 11-bit codes at entry 1024, and 12-bit codes at entry 2048. 12
+      bits is the maximum code length, giving a maximum of 4096 table entries.
+
+  - id: T5-095
+    section: "Appendix F"
+    heading: "Data Compression - Scheme 5 (LZW)"
+    level: MUST
+    actor: both
+    category: compression
+    conformance: baseline
+    tags: [259]
+    statement: >
+      LZW code 256 is reserved as the ClearCode and code 257 as the EndOfInformation code; the
+      string table's first multi-character entry is added at code 258 (entries 0-255 are the
+      256 single-byte strings created by table initialization).
+
+  - id: T5-096
+    section: "Appendix F"
+    heading: "Data Compression - Scheme 5 (LZW)"
+    level: MUST
+    actor: writer
+    category: compression
+    conformance: baseline
+    tags: [259]
+    statement: >
+      As soon as string table entry 4094 is used, the encoder must write a 12-bit Clear code,
+      re-initialize the string table, and resume writing 9-bit codes; the pending one-character
+      Omega must not be lost across this boundary (write it as a 12-bit code just before the
+      Clear code, or as a 9-bit code just after it - both give the same decompressed result).
+
+  - id: T5-097
+    section: "Appendix F"
+    heading: "Data Compression - Scheme 5 (LZW)"
+    level: MUST
+    actor: writer
+    category: compression
+    conformance: baseline
+    tags: [259]
+    statement: >
+      Each LZW-compressed strip must begin with a Clear code and end with an
+      EndOfInformation code.
+
+  - id: T5-098
+    section: "Appendix F"
+    heading: "Data Compression - Scheme 5 (LZW)"
+    level: MUST
+    actor: writer
+    category: compression
+    conformance: baseline
+    tags: [259]
+    statement: >
+      Every LZW-compressed strip must begin on a byte boundary; it need not begin on a word
+      boundary.
+
+  - id: T5-099
+    section: "Appendix F"
+    heading: "Data Compression - Scheme 5 (LZW)"
+    level: MUST
+    actor: writer
+    category: compression
+    conformance: baseline
+    tags: [259, 266]
+    statement: >
+      LZW compression codes are packed into bytes in high-to-low-order fashion (i.e.
+      FillOrder(266) is assumed to be 1) and the compressed codes are written as bytes, not
+      words, so the compressed data is identical regardless of whether the file is "II" or
+      "MM".
+
+  - id: T5-100
+    section: "Appendix F"
+    heading: "Data Compression - Scheme 5 (LZW)"
+    level: MAY
+    actor: writer
+    category: compression
+    conformance: baseline
+    tags: [259, 284, 277]
+    statement: >
+      When SamplesPerPixel(277) > 1 (e.g. RGB), LZW compression ratio is nearly identical
+      regardless of whether PlanarConfiguration(284) is 1 or 2; the writer may use whichever
+      configuration is preferred and simply compress the bytes in the strip.
+    notes: >
+      The document cautions that measured LZW compression ratios on RGB test images were
+      disappointing (roughly 1.1:1 to 1.5:1) and urges vendors to remove image noise where
+      possible.
+
+  - id: T5-101
+    section: "Appendix F"
+    heading: "Data Compression - Scheme 5 (LZW)"
+    level: MUST
+    actor: reader
+    category: compression
+    conformance: baseline
+    tags: [259]
+    statement: >
+      The LZW decoder's GetNextCode() function must switch to wider codes in lockstep with
+      the encoder (e.g. to 10-bit codes as soon as string #511 is stored into the table),
+      mirroring the encoder's table growth exactly.
+
+  - id: T5-102
+    section: "Appendix F"
+    heading: "Future LZW Extensions"
+    level: MUST
+    actor: reader
+    category: compression
+    conformance: baseline
+    tags: [259, 317]
+    statement: >
+      All TIFF readers that read LZW (Compression(259)=5) files must pay attention to the
+      Predictor(317) tag. If Predictor is 1 (the default), LZW decompression may proceed
+      safely. If Predictor is not 1 and the reader does not recognize the specified prediction
+      scheme, the reader should give up.
+
+  - id: T5-103
+    section: "Appendix G"
+    heading: "TIFF Classes - Core Requirements"
+    level: MUST
+    actor: reader
+    category: image-class
+    conformance: baseline
+    statement: >
+      TIFF X writers may, but are not required to, write out a field that has a default value
+      if the default is the value desired; TIFF X readers must be prepared to handle either
+      case (field present or absent).
+
+  - id: T5-104
+    section: "Appendix G"
+    heading: "TIFF Classes - Core Requirements"
+    level: MUST
+    actor: reader
+    category: image-class
+    conformance: baseline
+    statement: >
+      TIFF X readers must be prepared to encounter fields other than the required fields
+      (e.g. Make, Model, DateTime) in TIFF X files, and must not refuse to read the file if
+      such optional fields do not exist.
+
+  - id: T5-105
+    section: "Appendix G"
+    heading: "TIFF Classes - Core Requirements"
+    level: MUST
+    actor: reader
+    category: image-class
+    conformance: baseline
+    statement: >
+      TIFF X readers must be able to handle both "MM" and "II" byte order; TIFF X writers can
+      use whichever is most convenient or efficient.
+
+  - id: T5-106
+    section: "Appendix G"
+    heading: "TIFF Classes - Core Requirements"
+    level: MUST
+    actor: both
+    category: image-class
+    conformance: baseline
+    statement: >
+      TIFF X readers must be prepared for multiple subfiles (images) per TIFF file, although
+      they are not required to do anything with any subfile after the first. TIFF X writers
+      must write a long word of 0 after the last IFD.
+
+  - id: T5-107
+    section: "Appendix G"
+    heading: "TIFF Classes - Core Requirements"
+    level: MUST
+    actor: writer
+    category: image-class
+    conformance: baseline
+    statement: >
+      If a TIFF X writer writes multiple subfiles, the first one must be the full resolution
+      image; subsequent subimages (e.g. reduced-resolution images, transparency masks) may
+      appear in any order in the file.
+
+  - id: T5-108
+    section: "Appendix G"
+    heading: "TIFF Classes - Core Requirements (Editors)"
+    level: MUST
+    actor: writer
+    category: behavior
+    conformance: baseline
+    statement: >
+      TIFF X editors (applications that modify TIFF files) must be especially careful about
+      subfiles: if an editor edits a full-resolution subfile, it must either create a new
+      matching reduced-resolution subfile or delete any reduced-resolution/other subfiles it
+      is not prepared to keep consistent, so a reader relying on a stale reduced-resolution
+      subfile is not misled.
+
+  - id: T5-109
+    section: "Appendix G"
+    heading: "TIFF Classes - Core Requirements (Editors)"
+    level: SHOULD-NOT
+    actor: writer
+    category: behavior
+    conformance: baseline
+    statement: >
+      A TIFF X editor need only be concerned with the TIFF X required fields; it is
+      unnecessary, and probably dangerous, for an editor to copy fields it does not
+      understand, since it may have altered the file in a way incompatible with those unknown
+      fields.
+
+  - id: T5-110
+    section: "Appendix G"
+    heading: "TIFF Class X - Required Fields"
+    level: MUST
+    actor: both
+    category: image-class
+    conformance: baseline
+    tags: [254, 256, 257, 278, 273, 279, 282, 283, 296]
+    statement: >
+      All TIFF Class X (TIFF X) files require the following fields (in addition to the core
+      structural requirements): NewSubfileType(254) (recommended but not required),
+      ImageWidth(256), ImageLength(257), RowsPerStrip(278), StripOffsets(273),
+      StripByteCounts(279), XResolution(282), YResolution(283), and ResolutionUnit(296).
+
+  - id: T5-111
+    section: "Appendix G"
+    heading: "TIFF Class X - Required Fields"
+    level: MUST
+    actor: reader
+    category: image-class
+    conformance: baseline
+    tags: [278]
+    statement: >
+      TIFF X readers must be able to handle any RowsPerStrip(278) value between 1 and
+      2**32-1, though a reader may run out of memory if the entire image is one large strip.
+
+  - id: T5-112
+    section: "Appendix G"
+    heading: "TIFF Class X - Required Fields"
+    level: MUST
+    actor: writer
+    category: image-class
+    conformance: baseline
+    tags: [279]
+    statement: >
+      Although StripByteCounts(279) is described with "no default" (and is technically
+      unnecessary for some readers) in the main body, the TIFF Class X (TIFF X) requirements
+      mandate that StripByteCounts be present in TIFF X files, because it considerably
+      simplifies buffering compressed strip data.
+    notes: This extends/clarifies the main-body treatment of StripByteCounts (see T5-057).
+
+  - id: T5-113
+    section: "Appendix G"
+    heading: "TIFF Class X - Required Fields"
+    level: MUST
+    actor: reader
+    category: image-class
+    conformance: baseline
+    tags: [282, 283]
+    statement: >
+      TIFF X readers must be able to handle XResolution(282) and YResolution(283) being
+      unequal.
+
+  - id: T5-114
+    section: "Appendix G"
+    heading: "TIFF Class X - Required Fields"
+    level: MUST
+    actor: reader
+    category: image-class
+    conformance: baseline
+    tags: [296]
+    statement: >
+      TIFF X readers must be prepared to handle all three values (1, 2, 3) of
+      ResolutionUnit(296).
+
+  - id: T5-115
+    section: "Appendix G"
+    heading: "TIFF Class B - Bilevel"
+    level: MUST
+    actor: both
+    category: image-class
+    conformance: baseline
+    tags: [277, 258, 259, 262]
+    statement: >
+      TIFF Class B (bilevel) files require, in addition to the TIFF X core requirements:
+      SamplesPerPixel(277) = 1; BitsPerSample(258) = 1; Compression(259) = 1, 2 (CCITT 1D), or
+      32773 (PackBits) (TIFF B readers must handle all three; PackBits is recommended for its
+      simplicity, effectiveness, speed, and good worst-case behavior); PhotometricInterpretation(262)
+      = 0 or 1.
+
+  - id: T5-116
+    section: "Appendix G"
+    heading: "TIFF Class G - Grayscale"
+    level: MUST
+    actor: both
+    category: image-class
+    conformance: baseline
+    tags: [277, 258, 259, 262]
+    statement: >
+      TIFF Class G (grayscale) files require, in addition to the TIFF X core requirements:
+      SamplesPerPixel(277) = 1; BitsPerSample(258) = 4 or 8; Compression(259) = 1 or 5 (LZW
+      recommended, since LZW decompression is fast); PhotometricInterpretation(262) = 0 or 1
+      (1 recommended, due to popular brightness/contrast user interfaces).
+
+  - id: T5-117
+    section: "Appendix G"
+    heading: "TIFF Class P - Palette Color"
+    level: MUST
+    actor: both
+    category: image-class
+    conformance: baseline
+    tags: [277, 258, 259, 262, 320]
+    statement: >
+      TIFF Class P (palette color) files require, in addition to the TIFF X core
+      requirements: SamplesPerPixel(277) = 1; BitsPerSample(258) = 1, 2, 3, 4, 5, 6, 7, or 8;
+      Compression(259) = 1 or 5; PhotometricInterpretation(262) = 3 (Palette Color);
+      ColorMap(320) present.
+
+  - id: T5-118
+    section: "Appendix G"
+    heading: "TIFF Class R - RGB Full Color"
+    level: MUST
+    actor: both
+    category: image-class
+    conformance: baseline
+    tags: [277, 258, 284, 259, 262, 318, 319, 301]
+    statement: >
+      TIFF Class R (RGB full color) files require, in addition to the TIFF X core
+      requirements: SamplesPerPixel(277) = 3; BitsPerSample(258) = 8,8,8;
+      PlanarConfiguration(284) = 1 or 2 (1 recommended); Compression(259) = 1 or 5;
+      PhotometricInterpretation(262) = 2 (RGB). The colorimetric tags WhitePoint(318),
+      PrimaryChromaticities(319), and ColorResponseCurves(301) are recommended for TIFF Class
+      R, but not required.
+
+  - id: T5-119
+    section: "Appendix G"
+    heading: "A Sample TIFF B Image"
+    level: MUST
+    actor: reader
+    category: data-layout
+    conformance: baseline
+    tags: [273]
+    statement: >
+      Strip offsets must not be ignored, and readers must never assume strip N+1 follows strip
+      N in the file; there is no requirement that image data follow the IFD in the file - the
+      Class B example deliberately shows highly fragmented, out-of-order strip data.
+    notes: Reinforces the general StripOffsets rule already stated at T5-058.
+
+  - id: T5-120
+    section: "Appendix H"
+    heading: "White Point"
+    level: INFO
+    actor: file
+    category: color
+    conformance: extension
+    tags: [318]
+    statement: >
+      WhitePoint(318), added in Revision 5.0, is a RATIONAL, N=2 field giving the
+      chromaticity (x, y ordering) of the image's white point in the 1931 CIE xyY chromaticity
+      diagram; only chromaticity is specified, luminance is arbitrary/unspecified. Default is
+      the SMPTE white point D65: x = 0.313, y = 0.329.
+
+  - id: T5-121
+    section: "Appendix H"
+    heading: "Primary Chromaticities"
+    level: INFO
+    actor: file
+    category: color
+    conformance: extension
+    tags: [319]
+    statement: >
+      PrimaryChromaticities(319), added in Revision 5.0, is a RATIONAL, N=6 field giving the
+      CIE xyY chromaticities of the red, green, and blue primaries, ordered red-x, red-y,
+      green-x, green-y, blue-x, blue-y. Default is the SMPTE primaries: Red (0.635, 0.340),
+      Green (0.305, 0.595), Blue (0.155, 0.070).
+
+  - id: T5-122
+    section: "Appendix H"
+    heading: "Color Response Curves"
+    level: SHOULD
+    actor: reader
+    category: color
+    conformance: extension
+    tags: [301, 258]
+    statement: >
+      If no ColorResponseCurves(301) field exists in a color image, the reader should assume a
+      gamma of 2.2 for each primary, generating the default curve via:
+      curve[i] = floor(pow(i / (ValuesPerSample - 1.0), 2.2) * 65535.0 + 0.5) for i from 0 to
+      ValuesPerSample-1, where ValuesPerSample = 1 << BitsPerSample(258).
+
+  - id: T5-123
+    section: "Appendix H"
+    heading: "Color Response Curves"
+    level: MUST
+    actor: reader
+    category: color
+    conformance: extension
+    tags: [301]
+    statement: >
+      If a writer writes the ColorResponseCurves(301) field, a reader must assume the source
+      and destination gammas differ and must perform, for each sample:
+      NewSampleValue = floor(pow(curve[OldSampleValue] / 65535.0, 1.0 / DestinationGamma) *
+      (ValuesPerSample - 1.0) + 0.5).
+
+  - id: T5-124
+    section: "Appendix H"
+    heading: "Color Response Curves"
+    level: SHOULD
+    actor: writer
+    category: color
+    conformance: extension
+    tags: [301]
+    statement: >
+      Writers should omit ColorResponseCurves(301) when the default gamma of 2.2 applies, to
+      save space (about 1.5K in the common case).
+
+  - id: T5-125
+    section: "Appendix H"
+    heading: "Color Response Curves"
+    level: MUST-NOT
+    actor: writer
+    category: color
+    conformance: extension
+    tags: [301, 320]
+    statement: >
+      ColorResponseCurves(301) must not be used to store frame-buffer color maps; use
+      ColorMap(320) instead. ColorResponseCurves may, however, be used to refine the
+      information in a ColorMap if desired.
+
+  - id: T5-126
+    section: "Appendix I"
+    heading: "Horizontal Differencing Predictor"
+    level: INFO
+    actor: file
+    category: compression
+    conformance: extension
+    tags: [317, 259]
+    statement: >
+      Appendix I, explicitly described in the source document as "written after the release
+      of Revision 5.0" and "still in draft form", proposes a new Predictor(317) value of 2
+      ("Horizontal differencing"), for use only with Compression(259) = 5 (LZW).
+    notes: >
+      Non-normative post-5.0 draft addendum; not part of the officially released TIFF 5.0
+      specification body (which only defines Predictor value 1). Included here per the
+      extraction brief's instruction to capture proposal/appendix material as INFO.
+
+  - id: T5-127
+    section: "Appendix I"
+    heading: "Horizontal Differencing Predictor"
+    level: INFO
+    actor: writer
+    category: compression
+    conformance: extension
+    tags: [317, 284, 258, 277]
+    statement: >
+      The proposed horizontal differencing algorithm (draft Predictor=2) computes, per row,
+      pixel[col] -= pixel[col-1] (samples expanded to a full byte or word before subtracting,
+      then repacked). If PlanarConfiguration(284) = 2, differencing proceeds per-plane exactly
+      as for grayscale data. If PlanarConfiguration = 1, differencing must be done with an
+      offset of SamplesPerPixel(277) (e.g. subtract red from red, green from green, blue from
+      blue rather than mixing channels), which requires BitsPerSample(258) to be the same for
+      all samples.
+    notes: Non-normative post-5.0 draft addendum (see T5-126).
+
+  - id: T5-128
+    section: "Appendix J"
+    heading: "Palette Color (proposal)"
+    level: INFO
+    actor: file
+    category: image-class
+    conformance: extension
+    tags: [262, 320]
+    statement: >
+      Appendix J, also explicitly described as "written after the release of Revision 5.0"
+      and "still in draft form", proposes eliminating palette color as a distinct
+      PhotometricInterpretation(262) = 3 image type in favor of always storing such images as
+      full RGB, on the grounds that LZW(259=5) compression makes the size penalty negligible
+      for typical palette-type images.
+    notes: >
+      Non-normative proposal; the document itself frames this as an open question ("let's
+      drop it before too many people start creating palette color images") rather than an
+      adopted change. TIFF Class P (ColorMap(320)-based palette color) remains part of the
+      adopted TIFF 5.0 specification (see T5-117).
+
+  - id: T5-129
+    section: "Appendix J"
+    heading: "Palette Color (proposal) - ColorImageType"
+    level: INFO
+    actor: file
+    category: color
+    conformance: extension
+    tags: [318]
+    statement: >
+      Appendix J proposes a new tag ColorImageType, tag = 318, Type = SHORT, N = 1, default =
+      1, with values 1 = continuous tone natural image and 2 = synthetic image using a greatly
+      restricted range of colors (see proposed ColorList). Not required for TIFF Class R, but
+      "strongly recommended" for color images from palette-type paint programs.
+    notes: >
+      AMBIGUITY: this proposed tag number 318 collides with the WhitePoint tag (318) that
+      Appendix H of this same document formally adds to the Basic Fields section. Since
+      Appendix J is an unadopted draft written after the 5.0 release, WhitePoint(318) from
+      Appendix H is the tag actually registered at 318; ColorImageType was apparently never
+      assigned this number in practice.
+
+  - id: T5-130
+    section: "Appendix J"
+    heading: "Palette Color (proposal) - ColorList"
+    level: INFO
+    actor: file
+    category: color
+    conformance: extension
+    tags: [319]
+    statement: >
+      Appendix J proposes a new tag ColorList, tag = 319, Type = BYTE or SHORT, N = (number of
+      colors used in the image) * SamplesPerPixel, no default: an unordered array of RGB
+      triplets enumerating the colors used in an image, practical only for images with a
+      restricted (usually <= 256) color range and ColorImageType = 2.
+    notes: >
+      AMBIGUITY: this proposed tag number 319 collides with the PrimaryChromaticities tag
+      (319) that Appendix H of this same document formally adds to the Basic Fields section.
+      As with ColorImageType/WhitePoint (see T5-129), PrimaryChromaticities(319) from Appendix
+      H is the tag actually registered at 319.
+
+tags:
+  - code: 254
+    hex: "0x00FE"
+    name: NewSubfileType
+    types: [LONG]
+    count: "1"
+    default: 0
+    required: no
+    conformance: baseline
+    section: "3"
+    description: >
+      General indication of the kind of data in this subfile, expressed as 32 bit flags (bit
+      0 = reduced-resolution image, bit 1 = single page of multi-page image, bit 2 =
+      transparency mask). Replaces SubfileType(255). Recommended but not required for TIFF
+      Class X.
+    values:
+      0: "Bit 0: reduced-resolution version of another image in the file"
+      1: "Bit 1: single page of a multi-page image (see PageNumber)"
+      2: "Bit 2: transparency mask for another image in the file (requires PhotometricInterpretation=4)"
+    interacts_with: [262, 297]
+
+  - code: 255
+    hex: "0x00FF"
+    name: SubfileType
+    types: [SHORT]
+    count: "1"
+    default: null
+    required: no
+    conformance: extension
+    section: "3"
+    description: >
+      Superseded, "No Longer Recommended" general indication of subfile kind. Writers should
+      use NewSubfileType(254) instead.
+    values:
+      1: "Full resolution image data (ImageWidth, ImageLength, StripOffsets required)"
+      2: "Reduced resolution image data (same fields required; reduced version of full extent)"
+      3: "Single page of a multi-page image (see PageNumber)"
+    interacts_with: [254, 256, 257, 273, 297]
+
+  - code: 256
+    hex: "0x0100"
+    name: ImageWidth
+    types: [SHORT, LONG]
+    count: "1"
+    default: null
+    required: yes
+    conformance: baseline
+    section: "3"
+    description: The image's width, in pixels (number of columns).
+    interacts_with: [257]
+
+  - code: 257
+    hex: "0x0101"
+    name: ImageLength
+    types: [SHORT, LONG]
+    count: "1"
+    default: null
+    required: yes
+    conformance: baseline
+    section: "3"
+    description: The image's length (height), in pixels (number of rows).
+    interacts_with: [256, 278]
+
+  - code: 258
+    hex: "0x0102"
+    name: BitsPerSample
+    types: [SHORT]
+    count: "SamplesPerPixel"
+    default: 1
+    required: conditional
+    conformance: baseline
+    section: "3"
+    description: >
+      Number of bits per sample; allows a different bit depth per sample of a pixel, though
+      most files use the same depth for every sample. Allowed values are restricted per TIFF
+      Class (e.g. Class B = 1, Class G = 4 or 8, Class P = 1-8, Class R = 8,8,8).
+    interacts_with: [277, 259, 262, 320, 301, 291]
+
+  - code: 259
+    hex: "0x0103"
+    name: Compression
+    types: [SHORT]
+    count: "1"
+    default: 1
+    required: no
+    conformance: baseline
+    section: "3"
+    description: Compression scheme used for the image data referenced by StripOffsets.
+    values:
+      1: "No compression; data packed tightly into BYTE/SHORT/LONG array per BitsPerSample"
+      2: "CCITT Group 3 1-Dimensional Modified Huffman run length encoding (bilevel only)"
+      3: "Facsimile-compatible CCITT Group 3 (CCITT T.4); see Group3Options"
+      4: "Facsimile-compatible CCITT Group 4 (CCITT T.6); see Group4Options"
+      5: "LZW Compression, for grayscale, mapped color, and full color images"
+      32773: "PackBits compression, byte-oriented RLE, for 1-bit images"
+    interacts_with: [258, 262, 292, 293, 317]
+
+  - code: 262
+    hex: "0x0106"
+    name: PhotometricInterpretation
+    types: [SHORT]
+    count: "1"
+    default: null
+    required: yes
+    conformance: baseline
+    section: "3"
+    description: >
+      Defines the color/grayscale interpretation of pixel values. Determines whether 0 or
+      max-value is imaged as black/white, or selects RGB, Palette color, or Transparency Mask
+      interpretation.
+    values:
+      0: "WhiteIsZero (bilevel/grayscale): 0 = white, 2**BitsPerSample-1 = black; normal for Compression=2"
+      1: "BlackIsZero (bilevel/grayscale): 0 = black, 2**BitsPerSample-1 = white"
+      2: "RGB"
+      3: "Palette color (requires ColorMap; SamplesPerPixel must be 1)"
+      4: "Transparency Mask (requires SamplesPerPixel=1, BitsPerSample=1)"
+    interacts_with: [258, 277, 320, 291, 254]
+
+  - code: 263
+    hex: "0x0107"
+    name: Threshholding
+    types: [SHORT]
+    count: "1"
+    default: 1
+    required: no
+    conformance: extension
+    section: "3"
+    description: >
+      "No Longer Recommended" indicator of how a bilevel image was derived from continuous
+      tone data (line art, dithered, or error diffused).
+    values:
+      1: "Bilevel line art scan (BitsPerSample must be 1)"
+      2: "Dithered scan of continuous tone data (BitsPerSample must be 1)"
+      3: "Error Diffused"
+    interacts_with: [258, 264, 265]
+
+  - code: 264
+    hex: "0x0108"
+    name: CellWidth
+    types: [SHORT]
+    count: "1"
+    default: null
+    required: no
+    conformance: extension
+    section: "3"
+    description: >
+      "No Longer Recommended" width, in 1-bit samples, of the dithering/halftoning matrix.
+    interacts_with: [263]
+
+  - code: 265
+    hex: "0x0109"
+    name: CellLength
+    types: [SHORT]
+    count: "1"
+    default: null
+    required: no
+    conformance: extension
+    section: "3"
+    description: >
+      "No Longer Recommended" length, in 1-bit samples, of the dithering/halftoning matrix.
+      Assumes Threshholding = 2.
+    interacts_with: [263]
+
+  - code: 266
+    hex: "0x010A"
+    name: FillOrder
+    types: [SHORT]
+    count: "1"
+    default: 1
+    required: no
+    conformance: extension
+    section: "3"
+    description: >
+      "No Longer Recommended" order of data values/bits within a byte.
+    values:
+      1: "Most significant bit filled first (default)"
+      2: "Least significant bit filled first (recommended for private use only)"
+    interacts_with: [259]
+
+  - code: 269
+    hex: "0x010D"
+    name: DocumentName
+    types: [ASCII]
+    count: "variable (string length incl. null)"
+    default: null
+    required: no
+    conformance: extension
+    section: "3"
+    description: The name of the document from which this image was scanned.
+    interacts_with: [285]
+
+  - code: 270
+    hex: "0x010E"
+    name: ImageDescription
+    types: [ASCII]
+    count: "variable (string length incl. null)"
+    default: null
+    required: no
+    conformance: extension
+    section: "3"
+    description: A free-text description/comment for the image (e.g. a "slug").
+
+  - code: 271
+    hex: "0x010F"
+    name: Make
+    types: [ASCII]
+    count: "variable (string length incl. null)"
+    default: null
+    required: no
+    conformance: extension
+    section: "3"
+    description: Manufacturer of the scanner, video digitizer, or similar device.
+    interacts_with: [272, 305]
+
+  - code: 272
+    hex: "0x0110"
+    name: Model
+    types: [ASCII]
+    count: "variable (string length incl. null)"
+    default: null
+    required: no
+    conformance: extension
+    section: "3"
+    description: The model name/number of the scanner, video digitizer, or similar device.
+    interacts_with: [271, 305]
+
+  - code: 273
+    hex: "0x0111"
+    name: StripOffsets
+    types: [SHORT, LONG]
+    count: "StripsPerImage (PlanarConfiguration=1); SamplesPerPixel * StripsPerImage (PlanarConfiguration=2)"
+    default: null
+    required: yes
+    conformance: baseline
+    section: "3"
+    description: >
+      For each strip, the byte offset of that strip from the beginning of the file. The only
+      way for a reader to locate the image data; always required.
+    interacts_with: [279, 278, 284, 277]
+
+  - code: 274
+    hex: "0x0112"
+    name: Orientation
+    types: [SHORT]
+    count: "1"
+    default: 1
+    required: no
+    conformance: extension
+    section: "3"
+    description: >
+      "No Longer Recommended" indication of which visual edge corresponds to row 0 / column
+      0; recommended for private (non-interchange) use only.
+    values:
+      1: "0th row = visual top, 0th column = visual left"
+      2: "0th row = visual top, 0th column = visual right"
+      3: "0th row = visual bottom, 0th column = visual right"
+      4: "0th row = visual bottom, 0th column = visual left"
+      5: "0th row = visual left, 0th column = visual top"
+      6: "0th row = visual right, 0th column = visual top"
+      7: "0th row = visual right, 0th column = visual bottom"
+      8: "0th row = visual left, 0th column = visual bottom"
+
+  - code: 277
+    hex: "0x0115"
+    name: SamplesPerPixel
+    types: [SHORT]
+    count: "1"
+    default: 1
+    required: no
+    conformance: baseline
+    section: "3"
+    description: >
+      The number of samples per pixel: 1 for bilevel, grayscale, and palette color images; 3
+      for RGB images.
+    interacts_with: [258, 262, 284]
+
+  - code: 278
+    hex: "0x0116"
+    name: RowsPerStrip
+    types: [SHORT, LONG]
+    count: "1"
+    default: 4294967295
+    required: yes
+    conformance: baseline
+    section: "3"
+    description: >
+      Number of rows per strip. Together with ImageLength determines StripsPerImage. Default
+      is 2**32-1 (single strip), but ~8K bytes per strip is recommended.
+    interacts_with: [257, 273, 279]
+
+  - code: 279
+    hex: "0x0117"
+    name: StripByteCounts
+    types: [SHORT, LONG]
+    count: "StripsPerImage (PlanarConfiguration=1); SamplesPerPixel * StripsPerImage (PlanarConfiguration=2)"
+    default: null
+    required: yes
+    conformance: baseline
+    section: "3"
+    description: >
+      For each strip, the number of bytes in that strip. Required in TIFF Class X files
+      although described as having no default in the main body.
+    interacts_with: [273, 278, 284, 277]
+
+  - code: 280
+    hex: "0x0118"
+    name: MinSampleValue
+    types: [SHORT]
+    count: "SamplesPerPixel"
+    default: 0
+    required: no
+    conformance: extension
+    section: "3"
+    description: >
+      "No Longer Recommended" minimum used sample value, for statistical purposes only; must
+      not affect visual display or interpretation of other fields.
+    interacts_with: [281, 277]
+
+  - code: 281
+    hex: "0x0119"
+    name: MaxSampleValue
+    types: [SHORT]
+    count: "SamplesPerPixel"
+    default: "2**BitsPerSample - 1"
+    required: no
+    conformance: extension
+    section: "3"
+    description: >
+      "No Longer Recommended" maximum used sample value, for statistical purposes only; must
+      not affect visual display or interpretation of other fields.
+    interacts_with: [280, 277, 258]
+
+  - code: 282
+    hex: "0x011A"
+    name: XResolution
+    types: [RATIONAL]
+    count: "1"
+    default: null
+    required: yes
+    conformance: baseline
+    section: "3"
+    description: Number of pixels per ResolutionUnit in the ImageWidth (X) direction.
+    interacts_with: [283, 296]
+
+  - code: 283
+    hex: "0x011B"
+    name: YResolution
+    types: [RATIONAL]
+    count: "1"
+    default: null
+    required: yes
+    conformance: baseline
+    section: "3"
+    description: Number of pixels per ResolutionUnit in the ImageLength (Y) direction.
+    interacts_with: [282, 296]
+
+  - code: 284
+    hex: "0x011C"
+    name: PlanarConfiguration
+    types: [SHORT]
+    count: "1"
+    default: 1
+    required: conditional
+    conformance: baseline
+    section: "3"
+    description: >
+      How components of each pixel are stored: interleaved in one plane (1) or in separate
+      sample planes (2). Irrelevant, and should not be included, when SamplesPerPixel=1.
+    values:
+      1: "Chunky: samples for each pixel stored contiguously (e.g. RGBRGBRGB...)"
+      2: "Planar: each sample stored in a separate sample plane"
+    interacts_with: [277, 262, 273, 279]
+
+  - code: 285
+    hex: "0x011D"
+    name: PageName
+    types: [ASCII]
+    count: "variable (string length incl. null)"
+    default: null
+    required: no
+    conformance: extension
+    section: "3"
+    description: The name of the page from which this image was scanned.
+    interacts_with: [269]
+
+  - code: 286
+    hex: "0x011E"
+    name: XPosition
+    types: [RATIONAL]
+    count: "1"
+    default: null
+    required: no
+    conformance: extension
+    section: "3"
+    description: X offset of the left side of the image relative to the left side of the page, in ResolutionUnits.
+    interacts_with: [287, 296]
+
+  - code: 287
+    hex: "0x011F"
+    name: YPosition
+    types: [RATIONAL]
+    count: "1"
+    default: null
+    required: no
+    conformance: extension
+    section: "3"
+    description: >
+      Y offset of the top of the image relative to the top of the page, in ResolutionUnits;
+      always positive since positive Y is down in TIFF's coordinate scheme.
+    interacts_with: [286, 296]
+
+  - code: 288
+    hex: "0x0120"
+    name: FreeOffsets
+    types: [LONG]
+    count: "variable (one per free block)"
+    default: null
+    required: no
+    conformance: extension
+    section: "3"
+    description: >
+      "No Longer Recommended" byte offset of each "free block" in the file; readers may
+      ignore this field.
+    interacts_with: [289]
+
+  - code: 289
+    hex: "0x0121"
+    name: FreeByteCounts
+    types: [LONG]
+    count: "variable (one per free block)"
+    default: null
+    required: no
+    conformance: extension
+    section: "3"
+    description: >
+      "No Longer Recommended" byte length of each "free block" in the file; readers may
+      ignore this field.
+    interacts_with: [288]
+
+  - code: 290
+    hex: "0x0122"
+    name: GrayResponseUnit
+    types: [SHORT]
+    count: "1"
+    default: 2
+    required: no
+    conformance: extension
+    section: "3"
+    description: >
+      Precision/units of GrayResponseCurve values, expressed as a power-of-ten fraction of a
+      unit of optical density.
+    values:
+      1: "Tenths of a unit"
+      2: "Hundredths of a unit (default)"
+      3: "Thousandths of a unit (recommended for greater accuracy)"
+      4: "Ten-thousandths of a unit"
+      5: "Hundred-thousandths of a unit"
+    interacts_with: [291]
+
+  - code: 291
+    hex: "0x0123"
+    name: GrayResponseCurve
+    types: [SHORT]
+    count: "2**BitsPerSample"
+    default: null
+    required: no
+    conformance: extension
+    section: "3"
+    description: >
+      Lookup table mapping each possible pixel value to an optical density value (in units
+      set by GrayResponseUnit), for more exact photometric interpretation of grayscale data.
+      Overrides PhotometricInterpretation when present. TIFF B readers are not required to
+      honor it.
+    interacts_with: [258, 290, 262]
+
+  - code: 292
+    hex: "0x0124"
+    name: Group3Options
+    types: [LONG]
+    count: "1"
+    default: 0
+    required: conditional
+    conformance: extension
+    section: "3"
+    description: >
+      32-bit flag field describing CCITT Group 3 facsimile coding options, used with
+      Compression=3.
+    values:
+      0: "Bit 0: 1 = 2-dimensional coding (else 1-dimensional)"
+      1: "Bit 1: 1 = uncompressed mode used"
+      2: "Bit 2: 1 = fill bits added before EOL so EOL ends on a byte boundary"
+    interacts_with: [259, 278]
+
+  - code: 293
+    hex: "0x0125"
+    name: Group4Options
+    types: [LONG]
+    count: "1"
+    default: 0
+    required: conditional
+    conformance: extension
+    section: "3"
+    description: >
+      32-bit flag field describing CCITT Group 4 facsimile coding options, used with
+      Compression=4.
+    values:
+      0: "Bit 0: unused"
+      1: "Bit 1: 1 = uncompressed mode used"
+    interacts_with: [259]
+
+  - code: 296
+    hex: "0x0128"
+    name: ResolutionUnit
+    types: [SHORT]
+    count: "1"
+    default: 2
+    required: yes
+    conformance: baseline
+    section: "3"
+    description: Unit for XResolution and YResolution values.
+    values:
+      1: "No absolute unit of measurement"
+      2: "Inch (default)"
+      3: "Centimeter"
+    interacts_with: [282, 283]
+
+  - code: 297
+    hex: "0x0129"
+    name: PageNumber
+    types: [SHORT]
+    count: "2"
+    default: null
+    required: no
+    conformance: extension
+    section: "3"
+    description: >
+      Page number of a multi-page (e.g. facsimile) document; first value = page number
+      (0-based, pages need not be in numerical order), second value = total pages.
+    interacts_with: [254]
+
+  - code: 301
+    hex: "0x012D"
+    name: ColorResponseCurves
+    types: [SHORT]
+    count: "3 * (2**BitsPerSample)"
+    default: "curves based on NTSC recommended gamma of 2.2"
+    required: no
+    conformance: extension
+    section: "3"
+    description: >
+      Three concatenated Red/Green/Blue lookup-table curves (each of length 2**BitsPerSample)
+      refining the color balance of an RGB image, expressing "gamma" so a reader can
+      compensate for source vs destination gamma difference. Recommended (not required) for
+      TIFF Class R.
+    interacts_with: [258, 320]
+
+  - code: 305
+    hex: "0x0131"
+    name: Software
+    types: [ASCII]
+    count: "variable (string length incl. null)"
+    default: null
+    required: no
+    conformance: extension
+    section: "3"
+    description: Name and release number of the software package that created the image.
+    interacts_with: [271, 272]
+
+  - code: 306
+    hex: "0x0132"
+    name: DateTime
+    types: [ASCII]
+    count: "20"
+    default: null
+    required: no
+    conformance: extension
+    section: "3"
+    description: >
+      Date and time of image creation, format "YYYY:MM:DD HH:MM:SS" (24-hour clock, one space
+      separator), 20 bytes including terminating null.
+
+  - code: 315
+    hex: "0x013B"
+    name: Artist
+    types: [ASCII]
+    count: "variable (string length incl. null)"
+    default: null
+    required: no
+    conformance: extension
+    section: "3"
+    description: >
+      Person who created the image; also suggested as the place to attach a copyright notice.
+
+  - code: 316
+    hex: "0x013C"
+    name: HostComputer
+    types: [ASCII]
+    count: "variable (string length incl. null)"
+    default: null
+    required: no
+    conformance: extension
+    section: "3"
+    description: The computer and/or operating system used to create the image (e.g. "ENIAC").
+    interacts_with: [271, 272, 305]
+
+  - code: 317
+    hex: "0x013D"
+    name: Predictor
+    types: [SHORT]
+    count: "1"
+    default: 1
+    required: conditional
+    conformance: extension
+    section: "3"
+    description: >
+      Predictor (mathematical operator) applied to image data before encoding; used only
+      with Compression=5 (LZW) as of Revision 5.0. Value 2 (horizontal differencing) is a
+      post-5.0 draft addendum (Appendix I), not part of the officially released 5.0 body.
+    values:
+      1: "No prediction scheme used before coding (default)"
+      2: "Horizontal differencing (Appendix I draft addendum; not in the released 5.0 main body)"
+    interacts_with: [259, 284, 258, 277]
+
+  - code: 318
+    hex: "0x013E"
+    name: WhitePoint
+    types: [RATIONAL]
+    count: "2"
+    default: "D65: x=0.313, y=0.329"
+    required: no
+    conformance: extension
+    section: "Appendix H"
+    description: >
+      Chromaticity (CIE 1931 xyY, x then y) of the image's white point; luminance
+      unspecified. Recommended (not required) for TIFF Class R. Added in Revision 5.0
+      (Appendix H).
+    interacts_with: [319, 301]
+    notes: >
+      Appendix J (a separate, unadopted post-5.0 draft) proposes a different tag also
+      numbered 318 named ColorImageType; that proposal was apparently never assigned this
+      number in practice. See requirement T5-129.
+
+  - code: 319
+    hex: "0x013F"
+    name: PrimaryChromaticities
+    types: [RATIONAL]
+    count: "6"
+    default: "SMPTE: Red(0.635,0.340) Green(0.305,0.595) Blue(0.155,0.070)"
+    required: no
+    conformance: extension
+    section: "Appendix H"
+    description: >
+      Chromaticities (CIE 1931 xyY) of the red, green, and blue primaries, ordered red-x,
+      red-y, green-x, green-y, blue-x, blue-y. Recommended (not required) for TIFF Class R.
+      Added in Revision 5.0 (Appendix H).
+    interacts_with: [318, 301]
+    notes: >
+      Appendix J (a separate, unadopted post-5.0 draft) proposes a different tag also
+      numbered 319 named ColorList; that proposal was apparently never assigned this number in
+      practice. See requirement T5-130.
+
+  - code: 320
+    hex: "0x0140"
+    name: ColorMap
+    types: [SHORT]
+    count: "3 * (2**BitsPerSample)"
+    default: null
+    required: conditional
+    conformance: baseline
+    section: "3"
+    description: >
+      Red-Green-Blue color map (palette) for palette color images; three concatenated
+      subcurves (R, G, B), each of length 2**BitsPerSample, 0=min intensity, 65535=max
+      intensity. Required whenever PhotometricInterpretation=3 (TIFF Class P).
+    interacts_with: [258, 262, 301]
+
+  - code: 318
+    hex: "0x013E"
+    name: ColorImageType
+    types: [SHORT]
+    count: "1"
+    default: 1
+    required: no
+    conformance: extension
+    section: "Appendix J"
+    description: >
+      PROPOSED (unadopted, post-5.0 draft, Appendix J) tag classifying a color image as
+      continuous-tone/natural or synthetic/restricted-palette. Not required for TIFF Class R.
+      NOTE: proposed tag number collides with the officially added WhitePoint(318) tag from
+      Appendix H; see T5-129.
+    values:
+      1: "Continuous tone, natural image (default)"
+      2: "Synthetic image using a greatly restricted range of colors (see proposed ColorList)"
+    interacts_with: [319]
+
+  - code: 319
+    hex: "0x013F"
+    name: ColorList
+    types: [BYTE, SHORT]
+    count: "(number of colors used) * SamplesPerPixel"
+    default: null
+    required: no
+    conformance: extension
+    section: "Appendix J"
+    description: >
+      PROPOSED (unadopted, post-5.0 draft, Appendix J) unordered array of RGB triplets
+      enumerating colors used in an image with ColorImageType=2. NOTE: proposed tag number
+      collides with the officially added PrimaryChromaticities(319) tag from Appendix H; see
+      T5-130.
+    interacts_with: [318, 277]
+
+dependencies:
+  - id: T5-DEP-001
+    requirement: T5-027
+    when: "Compression(259) == 2"
+    then: "BitsPerSample(258) must == 1"
+    kind: requires
+    tags: [259, 258]
+
+  - id: T5-DEP-002
+    requirement: T5-044
+    when: "PhotometricInterpretation(262) == 3"
+    then: "SamplesPerPixel(277) must == 1; ColorMap(320) must be present"
+    kind: requires
+    tags: [262, 277, 320]
+
+  - id: T5-DEP-003
+    requirement: T5-045
+    when: "PhotometricInterpretation(262) == 4"
+    then: >
+      SamplesPerPixel(277) must == 1; BitsPerSample(258) must == 1; ImageLength(257) and
+      ImageWidth(256) must equal those of the main image being masked
+    kind: requires
+    tags: [262, 277, 258, 257, 256]
+
+  - id: T5-DEP-004
+    requirement: T5-040
+    when: "NewSubfileType(254) bit 2 == 1"
+    then: "PhotometricInterpretation(262) must == 4"
+    kind: requires
+    tags: [254, 262]
+
+  - id: T5-DEP-005
+    requirement: T5-037
+    when: "GrayResponseCurve(291) is present"
+    then: "its values override PhotometricInterpretation(262) for interpretation purposes"
+    kind: modifies-meaning
+    tags: [291, 262]
+
+  - id: T5-DEP-006
+    requirement: T5-023
+    when: "always (ColorMap(320) present)"
+    then: "Count of ColorMap(320) == 3 * 2**BitsPerSample(258)"
+    kind: constrains-value
+    tags: [320, 258]
+
+  - id: T5-DEP-007
+    requirement: T5-024
+    when: "always (ColorResponseCurves(301) present)"
+    then: "Count of ColorResponseCurves(301) == 3 * 2**BitsPerSample(258)"
+    kind: constrains-value
+    tags: [301, 258]
+
+  - id: T5-DEP-008
+    requirement: T5-034
+    when: "always (GrayResponseCurve(291) present)"
+    then: "Count of GrayResponseCurve(291) == 2**BitsPerSample(258)"
+    kind: constrains-value
+    tags: [291, 258]
+
+  - id: T5-DEP-009
+    requirement: T5-021
+    when: "always"
+    then: "Count of BitsPerSample(258) == SamplesPerPixel(277)"
+    kind: constrains-value
+    tags: [258, 277]
+
+  - id: T5-DEP-010
+    requirement: T5-056
+    when: "PlanarConfiguration(284) == 1"
+    then: "Count of StripOffsets(273) and StripByteCounts(279) == StripsPerImage"
+    kind: constrains-value
+    tags: [284, 273, 279]
+
+  - id: T5-DEP-011
+    requirement: T5-056
+    when: "PlanarConfiguration(284) == 2"
+    then: "Count of StripOffsets(273) and StripByteCounts(279) == SamplesPerPixel(277) * StripsPerImage"
+    kind: constrains-value
+    tags: [284, 273, 279, 277]
+
+  - id: T5-DEP-012
+    requirement: T5-072
+    when: "MaxSampleValue(281) is absent"
+    then: "default value == 2**BitsPerSample(258) - 1"
+    kind: selects-default
+    tags: [281, 258]
+
+  - id: T5-DEP-013
+    requirement: T5-072
+    when: "always"
+    then: "Count of MinSampleValue(280) and MaxSampleValue(281) == SamplesPerPixel(277)"
+    kind: constrains-value
+    tags: [280, 281, 277]
+
+  - id: T5-DEP-014
+    requirement: T5-049
+    when: "SamplesPerPixel(277) == 1"
+    then: "PlanarConfiguration(284) is irrelevant and should not be written"
+    kind: modifies-meaning
+    tags: [277, 284]
+
+  - id: T5-DEP-015
+    requirement: T5-052
+    when: "always"
+    then: "StripsPerImage == ceil(ImageLength(257) / RowsPerStrip(278))"
+    kind: constrains-value
+    tags: [257, 278]
+
+  - id: T5-DEP-016
+    requirement: T5-050
+    when: "Compression(259) != 5"
+    then: "Predictor(317) is not applicable / meaningless in the main-body scheme (only defined value 1 exists)"
+    kind: constrains-value
+    tags: [259, 317]
+
+  - id: T5-DEP-017
+    requirement: T5-069
+    when: "always (CellLength(265) present)"
+    then: "Threshholding(263) is assumed to == 2"
+    kind: constrains-value
+    tags: [265, 263]
+
+  - id: T5-DEP-018
+    requirement: T5-029
+    when: "Compression(259) == 3"
+    then: "Group3Options(292) applies and governs 1D/2D coding, uncompressed mode, and fill-bit behavior"
+    kind: constrains-value
+    tags: [259, 292]
+
+  - id: T5-DEP-019
+    requirement: T5-030
+    when: "Compression(259) == 4"
+    then: "Group4Options(293) applies and governs uncompressed mode and strip encoding behavior"
+    kind: constrains-value
+    tags: [259, 293]
+
+  - id: T5-DEP-020
+    requirement: T5-102
+    when: "Compression(259) == 5"
+    then: >
+      reader must inspect Predictor(317); if Predictor == 1 decompression proceeds normally;
+      if Predictor != 1 and unrecognized, reader should give up
+    kind: requires
+    tags: [259, 317]
+
+  - id: T5-DEP-021
+    requirement: T5-127
+    when: "Predictor(317) == 2 (Appendix I draft) and PlanarConfiguration(284) == 1"
+    then: >
+      horizontal differencing must use an offset of SamplesPerPixel(277) (same-channel
+      differencing) and BitsPerSample(258) must be identical for all samples
+    kind: constrains-value
+    tags: [317, 284, 277, 258]
+
+  - id: T5-DEP-022
+    requirement: T5-026
+    when: "Compression(259) == 1"
+    then: >
+      bytes per row == ceil(ImageWidth(256) * SamplesPerPixel(277) * BitsPerSample(258) / 8)
+      if PlanarConfiguration(284) == 1, else ceil(ImageWidth(256) * BitsPerSample(258) / 8)
+    kind: constrains-value
+    tags: [259, 256, 277, 258, 284]
+
+  - id: T5-DEP-023
+    requirement: T5-115
+    when: "conformance class == TIFF Class B"
+    then: >
+      SamplesPerPixel(277)=1, BitsPerSample(258)=1, Compression(259) in [1,2,32773],
+      PhotometricInterpretation(262) in [0,1]
+    kind: constrains-value
+    tags: [277, 258, 259, 262]
+
+  - id: T5-DEP-024
+    requirement: T5-116
+    when: "conformance class == TIFF Class G"
+    then: >
+      SamplesPerPixel(277)=1, BitsPerSample(258) in [4,8], Compression(259) in [1,5],
+      PhotometricInterpretation(262) in [0,1]
+    kind: constrains-value
+    tags: [277, 258, 259, 262]
+
+  - id: T5-DEP-025
+    requirement: T5-117
+    when: "conformance class == TIFF Class P"
+    then: >
+      SamplesPerPixel(277)=1, BitsPerSample(258) in [1..8], Compression(259) in [1,5],
+      PhotometricInterpretation(262)=3, ColorMap(320) present
+    kind: constrains-value
+    tags: [277, 258, 259, 262, 320]
+
+  - id: T5-DEP-026
+    requirement: T5-118
+    when: "conformance class == TIFF Class R"
+    then: >
+      SamplesPerPixel(277)=3, BitsPerSample(258)=8,8,8, PlanarConfiguration(284) in [1,2],
+      Compression(259) in [1,5], PhotometricInterpretation(262)=2
+    kind: constrains-value
+    tags: [277, 258, 284, 259, 262]
+
+  - id: T5-DEP-027
+    requirement: T5-040
+    when: "NewSubfileType(254) bit 1 == 1"
+    then: "the image is a single page of a multi-page image; see PageNumber(297)"
+    kind: modifies-meaning
+    tags: [254, 297]

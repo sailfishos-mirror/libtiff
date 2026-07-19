@@ -1,0 +1,2250 @@
+# =============================================================================
+# DNG tag registry: tags defined by the Adobe DNG specification (1.0-1.7.1)
+# =============================================================================
+#
+# Source: DNG 1.7.1.0 — see sources/DNG.yaml for per-tag citations. New values
+# DNG defines for classic tags (PhotometricInterpretation 32803/34892/51177/
+# 52527, Compression 34892/52546, Predictor 34892-34895, ...) are recorded in
+# tags.yaml against the classic entries.
+#
+# Same field conventions as tags.yaml, plus:
+#   location            which IFD role the tag belongs to. DNG assigns tags to
+#                       named IFD roles rather than the fixed classic chain:
+#                       ifd0 | raw-ifd | preview-ifd | enhanced-ifd |
+#                       depth-ifd | semantic-mask-ifd | camera-profile-ifd |
+#                       ifd0-or-camera-profile-ifd | jxl-ifd | any-ifd.
+#                       (Roles are identified via NewSubfileType and the
+#                       SubIFDs tree; see DEP-160.. in constraints.yaml.)
+#   supplement_version  DNG version that introduced the tag (e.g. "1.4.0.0").
+#   description         short semantic summary.
+# =============================================================================
+
+tags:
+- code: 50706
+  name: DNGVersion
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: ifd0
+  supplement_version: 1.0.0.0
+  types:
+  - BYTE
+  count: '4'
+  default: null
+  required: 'yes'
+  defined_in:
+  - DNG
+  description: Four-tier DNG version number of the file. For this spec version the bytes are
+    1,7,0,0.
+- code: 50707
+  name: DNGBackwardVersion
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: ifd0
+  supplement_version: 1.0.0.0
+  types:
+  - BYTE
+  count: '4'
+  default: DNGVersion with the last two bytes set to zero
+  required: 'no'
+  defined_in:
+  - DNG
+  description: >
+    Oldest DNG spec version with which the file is compatible. Readers must not read files
+    whose value exceeds the reader's supported version.
+- code: 50708
+  name: UniqueCameraModel
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: ifd0
+  supplement_version: 1.0.0.0
+  types:
+  - ASCII
+  count: String length including null
+  default: null
+  required: 'yes'
+  defined_in:
+  - DNG
+  description: >
+    Unique, non-localized camera model name including manufacturer; used to index per-model
+    preferences and replacement profiles.
+- code: 50709
+  name: LocalizedCameraModel
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: ifd0
+  supplement_version: 1.0.0.0
+  types:
+  - ASCII
+  - BYTE
+  count: Byte count including null
+  default: Same as UniqueCameraModel
+  required: 'no'
+  defined_in:
+  - DNG
+  description: Localized (UTF-8) camera model name for different markets.
+- code: 50710
+  name: CFAPlaneColor
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: raw-ifd
+  supplement_version: 1.0.0.0
+  types:
+  - BYTE
+  count: ColorPlanes
+  default: 0, 1, 2 (red, green, blue)
+  required: conditional
+  defined_in:
+  - DNG
+  description: >
+    Mapping between CFAPattern values and plane numbers in LinearRaw space. Required for non-RGB
+    CFA images.
+- code: 50711
+  name: CFALayout
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: raw-ifd
+  supplement_version: 1.0.0.0
+  types:
+  - SHORT
+  count: '1'
+  default: 1
+  required: 'no'
+  values:
+    1: Rectangular (or square) layout
+    2: 'Staggered layout A: even columns offset down 1/2 row'
+    3: 'Staggered layout B: even columns offset up 1/2 row'
+    4: 'Staggered layout C: even rows offset right 1/2 column'
+    5: 'Staggered layout D: even rows offset left 1/2 column'
+    6: 'Staggered layout E: even rows up 1/2 row, even columns left 1/2 column (DNG 1.3.0.0+)'
+    7: 'Staggered layout F: even rows up 1/2 row, even columns right 1/2 column (DNG 1.3.0.0+)'
+    8: 'Staggered layout G: even rows down 1/2 row, even columns left 1/2 column (DNG 1.3.0.0+)'
+    9: 'Staggered layout H: even rows down 1/2 row, even columns right 1/2 column (DNG 1.3.0.0+)'
+  defined_in:
+  - DNG
+  description: Spatial layout of the CFA. Rows/columns numbered from one.
+- code: 50712
+  name: LinearizationTable
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: raw-ifd
+  supplement_version: 1.0.0.0
+  types:
+  - SHORT
+  count: N
+  default: Identity table (0, 1, 2, 3, ...)
+  required: 'no'
+  defined_in:
+  - DNG
+  description: >
+    Lookup table mapping stored values to linear values. If SamplesPerPixel != 1, applies
+    to all samples. Raw values beyond table size map to last entry.
+- code: 50713
+  name: BlackLevelRepeatDim
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: raw-ifd
+  supplement_version: 1.0.0.0
+  types:
+  - SHORT
+  count: '2'
+  default: 1, 1
+  required: 'no'
+  defined_in:
+  - DNG
+  description: Repeat pattern size (BlackLevelRepeatRows, BlackLevelRepeatCols) for the BlackLevel
+    tag.
+- code: 50714
+  name: BlackLevel
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: raw-ifd
+  supplement_version: 1.0.0.0
+  types:
+  - SHORT
+  - LONG
+  - RATIONAL
+  count: BlackLevelRepeatRows * BlackLevelRepeatCols * SamplesPerPixel
+  default: 0
+  required: 'no'
+  defined_in:
+  - DNG
+  description: >
+    Zero-light (thermal black) encoding level as a repeating pattern; origin is top-left of
+    ActiveArea, stored in row-column-sample scan order.
+- code: 50715
+  name: BlackLevelDeltaH
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: raw-ifd
+  supplement_version: 1.0.0.0
+  types:
+  - SRATIONAL
+  count: ActiveArea width
+  default: All zeros
+  required: 'no'
+  defined_in:
+  - DNG
+  description: >
+    Per-column difference from the baseline zero-light encoding level. Applies to all samples
+    if SamplesPerPixel != 1.
+- code: 50716
+  name: BlackLevelDeltaV
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: raw-ifd
+  supplement_version: 1.0.0.0
+  types:
+  - SRATIONAL
+  count: ActiveArea length
+  default: All zeros
+  required: 'no'
+  defined_in:
+  - DNG
+  description: >
+    Per-row difference from the baseline zero-light encoding level. Applies to all samples
+    if SamplesPerPixel != 1.
+- code: 50717
+  name: WhiteLevel
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: raw-ifd
+  supplement_version: 1.0.0.0
+  types:
+  - SHORT
+  - LONG
+  count: SamplesPerPixel
+  default: 2^BitsPerSample - 1 (unsigned int); 1.0 (floating point)
+  required: 'no'
+  defined_in:
+  - DNG
+  description: Fully saturated encoding level for raw sample values.
+- code: 50718
+  name: DefaultScale
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: raw-ifd
+  supplement_version: 1.0.0.0
+  types:
+  - RATIONAL
+  count: '2'
+  default: 1.0, 1.0
+  required: conditional
+  defined_in:
+  - DNG
+  description: >
+    Default horizontal/vertical scale factors to convert to square pixels; required for cameras
+    with non-square pixels. For CFALayout 2-5 the two values usually differ by 2.0.
+- code: 50719
+  name: DefaultCropOrigin
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: raw-ifd
+  supplement_version: 1.0.0.0
+  types:
+  - SHORT
+  - LONG
+  - RATIONAL
+  count: '2'
+  default: 0, 0
+  required: 'no'
+  defined_in:
+  - DNG
+  description: >
+    Origin of the final image area in raw coordinates (before DefaultScale), relative to the
+    top-left of ActiveArea.
+- code: 50720
+  name: DefaultCropSize
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: raw-ifd
+  supplement_version: 1.0.0.0
+  types:
+  - SHORT
+  - LONG
+  - RATIONAL
+  count: '2'
+  default: ImageWidth, ImageLength
+  required: 'no'
+  defined_in:
+  - DNG
+  description: Size of the final image area in raw coordinates (before DefaultScale).
+- code: 50721
+  name: ColorMatrix1
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: ifd0-or-camera-profile-ifd
+  supplement_version: 1.0.0.0
+  types:
+  - SRATIONAL
+  count: ColorPlanes * 3
+  default: null
+  required: conditional
+  defined_in:
+  - DNG
+  description: >
+    Matrix converting XYZ to reference camera native color space under the first calibration
+    illuminant, row scan order. Required for all non-monochrome DNG files.
+- code: 50722
+  name: ColorMatrix2
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: ifd0-or-camera-profile-ifd
+  supplement_version: 1.0.0.0
+  types:
+  - SRATIONAL
+  count: ColorPlanes * 3
+  default: null
+  required: 'no'
+  defined_in:
+  - DNG
+  description: >
+    Matrix converting XYZ to reference camera native color space under the second calibration
+    illuminant, row scan order.
+- code: 50723
+  name: CameraCalibration1
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: ifd0
+  supplement_version: 1.0.0.0
+  types:
+  - SRATIONAL
+  count: ColorPlanes * ColorPlanes
+  default: Identity matrix
+  required: 'no'
+  defined_in:
+  - DNG
+  description: >
+    Calibration matrix from reference to individual camera native space under illuminant 1,
+    row scan order.
+- code: 50724
+  name: CameraCalibration2
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: ifd0
+  supplement_version: 1.0.0.0
+  types:
+  - SRATIONAL
+  count: ColorPlanes * ColorPlanes
+  default: Identity matrix
+  required: 'no'
+  defined_in:
+  - DNG
+  description: >
+    Calibration matrix from reference to individual camera native space under illuminant 2,
+    row scan order.
+- code: 50725
+  name: ReductionMatrix1
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: ifd0-or-camera-profile-ifd
+  supplement_version: 1.0.0.0
+  types:
+  - SRATIONAL
+  count: 3 * ColorPlanes
+  default: null
+  required: 'no'
+  defined_in:
+  - DNG
+  description: >
+    Dimensionality reduction matrix (first stage) converting camera native to XYZ under illuminant
+    1. Only usable if ColorPlanes > 3. Row scan order.
+- code: 50726
+  name: ReductionMatrix2
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: ifd0-or-camera-profile-ifd
+  supplement_version: 1.0.0.0
+  types:
+  - SRATIONAL
+  count: 3 * ColorPlanes
+  default: null
+  required: 'no'
+  defined_in:
+  - DNG
+  description: >
+    Dimensionality reduction matrix (first stage) converting camera native to XYZ under illuminant
+    2. Only usable if ColorPlanes > 3. Row scan order.
+- code: 50727
+  name: AnalogBalance
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: ifd0
+  supplement_version: 1.0.0.0
+  types:
+  - RATIONAL
+  count: ColorPlanes
+  default: All 1.0
+  required: 'no'
+  defined_in:
+  - DNG
+  description: Gain (analog recommended) applied to the stored raw values before digitization.
+- code: 50728
+  name: AsShotNeutral
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: ifd0
+  supplement_version: 1.0.0.0
+  types:
+  - SHORT
+  - RATIONAL
+  count: ColorPlanes
+  default: null
+  required: 'no'
+  defined_in:
+  - DNG
+  description: >
+    Selected white balance at capture as coordinates of a neutral color in linear reference
+    space. Precludes AsShotWhiteXY.
+- code: 50729
+  name: AsShotWhiteXY
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: ifd0
+  supplement_version: 1.0.0.0
+  types:
+  - RATIONAL
+  count: '2'
+  default: null
+  required: 'no'
+  defined_in:
+  - DNG
+  description: >
+    Selected white balance at capture as x-y chromaticity coordinates. Precludes AsShotNeutral.
+- code: 50730
+  name: BaselineExposure
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: ifd0
+  supplement_version: 1.0.0.0
+  types:
+  - SRATIONAL
+  count: '1'
+  default: 0.0
+  required: 'no'
+  defined_in:
+  - DNG
+  description: EV offset to move the zero point of exposure compensation for this camera model.
+- code: 50731
+  name: BaselineNoise
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: ifd0
+  supplement_version: 1.0.0.0
+  types:
+  - RATIONAL
+  count: '1'
+  default: 1.0
+  required: 'no'
+  defined_in:
+  - DNG
+  description: >
+    Relative noise level of the camera at ISO 100 vs a reference camera. NoiseProfile is recommended
+    instead.
+- code: 50732
+  name: BaselineSharpness
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: ifd0
+  supplement_version: 1.0.0.0
+  types:
+  - RATIONAL
+  count: '1'
+  default: 1.0
+  required: 'no'
+  defined_in:
+  - DNG
+  description: >
+    Relative amount of sharpening required for this camera model vs a reference camera. May
+    appear in an enhanced IFD with a different value.
+- code: 50733
+  name: BayerGreenSplit
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: raw-ifd
+  supplement_version: 1.0.0.0
+  types:
+  - LONG
+  count: '1'
+  default: 0
+  required: 'no'
+  defined_in:
+  - DNG
+  description: >
+    For Bayer CFA images, how closely blue/green-row and red/green-row green pixels track
+    (0 = close, up to ~5000 = large divergence).
+- code: 50734
+  name: LinearResponseLimit
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: ifd0
+  supplement_version: 1.0.0.0
+  types:
+  - RATIONAL
+  count: '1'
+  default: 1.0
+  required: 'no'
+  defined_in:
+  - DNG
+  description: >
+    Fraction of the encoding range above which sensor response may become significantly non-linear.
+- code: 50735
+  name: CameraSerialNumber
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: ifd0
+  supplement_version: 1.0.0.0
+  types:
+  - ASCII
+  count: String length including null
+  default: null
+  required: 'no'
+  defined_in:
+  - DNG
+  description: Serial number of the camera/body that captured the image.
+- code: 50736
+  name: LensInfo
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: ifd0
+  supplement_version: 1.0.0.0
+  types:
+  - RATIONAL
+  count: '4'
+  default: null
+  required: 'no'
+  defined_in:
+  - DNG
+  description: >
+    Lens info: min focal length (mm), max focal length (mm), min f-stop at min focal length,
+    min f-stop at max focal length. Unknown f-stops encoded as 0/0.
+- code: 50737
+  name: ChromaBlurRadius
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: raw-ifd
+  supplement_version: 1.0.0.0
+  types:
+  - RATIONAL
+  count: '1'
+  default: Reader default amount
+  required: 'no'
+  defined_in:
+  - DNG
+  description: Hint for how much chroma blur to apply (in pixels); normally only for non-CFA
+    images.
+- code: 50738
+  name: AntiAliasStrength
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: raw-ifd
+  supplement_version: 1.0.0.0
+  types:
+  - RATIONAL
+  count: '1'
+  default: 1.0
+  required: 'no'
+  defined_in:
+  - DNG
+  description: >
+    Hint about anti-alias filter strength (0.0 = none, 1.0 = strong); used by the demosaic
+    algorithm.
+- code: 50739
+  name: ShadowScale
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: ifd0
+  supplement_version: 1.0.0.0
+  types:
+  - RATIONAL
+  count: '1'
+  default: 1.0
+  required: 'no'
+  defined_in:
+  - DNG
+  description: Used by older Adobe Camera Raw to control the sensitivity of its "Blacks" slider.
+- code: 50740
+  name: DNGPrivateData
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: ifd0
+  supplement_version: 1.0.0.0
+  types:
+  - BYTE
+  count: Length of private data block in bytes
+  default: null
+  required: 'no'
+  defined_in:
+  - DNG
+  description: >
+    Manufacturer private data. Must start with a null-terminated manufacturer-name string,
+    be self-contained (relative offsets), and byte-order independent.
+- code: 50741
+  name: MakerNoteSafety
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: ifd0
+  supplement_version: 1.0.0.0
+  types:
+  - SHORT
+  count: '1'
+  default: 0
+  required: 'no'
+  values:
+    0: Unsafe
+    1: Safe (self-contained, byte-order independent)
+  defined_in:
+  - DNG
+  description: Whether the Exif MakerNote is safe to preserve.
+- code: 50778
+  name: CalibrationIlluminant1
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: ifd0-or-camera-profile-ifd
+  supplement_version: 1.0.0.0
+  types:
+  - SHORT
+  count: '1'
+  default: 0 (unknown)
+  required: 'no'
+  defined_in:
+  - DNG
+  description: >
+    Illuminant for the first color calibration set. Legal values are the Exif LightSource
+    values. DNG 1.6.0.0+ allows 255 (Other) with IlluminantData1 required.
+- code: 50779
+  name: CalibrationIlluminant2
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: ifd0-or-camera-profile-ifd
+  supplement_version: 1.0.0.0
+  types:
+  - SHORT
+  count: '1'
+  default: null
+  required: conditional
+  defined_in:
+  - DNG
+  description: >
+    Illuminant for the optional second color calibration set. Exif LightSource values; if
+    both illuminant 1 and 2 present, neither may be 0. DNG 1.6.0.0+ allows 255 (Other) with
+    IlluminantData2 required.
+- code: 50780
+  name: BestQualityScale
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: raw-ifd
+  supplement_version: 1.0.0.0
+  types:
+  - RATIONAL
+  count: '1'
+  default: 1.0
+  required: 'no'
+  defined_in:
+  - DNG
+  description: Multiplier applied to DefaultScale to achieve the best quality image size.
+- code: 50781
+  name: RawDataUniqueID
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: ifd0
+  supplement_version: 1.0.0.0
+  types:
+  - BYTE
+  count: '16'
+  default: null
+  required: 'no'
+  defined_in:
+  - DNG
+  description: 16-byte unique identifier for the raw image data, stable across renames/metadata
+    changes.
+- code: 50827
+  name: OriginalRawFileName
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: ifd0
+  supplement_version: 1.0.0.0
+  types:
+  - ASCII
+  - BYTE
+  count: Byte count including null
+  default: null
+  required: 'no'
+  defined_in:
+  - DNG
+  description: File name of the original non-DNG raw file this DNG was converted from (UTF-8).
+- code: 50828
+  name: OriginalRawFileData
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: ifd0
+  supplement_version: 1.0.0.0
+  types:
+  - UNDEFINED
+  count: Byte count of embedded data
+  default: null
+  required: 'no'
+  defined_in:
+  - DNG
+  description: >
+    Compressed contents of the original non-DNG raw file, as a sequence of data blocks, always
+    big-endian byte order.
+- code: 50829
+  name: ActiveArea
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: raw-ifd
+  supplement_version: 1.1.0.0
+  types:
+  - SHORT
+  - LONG
+  count: '4'
+  default: 0, 0, ImageLength, ImageWidth
+  required: conditional
+  defined_in:
+  - DNG
+  description: >
+    Rectangle of active (non-masked) sensor pixels: top, left, bottom, right. Required if
+    masked pixels are not trimmed.
+- code: 50830
+  name: MaskedAreas
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: raw-ifd
+  supplement_version: 1.1.0.0
+  types:
+  - SHORT
+  - LONG
+  count: 4 * number of rectangles
+  default: null
+  required: 'no'
+  defined_in:
+  - DNG
+  description: >
+    List of non-overlapping fully-masked rectangles (top,left,bottom,right) usable to measure
+    black level. Not used if black level already subtracted.
+- code: 50831
+  name: AsShotICCProfile
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: ifd0
+  supplement_version: 1.0.0.0
+  types:
+  - UNDEFINED
+  count: Length of ICC profile in bytes
+  default: null
+  required: 'no'
+  defined_in:
+  - DNG
+  description: >
+    ICC profile (with AsShotPreProfileMatrix) giving a default output-referred rendering from
+    camera color space to the ICC PCS.
+- code: 50832
+  name: AsShotPreProfileMatrix
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: ifd0
+  supplement_version: 1.0.0.0
+  types:
+  - SRATIONAL
+  count: 3 * ColorPlanes or ColorPlanes * ColorPlanes
+  default: Identity matrix
+  required: 'no'
+  defined_in:
+  - DNG
+  description: >
+    Matrix applied to camera color space coordinates before the AsShotICCProfile; may reduce
+    dimensionality to 3 if ColorPlanes > 3.
+- code: 50833
+  name: CurrentICCProfile
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: ifd0
+  supplement_version: 1.0.0.0
+  types:
+  - UNDEFINED
+  count: Length of ICC profile in bytes
+  default: null
+  required: 'no'
+  defined_in:
+  - DNG
+  description: Same purpose as AsShotICCProfile but for raw file editors rather than camera
+    makers.
+- code: 50834
+  name: CurrentPreProfileMatrix
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: ifd0
+  supplement_version: 1.0.0.0
+  types:
+  - SRATIONAL
+  count: 3 * ColorPlanes or ColorPlanes * ColorPlanes
+  default: Identity matrix
+  required: 'no'
+  defined_in:
+  - DNG
+  description: Companion matrix to CurrentICCProfile, for raw file editors.
+- code: 50879
+  name: ColorimetricReference
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: ifd0
+  supplement_version: 1.2.0.0
+  types:
+  - SHORT
+  count: '1'
+  default: 0
+  required: 'no'
+  values:
+    0: Scene-referred (DNG 1.2+)
+    1: Output-referred, ICC perceptual dynamic range (DNG 1.2+)
+    2: Output-referred, may be high dynamic range; XYZ may be <0.0 or >1.0 (DNG 1.7+)
+  defined_in:
+  - DNG
+  description: Colorimetric reference for the CIE XYZ values in the DNG color model.
+- code: 50931
+  name: CameraCalibrationSignature
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: ifd0
+  supplement_version: 1.2.0.0
+  types:
+  - ASCII
+  - BYTE
+  count: Length of string including null
+  default: Empty string
+  required: 'no'
+  defined_in:
+  - DNG
+  description: >
+    UTF-8 string associated with CameraCalibration1/2/3; must match a profile's ProfileCalibrationSignature
+    for the calibration tags to be used.
+- code: 50932
+  name: ProfileCalibrationSignature
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: ifd0-or-camera-profile-ifd
+  supplement_version: 1.2.0.0
+  types:
+  - ASCII
+  - BYTE
+  count: Length of string including null
+  default: Empty string
+  required: 'no'
+  defined_in:
+  - DNG
+  description: >
+    UTF-8 string associated with camera profile tags; matched against CameraCalibrationSignature.
+- code: 50933
+  name: ExtraCameraProfiles
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: ifd0
+  supplement_version: 1.2.0.0
+  types:
+  - LONG
+  count: Number of extra camera profiles
+  default: Empty list
+  required: 'no'
+  defined_in:
+  - DNG
+  description: >
+    File offsets to extra Camera Profile IFDs (each begins with BOM, magic 0x4352, IFD offset,
+    then TIFF IFD; offsets relative to the BOM).
+- code: 50934
+  name: AsShotProfileName
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: ifd0
+  supplement_version: 1.2.0.0
+  types:
+  - ASCII
+  - BYTE
+  count: Length of string including null
+  default: null
+  required: 'no'
+  defined_in:
+  - DNG
+  description: UTF-8 name of the "as shot" camera profile, if any.
+- code: 50935
+  name: NoiseReductionApplied
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: raw-ifd
+  supplement_version: 1.2.0.0
+  types:
+  - RATIONAL
+  count: '1'
+  default: 0/0 (unknown)
+  required: 'no'
+  defined_in:
+  - DNG
+  description: >
+    Amount of noise reduction already applied to the raw data (0.0 none .. 1.0 ideal); 0/0
+    = unknown. May also appear in an enhanced IFD.
+- code: 50936
+  name: ProfileName
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: ifd0-or-camera-profile-ifd
+  supplement_version: 1.2.0.0
+  types:
+  - ASCII
+  - BYTE
+  count: Length of string including null
+  default: null
+  required: conditional
+  defined_in:
+  - DNG
+  description: >
+    UTF-8 camera profile name. Optional with one profile; required for all profiles when more
+    than one exists.
+- code: 50937
+  name: ProfileHueSatMapDims
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: ifd0-or-camera-profile-ifd
+  supplement_version: 1.2.0.0
+  types:
+  - LONG
+  count: '3'
+  default: null
+  required: conditional
+  defined_in:
+  - DNG
+  description: >
+    Dimensions (HueDivisions, SaturationDivisions, ValueDivisions) of the HueSatMap tables.
+    HueDivisions>=1, SaturationDivisions>=2, ValueDivisions>=1.
+- code: 50938
+  name: ProfileHueSatMapData1
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: ifd0-or-camera-profile-ifd
+  supplement_version: 1.2.0.0
+  types:
+  - FLOAT
+  count: HueDivisions * SaturationDivisions * ValueDivisions * 3
+  default: null
+  required: 'no'
+  defined_in:
+  - DNG
+  description: >
+    First HueSatMap table: entries of (hue shift deg, saturation scale, value scale), nested
+    value/hue/saturation loop order. Zero-saturation entries must have value scale 1.0.
+- code: 50939
+  name: ProfileHueSatMapData2
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: ifd0-or-camera-profile-ifd
+  supplement_version: 1.2.0.0
+  types:
+  - FLOAT
+  count: HueDivisions * SaturationDivisions * ValueDivisions * 3
+  default: null
+  required: 'no'
+  defined_in:
+  - DNG
+  description: Second HueSatMap table (same format as ProfileHueSatMapData1).
+- code: 50940
+  name: ProfileToneCurve
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: ifd0-or-camera-profile-ifd
+  supplement_version: 1.2.0.0
+  types:
+  - FLOAT
+  count: Samples * 2
+  default: null
+  required: 'no'
+  defined_in:
+  - DNG
+  description: >
+    Default tone curve as (x,y) pairs in linear gamma, strictly increasing x. SDR: endpoints
+    (0,0) and (1,1). HDR: first (0,0), applied in encoded space, slope-extended beyond.
+- code: 50941
+  name: ProfileEmbedPolicy
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: ifd0-or-camera-profile-ifd
+  supplement_version: 1.2.0.0
+  types:
+  - LONG
+  count: '1'
+  default: 0
+  required: 'no'
+  values:
+    0: Allow copying (any DNG); may not process non-DNG files
+    1: Embed if used
+    2: Embed never (stored profiles only)
+    3: No restrictions
+  defined_in:
+  - DNG
+  description: Usage rules for the camera profile.
+- code: 50942
+  name: ProfileCopyright
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: ifd0-or-camera-profile-ifd
+  supplement_version: 1.2.0.0
+  types:
+  - ASCII
+  - BYTE
+  count: Length of string including null
+  default: null
+  required: 'no'
+  defined_in:
+  - DNG
+  description: >
+    UTF-8 copyright information for the camera profile; always preserved with other profile
+    tags.
+- code: 50964
+  name: ForwardMatrix1
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: ifd0-or-camera-profile-ifd
+  supplement_version: 1.2.0.0
+  types:
+  - SRATIONAL
+  count: 3 * ColorPlanes
+  default: null
+  required: 'no'
+  defined_in:
+  - DNG
+  description: Matrix mapping white-balanced camera colors to XYZ D50 under illuminant 1.
+- code: 50965
+  name: ForwardMatrix2
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: ifd0-or-camera-profile-ifd
+  supplement_version: 1.2.0.0
+  types:
+  - SRATIONAL
+  count: 3 * ColorPlanes
+  default: null
+  required: 'no'
+  defined_in:
+  - DNG
+  description: Matrix mapping white-balanced camera colors to XYZ D50 under illuminant 2.
+- code: 50966
+  name: PreviewApplicationName
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: preview-ifd
+  supplement_version: 1.2.0.0
+  types:
+  - ASCII
+  - BYTE
+  count: Length of string including null
+  default: null
+  required: 'no'
+  defined_in:
+  - DNG
+  description: UTF-8 name of the application that created the preview in this IFD.
+- code: 50967
+  name: PreviewApplicationVersion
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: preview-ifd
+  supplement_version: 1.2.0.0
+  types:
+  - ASCII
+  - BYTE
+  count: Length of string including null
+  default: null
+  required: 'no'
+  defined_in:
+  - DNG
+  description: UTF-8 version of the application that created the preview.
+- code: 50968
+  name: PreviewSettingsName
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: preview-ifd
+  supplement_version: 1.2.0.0
+  types:
+  - ASCII
+  - BYTE
+  count: Length of string including null
+  default: null
+  required: 'no'
+  defined_in:
+  - DNG
+  description: UTF-8 name of the conversion settings used for the preview.
+- code: 50969
+  name: PreviewSettingsDigest
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: preview-ifd
+  supplement_version: 1.2.0.0
+  types:
+  - BYTE
+  count: '16'
+  default: null
+  required: 'no'
+  defined_in:
+  - DNG
+  description: Unique ID (e.g. MD5) of the conversion settings used to render the preview.
+- code: 50970
+  name: PreviewColorSpace
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: preview-ifd
+  supplement_version: 1.2.0.0
+  types:
+  - LONG
+  count: '1'
+  default: sRGB for color previews, Gray Gamma 2.2 for monochrome previews
+  required: 'no'
+  values:
+    0: Unknown
+    1: Gray Gamma 2.2
+    2: sRGB
+    3: Adobe RGB
+    4: ProPhoto RGB
+  defined_in:
+  - DNG
+  description: Color space in which the rendered preview is stored.
+- code: 50971
+  name: PreviewDateTime
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: preview-ifd
+  supplement_version: 1.2.0.0
+  types:
+  - ASCII
+  count: Length of string including null
+  default: null
+  required: 'no'
+  defined_in:
+  - DNG
+  description: ISO 8601 date/time at which the preview was rendered.
+- code: 50972
+  name: RawImageDigest
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: ifd0
+  supplement_version: 1.2.0.0
+  types:
+  - BYTE
+  count: '16'
+  default: null
+  required: 'no'
+  defined_in:
+  - DNG
+  description: MD5 digest of raw image data (row-scan, zero-padded 16/32-bit pixels, little-endian).
+- code: 50973
+  name: OriginalRawFileDigest
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: ifd0
+  supplement_version: 1.2.0.0
+  types:
+  - BYTE
+  count: '16'
+  default: null
+  required: 'no'
+  defined_in:
+  - DNG
+  description: MD5 digest of the data in the OriginalRawFileData tag.
+- code: 50974
+  name: SubTileBlockSize
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: raw-ifd
+  supplement_version: 1.2.0.0
+  types:
+  - SHORT
+  - LONG
+  count: '2'
+  default: 1, 1
+  required: 'no'
+  defined_in:
+  - DNG
+  description: >
+    Groups pixels within a tile into rectangular blocks (rows, cols) stored in row-scan order.
+    Non-default value requires DNGBackwardVersion >= 1.2.0.0.
+- code: 50975
+  name: RowInterleaveFactor
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: raw-ifd
+  supplement_version: 1.2.0.0
+  types:
+  - SHORT
+  - LONG
+  count: '1'
+  default: 1
+  required: 'no'
+  defined_in:
+  - DNG
+  description: Number of interleaved row fields. Non-default requires DNGBackwardVersion >=
+    1.2.0.0.
+- code: 50981
+  name: ProfileLookTableDims
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: ifd0-or-camera-profile-ifd
+  supplement_version: 1.2.0.0
+  types:
+  - LONG
+  count: '3'
+  default: null
+  required: 'no'
+  defined_in:
+  - DNG
+  description: >
+    Dimensions (HueDivisions, SaturationDivisions, ValueDivisions) of the default look table.
+    HueDivisions>=1, SaturationDivisions>=2, ValueDivisions>=1.
+- code: 50982
+  name: ProfileLookTableData
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: ifd0-or-camera-profile-ifd
+  supplement_version: 1.2.0.0
+  types:
+  - FLOAT
+  count: HueDivisions * SaturationDivisions * ValueDivisions * 3
+  default: null
+  required: 'no'
+  defined_in:
+  - DNG
+  description: >
+    Default "look" table (same format as HueSatMap), applied after exposure/fill but before
+    the tone curve. Zero-saturation entries must have value scale 1.0.
+- code: 51008
+  name: OpcodeList1
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: raw-ifd
+  supplement_version: 1.3.0.0
+  types:
+  - UNDEFINED
+  count: Variable
+  default: Empty List
+  required: 'no'
+  defined_in:
+  - DNG
+  description: >
+    Opcodes applied to the raw image as read directly from the file (big-endian opcode format).
+- code: 51009
+  name: OpcodeList2
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: raw-ifd
+  supplement_version: 1.3.0.0
+  types:
+  - UNDEFINED
+  count: Variable
+  default: Empty List
+  required: 'no'
+  defined_in:
+  - DNG
+  description: Opcodes applied just after the raw image is mapped to linear reference values.
+- code: 51022
+  name: OpcodeList3
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: raw-ifd
+  supplement_version: 1.3.0.0
+  types:
+  - UNDEFINED
+  count: Variable
+  default: Empty List
+  required: 'no'
+  defined_in:
+  - DNG
+  description: Opcodes applied just after the raw image is demosaiced.
+- code: 51041
+  name: NoiseProfile
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: raw-ifd
+  supplement_version: 1.3.0.0
+  types:
+  - DOUBLE
+  count: 2 or 2 * ColorPlanes
+  default: Estimated from BaselineNoise
+  required: 'no'
+  defined_in:
+  - DNG
+  description: >
+    Noise model parameters (S_i, O_i) per plane; N(x)=sqrt(S_i*x+O_i). S_i>0, O_i>=0. May
+    appear in an enhanced IFD. Order follows CFAPlaneColor.
+- code: 51089
+  name: OriginalDefaultFinalSize
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: ifd0
+  supplement_version: 1.4.0.0
+  types:
+  - SHORT
+  - LONG
+  count: '2'
+  default: DefaultCropSize * DefaultScale of this file
+  required: 'no'
+  defined_in:
+  - DNG
+  description: For a proxy DNG, the default final size (width,length) of the larger original
+    DNG.
+- code: 51090
+  name: OriginalBestQualityFinalSize
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: ifd0
+  supplement_version: 1.4.0.0
+  types:
+  - SHORT
+  - LONG
+  count: '2'
+  default: OriginalDefaultFinalSize, else DefaultCropSize*DefaultScale*BestQualityScale
+  required: 'no'
+  defined_in:
+  - DNG
+  description: For a proxy DNG, the best-quality final size (width,length) of the larger original
+    DNG.
+- code: 51091
+  name: OriginalDefaultCropSize
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: ifd0
+  supplement_version: 1.4.0.0
+  types:
+  - SHORT
+  - LONG
+  - RATIONAL
+  count: '2'
+  default: OriginalDefaultFinalSize, else this file's DefaultCropSize
+  required: 'no'
+  defined_in:
+  - DNG
+  description: For a proxy DNG, the DefaultCropSize (width,length) of the larger original
+    DNG.
+- code: 51107
+  name: ProfileHueSatMapEncoding
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: ifd0-or-camera-profile-ifd
+  supplement_version: 1.4.0.0
+  types:
+  - LONG
+  count: '1'
+  default: 0
+  required: 'no'
+  values:
+    0: Linear encoding
+    1: sRGB encoding
+  defined_in:
+  - DNG
+  description: Indexing encoding for a 3D HueSatMap (not applicable to 2.5D where ValueDivisions=1).
+- code: 51108
+  name: ProfileLookTableEncoding
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: ifd0-or-camera-profile-ifd
+  supplement_version: 1.4.0.0
+  types:
+  - LONG
+  count: '1'
+  default: 0
+  required: 'no'
+  values:
+    0: Linear encoding
+    1: sRGB encoding
+  defined_in:
+  - DNG
+  description: Indexing encoding for a 3D LookTable (not applicable to 2.5D where ValueDivisions=1).
+- code: 51109
+  name: BaselineExposureOffset
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: ifd0-or-camera-profile-ifd
+  supplement_version: 1.4.0.0
+  types:
+  - RATIONAL
+  count: '1'
+  default: 0.0
+  required: 'no'
+  defined_in:
+  - DNG
+  description: >
+    EV amount added to BaselineExposure during rendering (can be negative per examples; declared
+    type is RATIONAL in the spec).
+- code: 51110
+  name: DefaultBlackRender
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: ifd0-or-camera-profile-ifd
+  supplement_version: 1.4.0.0
+  types:
+  - LONG
+  count: '1'
+  default: 0
+  required: 'no'
+  values:
+    0: Auto (raw converter performs black subtraction)
+    1: None (no black subtraction)
+  defined_in:
+  - DNG
+  description: Hint for how to handle the black point during rendering.
+- code: 51111
+  name: NewRawImageDigest
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: ifd0
+  supplement_version: 1.4.0.0
+  types:
+  - BYTE
+  count: '16'
+  default: null
+  required: 'no'
+  defined_in:
+  - DNG
+  description: >
+    Modified MD5 digest of raw image data; multiprocessor-friendly and supports lossy compression
+    (algorithm in Adobe DNG SDK).
+- code: 51112
+  name: RawToPreviewGain
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: preview-ifd
+  supplement_version: 1.4.0.0
+  types:
+  - DOUBLE
+  count: '1'
+  default: 1.0
+  required: 'no'
+  defined_in:
+  - DNG
+  description: Gain multiplier between the main raw IFD and the preview IFD containing this
+    tag.
+- code: 51125
+  name: DefaultUserCrop
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: raw-ifd
+  supplement_version: 1.4.0.0
+  types:
+  - RATIONAL
+  count: '4'
+  default: 0.0, 0.0, 1.0, 1.0
+  required: 'no'
+  defined_in:
+  - DNG
+  description: >
+    Default user crop rectangle (Top,Left,Bottom,Right) in relative coordinates; 0<=Top<Bottom
+    <=1, 0<=Left<Right<=1.
+- code: 51177
+  name: DepthFormat
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: ifd0
+  supplement_version: 1.5.0.0
+  types:
+  - SHORT
+  count: '1'
+  default: 0
+  required: 'no'
+  values:
+    0: Unknown
+    1: Linear (0=near, max=far)
+    2: Inverse (stored inverse linearly; 0=near, max=far)
+  defined_in:
+  - DNG
+  description: Encoding of depth data in the file.
+- code: 51178
+  name: DepthNear
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: ifd0
+  supplement_version: 1.5.0.0
+  types:
+  - RATIONAL
+  count: '1'
+  default: 0/0 (unknown)
+  required: 'no'
+  defined_in:
+  - DNG
+  description: Distance from camera represented by the zero value in the depth map. 0/0 =
+    unknown.
+- code: 51179
+  name: DepthFar
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: ifd0
+  supplement_version: 1.5.0.0
+  types:
+  - RATIONAL
+  count: '1'
+  default: 0/0 (unknown)
+  required: 'no'
+  defined_in:
+  - DNG
+  description: >
+    Distance from camera represented by the maximum depth value. 0/0 = unknown; 1/0 = infinity
+    (valid for unknown and inverse formats).
+- code: 51180
+  name: DepthUnits
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: ifd0
+  supplement_version: 1.5.0.0
+  types:
+  - SHORT
+  count: '1'
+  default: 0
+  required: 'no'
+  values:
+    0: Unknown
+    1: Meters
+  defined_in:
+  - DNG
+  description: Measurement units for DepthNear and DepthFar.
+- code: 51181
+  name: DepthMeasureType
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: ifd0
+  supplement_version: 1.5.0.0
+  types:
+  - SHORT
+  count: '1'
+  default: 0
+  required: 'no'
+  values:
+    0: Unknown
+    1: Optical Axis
+    2: Optical Ray (through each pixel)
+  defined_in:
+  - DNG
+  description: Measurement geometry for the depth map.
+- code: 51182
+  name: EnhanceParams
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: enhanced-ifd
+  supplement_version: 1.5.0.0
+  types:
+  - ASCII
+  count: String length including null
+  default: null
+  required: conditional
+  defined_in:
+  - DNG
+  description: >
+    Documents how enhanced image data was processed; required non-null in an enhanced IFD
+    and should begin with the company name.
+- code: 52525
+  name: ProfileGainTableMap
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: raw-ifd
+  supplement_version: 1.6.0.0
+  types:
+  - UNDEFINED
+  count: 64 + (4 * MapPointsV * MapPointsH * MapPointsN)
+  default: null
+  required: 'no'
+  defined_in:
+  - DNG
+  description: >
+    Spatially varying RGB gain tables (32-bit float) applied in RIMM color space after BaselineExposure.
+    Superseded by ProfileGainTableMap2 if both present. (Spec text says Raw IFD, but errata:
+    meaningful for all scene-referred IFDs.)
+- code: 52526
+  name: SemanticName
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: semantic-mask-ifd
+  supplement_version: 1.6.0.0
+  types:
+  - ASCII
+  count: String length including null
+  default: null
+  required: 'yes'
+  defined_in:
+  - DNG
+  description: >
+    String identifying the semantic mask; strongly recommended to be unique across masks.
+    Required tag in a semantic mask IFD.
+- code: 52528
+  name: SemanticInstanceID
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: semantic-mask-ifd
+  supplement_version: 1.6.0.0
+  types:
+  - ASCII
+  count: String length including null
+  default: null
+  required: 'no'
+  defined_in:
+  - DNG
+  description: >
+    String identifying a specific instance in a semantic mask; relates content across masks
+    within one DNG file (not across files).
+- code: 52529
+  name: CalibrationIlluminant3
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: ifd0-or-camera-profile-ifd
+  supplement_version: 1.6.0.0
+  types:
+  - SHORT
+  count: '1'
+  default: 0 (unknown)
+  required: 'no'
+  defined_in:
+  - DNG
+  description: >
+    Illuminant for the third color calibration set (Exif LightSource values; 255=Other needs
+    IlluminantData3).
+- code: 52530
+  name: CameraCalibration3
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: ifd0
+  supplement_version: 1.6.0.0
+  types:
+  - SRATIONAL
+  count: ColorPlanes * ColorPlanes
+  default: Identity matrix
+  required: 'no'
+  defined_in:
+  - DNG
+  description: Calibration matrix from reference to individual camera native space under illuminant
+    3.
+- code: 52531
+  name: ColorMatrix3
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: ifd0-or-camera-profile-ifd
+  supplement_version: 1.6.0.0
+  types:
+  - SRATIONAL
+  count: ColorPlanes * 3
+  default: null
+  required: conditional
+  defined_in:
+  - DNG
+  description: >
+    Matrix converting XYZ to reference camera native color space under the third illuminant.
+    Required if CalibrationIlluminant3 is included.
+- code: 52532
+  name: ForwardMatrix3
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: ifd0-or-camera-profile-ifd
+  supplement_version: 1.6.0.0
+  types:
+  - SRATIONAL
+  count: ColorPlanes * 3
+  default: null
+  required: 'no'
+  defined_in:
+  - DNG
+  description: Matrix mapping white-balanced camera colors to XYZ D50 under illuminant 3.
+- code: 52533
+  name: IlluminantData1
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: ifd0-or-camera-profile-ifd
+  supplement_version: 1.6.0.0
+  types:
+  - UNDEFINED
+  count: See structure (x-y or spectral power distribution)
+  default: null
+  required: conditional
+  defined_in:
+  - DNG
+  description: >
+    Custom illuminant 1 data; required when CalibrationIlluminant1=255. DataType 0 = x-y chromaticity
+    (x,y RATIONAL); DataType 1 = spectral power distribution (NumLambda>=2, MinLambda, LambdaSpacing,
+    values).
+- code: 52534
+  name: IlluminantData2
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: ifd0-or-camera-profile-ifd
+  supplement_version: 1.6.0.0
+  types:
+  - UNDEFINED
+  count: See structure (same as IlluminantData1)
+  default: null
+  required: conditional
+  defined_in:
+  - DNG
+  description: Custom illuminant 2 data; required when CalibrationIlluminant2=255.
+- code: 52535
+  name: IlluminantData3
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: ifd0-or-camera-profile-ifd
+  supplement_version: 1.6.0.0
+  types:
+  - UNDEFINED
+  count: See structure (same as IlluminantData1)
+  default: null
+  required: conditional
+  defined_in:
+  - DNG
+  description: Custom illuminant 3 data; required when CalibrationIlluminant3=255.
+  notes: >
+    DNG 1.7.1 prints "Tag 52535 (CD37.H)". libtiff (through 4.7.x) defines
+    TIFFTAG_ILLUMINANTDATA3 as 53535 - a transposition typo - so it
+    reads/writes this tag under the wrong code (see gaps.md).
+- code: 52536
+  name: MaskSubArea
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: semantic-mask-ifd
+  supplement_version: 1.6.0.0
+  types:
+  - LONG
+  count: '4'
+  default: 0, 0, MaskWidth, MaskHeight
+  required: 'no'
+  defined_in:
+  - DNG
+  description: >
+    Crop rectangle of this IFD's mask relative to the main image: T_crop, L_crop, W_full (uncropped
+    width), H_full (uncropped height). Pixels outside are 0.
+- code: 52537
+  name: ProfileHueSatMapData3
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: ifd0-or-camera-profile-ifd
+  supplement_version: 1.6.0.0
+  types:
+  - FLOAT
+  count: HueDivisions * SaturationDivisions * ValueDivisions * 3
+  default: null
+  required: 'no'
+  defined_in:
+  - DNG
+  description: Third HueSatMap table (same format as ProfileHueSatMapData1).
+- code: 52538
+  name: ReductionMatrix3
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: ifd0-or-camera-profile-ifd
+  supplement_version: 1.6.0.0
+  types:
+  - SRATIONAL
+  count: ColorPlanes * 3
+  default: null
+  required: 'no'
+  defined_in:
+  - DNG
+  description: >
+    Dimensionality reduction matrix under illuminant 3. Only usable if ColorPlanes > 3. Note
+    spec Count text reads ColorPlanes*3 (row scan order).
+- code: 52543
+  name: RGBTables
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: ifd0-or-camera-profile-ifd
+  supplement_version: 1.6.0.0
+  types:
+  - UNDEFINED
+  count: See structure (NumTables, CompositeMethod, per-table data)
+  default: null
+  required: 'no'
+  defined_in:
+  - DNG
+  description: >
+    RGB-to-RGB color lookup tables associated with Semantic Masks. NumTables 1..20; CompositeMethod
+    0 (Weighted Sum) or 1 (Sequential); per table Divisions 2..32, PixelType 0/1/2, GammaEncoding
+    0..4, ColorPrimaries 0..4, GamutExtension 0/1. IFD0 in 1.6; IFD0 or profile in 1.7 (profile
+    takes precedence).
+- code: 52544
+  name: ProfileGainTableMap2
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: ifd0-or-camera-profile-ifd
+  supplement_version: 1.7.0.0
+  types:
+  - UNDEFINED
+  count: 80 + (B * MapPointsV * MapPointsH * MapPointsN)
+  default: null
+  required: 'no'
+  defined_in:
+  - DNG
+  description: >
+    Extended ProfileGainTableMap adding DataType (0=uint8,1=uint16,2=float16,3=float32), Gamma
+    (0.25..4.0), GainMin, GainMax. Supersedes ProfileGainTableMap when both present.
+- code: 52547
+  name: ColumnInterleaveFactor
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: raw-ifd
+  supplement_version: 1.7.1.0
+  types:
+  - SHORT
+  - LONG
+  count: '1'
+  default: 1
+  required: 'no'
+  defined_in:
+  - DNG
+  description: >
+    Number of interleaved column fields. Non-default requires DNGBackwardVersion >= 1.7.1.0.
+    Usable with RowInterleaveFactor to store CFA data as subimages.
+- code: 52548
+  name: ImageSequenceInfo
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: ifd0
+  supplement_version: 1.7.0.0
+  types:
+  - UNDEFINED
+  count: Byte count of data
+  default: null
+  required: 'no'
+  defined_in:
+  - DNG
+  description: >
+    Informative: relates this image to others in a sequence (SequenceID, SequenceType, Frame
+    Info, Index, Count, Final).
+- code: 52550
+  name: ImageStats
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: raw-ifd
+  supplement_version: 1.7.0.0
+  types:
+  - UNDEFINED
+  count: Byte count of data
+  default: null
+  required: 'no'
+  defined_in:
+  - DNG
+  description: >
+    Informative statistical information about pixel values (child-tag table, big-endian, normalized
+    0.0 black..1.0 white). Values are approximate.
+- code: 52551
+  name: ProfileDynamicRange
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: ifd0-or-camera-profile-ifd
+  supplement_version: 1.7.0.0
+  types:
+  - UNDEFINED
+  count: '8'
+  default: Optional (Standard Dynamic Range)
+  required: 'no'
+  defined_in:
+  - DNG
+  description: >
+    Intended output dynamic range of a profile: SHORT Version(=1), SHORT DynamicRange (0=SDR,
+    1=HDR), FLOAT HintMaxOutputValue. HDR alters math for several profile tags.
+- code: 52552
+  name: ProfileGroupName
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: ifd0-or-camera-profile-ifd
+  supplement_version: 1.7.0.0
+  types:
+  - ASCII
+  - BYTE
+  count: Length of string including null
+  default: null
+  required: 'no'
+  defined_in:
+  - DNG
+  description: UTF-8 group name associating related camera profiles (e.g. SDR/HDR variants).
+- code: 52553
+  name: JXLDistance
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: jxl-ifd
+  supplement_version: 1.7.1.0
+  types:
+  - FLOAT
+  count: '1'
+  default: null
+  required: 'no'
+  defined_in:
+  - DNG
+  description: JPEG XL distance parameter used to encode this IFD. 0.0 = lossless; >0.0 =
+    lossy.
+- code: 52554
+  name: JXLEffort
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: jxl-ifd
+  supplement_version: 1.7.1.0
+  types:
+  - LONG
+  count: '1'
+  default: null
+  required: 'no'
+  defined_in:
+  - DNG
+  description: JPEG XL effort parameter (1 low .. 9 high) used to encode this IFD.
+- code: 52555
+  name: JXLDecodeSpeed
+  since: DNG
+  last: null
+  status: current
+  conformance: DNG
+  container: both
+  location: jxl-ifd
+  supplement_version: 1.7.1.0
+  types:
+  - LONG
+  count: '1'
+  default: null
+  required: 'no'
+  defined_in:
+  - DNG
+  description: JPEG XL decode speed parameter (1 slow .. 4 fast) used to encode this IFD.

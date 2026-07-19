@@ -1,0 +1,1701 @@
+# =============================================================================
+# TIFF tag registry, unified across all specification revisions and supplements
+# =============================================================================
+#
+# One entry per tag code. This file is the canonical machine-readable tag
+# table; tags.md is generated from it. Cross-tag validity rules live in
+# constraints.yaml (DEP-*); behavioral per-tag requirements live in
+# tag-requirements.md (TAG-<code>-NN).
+#
+# Fields:
+#   code         decimal tag code
+#   name         current canonical name (see name_history for renames)
+#   since        first specification defining the tag: a core revision
+#                ("4.0", "5.0", "6.0") or a supplement ID (PM6, PS, TN2, TN3,
+#                BIGTIFF - all of which imply the TIFF 6.0 era)
+#   last         last core revision in which the tag was valid; null = current
+#   status       current | deprecated | retired | draft-proposal
+#   conformance  baseline | extension | <supplement ID>  (classification as of
+#                TIFF 6.0; earlier classifications noted in `notes`)
+#   container    classic | bigtiff | both
+#   location     recorded only where a source document restricts placement
+#                (e.g. "ifd0" = 0th/primary IFD only, per XMP Part 3 for the
+#                metadata-carrier and Exif-pointer tags). Absent = any IFD of
+#                the primary chain. Exif/GPS/Interop-IFD-resident tags live in
+#                tags-exif.yaml; DNG tags in tags-dng.yaml; TIFF/FX tags in
+#                tags-fx.yaml - each with its own location vocabulary.
+#   types        allowed TIFF field types (current spec)
+#   bigtiff_types  additional types allowed in a BigTIFF container, if any
+#   type_history / name_history  changes across revisions
+#   count        value count; expression where variable (SPP = SamplesPerPixel)
+#   default      default value; null = no default
+#   required     no | yes | conditional  (as of TIFF 6.0; per-class detail in
+#                image-classes.md and constraints.yaml)
+#   values       enumerated values. Simple form `value: meaning`, or rich form
+#                `value: {meaning, since, status}` where values were added or
+#                deprecated over time. Bit-flag fields use keys bit0, bit1...
+#   defined_in   source extractions containing this tag's per-document entry
+#                (see sources/<DOC>.yaml, which carries section/page cites)
+#   notes        history, ambiguities, known spec inconsistencies
+#
+# Requirement IDs citable against this file: each entry implies the generic
+# validation rules TAG-<code>-TYPE (field type must be one of `types`),
+# TAG-<code>-COUNT (count must match), TAG-<code>-VALUE (value must be an
+# allowed enumerated value), evaluated per the container and version in use.
+# =============================================================================
+
+tags:
+  - code: 254
+    name: NewSubfileType
+    since: "5.0"
+    last: null
+    status: current
+    conformance: baseline
+    container: both
+    types: [LONG]
+    count: "1"
+    default: 0
+    required: no
+    values:
+      bit0: "Image is a reduced-resolution version of another image in this file"
+      bit1: "Image is a single page of a multi-page image (see PageNumber 297)"
+      bit2: "Image is a transparency mask for another image in this file (PhotometricInterpretation must be 4)"
+      bit3: {meaning: "Depth map (value 8 = highest-resolution, 9 = reduced-resolution depth map)", since: DNG, conformance: DNG, notes: "DNG 1.5+"}
+      bit4: {meaning: "TIFF/FX: MRC-related IFD (value 16 = MRC child IFD, 18 = MRC primary IFD); DNG 1.5+ reuses the bit as value 16 = enhanced image data", since: TFX, conformance: TFX, notes: "Bit 4 meaning is domain-dependent (fax MRC vs DNG enhanced image); disambiguate via FaxProfile (402) / DNGVersion (50706)"}
+      bit16: {meaning: "DNG qualifier bit: value 65537 (0x10001) = alternate/non-primary rendered preview, 65540 (0x10004) = semantic mask", since: DNG, conformance: DNG, notes: "DNG 1.2+ (65537), 1.6+ (65540)"}
+    defined_in: [T5, T6B, TFX, DNG]
+    notes: >
+      Replaces SubfileType (255). TIFF/FX requires the field to be written
+      explicitly on every fax page; DNG uses the value to assign IFD roles
+      (raw/preview/enhanced/depth/semantic-mask), see tags-dng.yaml and the
+      DEP-160 group.
+
+  - code: 255
+    name: SubfileType
+    since: "4.0"
+    last: null
+    status: deprecated
+    conformance: baseline
+    container: both
+    types: [SHORT]
+    count: "1"
+    default: null
+    required: no
+    values:
+      1: "Full-resolution image data"
+      2: "Reduced-resolution image data"
+      3: "Single page of a multi-page image (see PageNumber 297)"
+    defined_in: [T4, T5, T6B]
+    notes: >
+      Deprecated in favour of NewSubfileType (254) from revision 5.0 onward.
+      In TIFF 4.0 this was the only subfile classification and values 1/2
+      made ImageWidth/ImageLength/StripOffsets required.
+
+  - code: 256
+    name: ImageWidth
+    since: "4.0"
+    last: null
+    status: current
+    conformance: baseline
+    container: both
+    types: [SHORT, LONG]
+    count: "1"
+    default: null
+    required: yes
+    type_history:
+      - {version: "4.0", types: [SHORT], notes: "Formal definition SHORT only; §3 prose already claims SHORT or LONG (internal inconsistency, see sources/T4.yaml)"}
+      - {version: "5.0", types: [SHORT, LONG]}
+    defined_in: [T4, T5, T6B]
+
+  - code: 257
+    name: ImageLength
+    since: "4.0"
+    last: null
+    status: current
+    conformance: baseline
+    container: both
+    types: [SHORT, LONG]
+    count: "1"
+    default: null
+    required: yes
+    type_history:
+      - {version: "4.0", types: [SHORT], notes: "Same inconsistency as ImageWidth (256)"}
+      - {version: "5.0", types: [SHORT, LONG]}
+    defined_in: [T4, T5, T6B]
+
+  - code: 258
+    name: BitsPerSample
+    since: "4.0"
+    last: null
+    status: current
+    conformance: baseline
+    container: both
+    types: [SHORT]
+    count: "SPP"
+    default: 1
+    required: conditional
+    defined_in: [T4, T5, T6B, TN3]
+    notes: >
+      Baseline allows 1 (bilevel), 4/8 (grayscale, palette), 8,8,8 (RGB).
+      Larger and mixed depths are extensions. TN3 adds 16 and 24 as valid
+      widths when SampleFormat (339) = 3 (reduced-precision floating point).
+
+  - code: 259
+    name: Compression
+    since: "4.0"
+    last: null
+    status: current
+    conformance: baseline
+    container: both
+    types: [SHORT]
+    count: "1"
+    default: 1
+    required: no
+    count_history:
+      - {version: "4.0", count: "SPP", notes: "TIFF 4.0 allowed one value per sample; 5.0 onward count = 1"}
+      - {version: "5.0", count: "1"}
+    values:
+      1: {meaning: "No compression", since: "4.0"}
+      2: {meaning: "CCITT Group 3 1-D Modified Huffman RLE (bilevel only)", since: "4.0"}
+      3: {meaning: "CCITT T.4 bilevel encoding (Group 3 fax); see T4Options (292)", since: "4.0", conformance: extension}
+      4: {meaning: "CCITT T.6 bilevel encoding (Group 4 fax); see T6Options (293)", since: "4.0", conformance: extension}
+      5: {meaning: "LZW", since: "5.0", conformance: extension}
+      6: {meaning: "JPEG per TIFF 6.0 Section 22 ('old-style'); deprecated by TN2, number reserved indefinitely", since: "6.0", status: deprecated, conformance: extension}
+      7: {meaning: "JPEG: each strip/tile is a complete ISO/IEC 10918-1 datastream; see JPEGTables (347)", since: "TN2", conformance: TN2}
+      8: {meaning: "Deflate (zlib data format, RFC 1950/1951)", since: "PS", conformance: PS}
+      9: {meaning: "JBIG per the ITU-T T.85 profile of T.82 (fax Profile J); see T82Options (435)", since: TFX, conformance: TFX}
+      10: {meaning: "ITU-T T.43 color/grayscale representation using T.82 JBIG coding (fax Profile L)", since: TFX, conformance: TFX}
+      32771: {meaning: "No compression, word-aligned rows", since: "4.0", last: "4.0", status: retired}
+      32773: {meaning: "PackBits byte-oriented RLE", since: "4.0"}
+      34676: {meaning: "SGILOG adaptive run-length encoding for LogLuv/LogL HDR data (PhotometricInterpretation 32844/32845)", since: LLV, conformance: LLV}
+      34677: {meaning: "SGILOG24 packing for the 24-bit LogLuv encoding", since: LLV, conformance: LLV}
+      34892: {meaning: "Lossy baseline-DCT JPEG for 8-bit LinearRaw/PhotometricMask data (DNG 1.4+)", since: DNG, conformance: DNG}
+      52546: {meaning: "JPEG XL (ISO/IEC 18181-1); DNG 1.7+", since: DNG, conformance: DNG}
+    defined_in: [T4, T5, T6B, T6X, TN2, PS, TFX, LLV, DNG]
+    notes: >
+      Baseline readers must support 1, 2, 32773. Value 32946 is a
+      widely-used unofficial synonym for 8 (Deflate) predating the PS
+      technote; it appears in no document in this registry but is accepted
+      by libtiff (record as vendor deviation, not a requirement).
+
+  - code: 262
+    name: PhotometricInterpretation
+    since: "4.0"
+    last: null
+    status: current
+    conformance: baseline
+    container: both
+    types: [SHORT]
+    count: "1"
+    default: null
+    required: yes
+    values:
+      0: {meaning: "WhiteIsZero (min-is-white grayscale/bilevel)", since: "4.0"}
+      1: {meaning: "BlackIsZero (min-is-black grayscale/bilevel)", since: "4.0"}
+      2: {meaning: "RGB", since: "4.0"}
+      3: {meaning: "Palette color (requires ColorMap 320, SamplesPerPixel = 1)", since: "5.0"}
+      4: {meaning: "Transparency mask (SamplesPerPixel = 1, BitsPerSample = 1)", since: "5.0"}
+      5: {meaning: "Separated, usually CMYK (see InkSet 332)", since: "6.0", conformance: extension}
+      6: {meaning: "YCbCr (see 529-532)", since: "6.0", conformance: extension}
+      8: {meaning: "1976 CIE L*a*b*, a*/b* signed -128..127 encoding", since: "6.0", conformance: extension}
+      9: {meaning: "ICCLab: CIE L*a*b* with a*/b* offset to 0..255 (a*+128); ICC profile convention", since: "PM6", conformance: PM6}
+      10: {meaning: "ITULab: CIE L*a*b* per ITU-T T.42, unsigned sample encoding with ranges/offsets given by Decode (433); fax Profiles C/L/M", since: TFX, conformance: TFX}
+      32803: {meaning: "CFA (color filter array, DNG raw IFD); requires CFARepeatPatternDim (33421) and CFAPattern (33422)", since: DNG, conformance: DNG}
+      32844: {meaning: "LOGL: grayscale log-luminance HDR encoding (16-bit LogL); pairs with Compression 34676", since: LLV, conformance: LLV}
+      32845: {meaning: "LOGLUV: log-luminance + uv chrominance HDR encoding (24- or 32-bit); pairs with Compression 34676/34677", since: LLV, conformance: LLV}
+      34892: {meaning: "LinearRaw (DNG raw/enhanced/reduced-resolution IFDs)", since: DNG, conformance: DNG}
+      51177: {meaning: "Depth map (DNG 1.5+ depth IFDs)", since: DNG, conformance: DNG}
+      52527: {meaning: "PhotometricMask (DNG 1.6+ semantic mask IFDs)", since: DNG, conformance: DNG}
+    defined_in: [T4, T5, T6B, T6X, PM6, PS, TFX, LLV, DNG]
+    notes: >
+      Required since 5.0 (TIFF 4.0 made it optional and told readers to
+      ignore it when the compression scheme implies an interpretation).
+      Value 10, previously only referenced in ecosystem practice, is
+      normatively defined by RFC 3949 (TFX). The LOGL/LOGLUV numeric codes
+      are not printed in the LLV paper itself; they are the SGI/libtiff
+      registered codes (see sources/LLV.yaml notes).
+
+  - code: 263
+    name: Threshholding
+    since: "4.0"
+    last: null
+    status: current
+    conformance: baseline
+    container: both
+    types: [SHORT]
+    count: "1"
+    default: 1
+    required: no
+    values:
+      1: "No dithering or halftoning applied (line art)"
+      2: "Ordered dither or halftone applied (see CellWidth 264, CellLength 265)"
+      3: "Randomized process (e.g. error diffusion) applied"
+    defined_in: [T4, T5, T6B]
+    notes: Listed as "No Longer Recommended" in 5.0 but restored as baseline in 6.0.
+
+  - code: 264
+    name: CellWidth
+    since: "4.0"
+    last: null
+    status: current
+    conformance: baseline
+    container: both
+    types: [SHORT]
+    count: "1"
+    default: null
+    required: no
+    defined_in: [T4, T5, T6B]
+    notes: Meaningful only when Threshholding (263) = 2.
+
+  - code: 265
+    name: CellLength
+    since: "4.0"
+    last: null
+    status: current
+    conformance: baseline
+    container: both
+    types: [SHORT]
+    count: "1"
+    default: null
+    required: no
+    defined_in: [T4, T5, T6B]
+    notes: Should only be present when Threshholding (263) = 2.
+
+  - code: 266
+    name: FillOrder
+    since: "4.0"
+    last: null
+    status: current
+    conformance: baseline
+    container: both
+    types: [SHORT]
+    count: "1"
+    default: 1
+    required: no
+    values:
+      1: "Lower column values in higher-order bits (MSB-first)"
+      2: "Lower column values in lower-order bits (LSB-first); baseline readers need not support"
+    defined_in: [T4, T5, T6B, T6X]
+    notes: >
+      FillOrder = 2 is recommended only for localized/transient facsimile
+      use; FillOrder = 1 for interchange. LZW data is always FillOrder 1.
+
+  - code: 269
+    name: DocumentName
+    since: "4.0"
+    last: null
+    status: current
+    conformance: extension
+    container: both
+    types: [ASCII]
+    count: "N"
+    default: null
+    required: no
+    defined_in: [T4, T5, T6X]
+    notes: Baseline in 4.0; document-storage extension (§12) from 6.0.
+
+  - code: 270
+    name: ImageDescription
+    since: "4.0"
+    last: null
+    status: current
+    conformance: baseline
+    container: both
+    types: [ASCII]
+    count: "N"
+    default: null
+    required: no
+    defined_in: [T4, T5, T6B]
+
+  - code: 271
+    name: Make
+    since: "4.0"
+    last: null
+    status: current
+    conformance: baseline
+    container: both
+    types: [ASCII]
+    count: "N"
+    default: null
+    required: no
+    defined_in: [T4, T5, T6B]
+
+  - code: 272
+    name: Model
+    since: "4.0"
+    last: null
+    status: current
+    conformance: baseline
+    container: both
+    types: [ASCII]
+    count: "N"
+    default: null
+    required: no
+    defined_in: [T4, T5, T6B]
+
+  - code: 273
+    name: StripOffsets
+    since: "4.0"
+    last: null
+    status: current
+    conformance: baseline
+    container: both
+    types: [SHORT, LONG]
+    bigtiff_types: [LONG8]
+    count: "StripsPerImage (PlanarConfiguration=1) | SPP*StripsPerImage (PlanarConfiguration=2)"
+    default: null
+    required: conditional
+    defined_in: [T4, T5, T6B, BTF]
+    notes: >
+      Required for strip-organized images; mutually exclusive with the tile
+      fields (322-325). StripsPerImage = floor((ImageLength + RowsPerStrip -
+      1) / RowsPerStrip).
+
+  - code: 274
+    name: Orientation
+    since: "4.0"
+    last: null
+    status: current
+    conformance: baseline
+    container: both
+    types: [SHORT]
+    count: "1"
+    default: 1
+    required: no
+    values:
+      1: "Row 0 top, column 0 left"
+      2: "Row 0 top, column 0 right"
+      3: "Row 0 bottom, column 0 right"
+      4: "Row 0 bottom, column 0 left"
+      5: "Row 0 left, column 0 top"
+      6: "Row 0 right, column 0 top"
+      7: "Row 0 right, column 0 bottom"
+      8: "Row 0 left, column 0 bottom"
+    defined_in: [T4, T5, T6B]
+    notes: Baseline readers are only required to support value 1.
+
+  - code: 277
+    name: SamplesPerPixel
+    since: "4.0"
+    last: null
+    status: current
+    conformance: baseline
+    container: both
+    types: [SHORT]
+    count: "1"
+    default: 1
+    required: conditional
+    defined_in: [T4, T5, T6B]
+    notes: >
+      Counts ALL components including extra samples; readers must not derive
+      it from PhotometricInterpretation (see DEP rules for 338).
+
+  - code: 278
+    name: RowsPerStrip
+    since: "4.0"
+    last: null
+    status: current
+    conformance: baseline
+    container: both
+    types: [SHORT, LONG]
+    count: "1"
+    default: 4294967295
+    required: conditional
+    defined_in: [T4, T5, T6B]
+    notes: >
+      Default 2**32-1 means the whole image is one strip. Recommended target
+      is ~8KB per strip (5.0/6.0 guidance). Not used for tiled images.
+
+  - code: 279
+    name: StripByteCounts
+    since: "4.0"
+    last: null
+    status: current
+    conformance: baseline
+    container: both
+    types: [SHORT, LONG]
+    bigtiff_types: [LONG8]
+    count: "StripsPerImage (PlanarConfiguration=1) | SPP*StripsPerImage (PlanarConfiguration=2)"
+    default: null
+    required: conditional
+    type_history:
+      - {version: "4.0", types: [LONG]}
+      - {version: "5.0", types: [SHORT, LONG]}
+    defined_in: [T4, T5, T6B, BTF]
+    notes: >
+      Required for strip-organized images from 5.0/6.0 (4.0 never states it
+      as required - a documented asymmetry; see sources/T4.yaml). Vendor
+      deviation: files missing StripByteCounts exist for uncompressed data
+      where counts are computable (see constraints.yaml repair actions).
+
+  - code: 280
+    name: MinSampleValue
+    since: "4.0"
+    last: null
+    status: current
+    conformance: baseline
+    container: both
+    types: [SHORT]
+    count: "SPP"
+    default: 0
+    required: no
+    defined_in: [T4, T5, T6B]
+    notes: >
+      Since 5.0, for statistical purposes only - must not affect display.
+      In 4.0 it defined the photometric endpoint together with
+      GrayResponseCurve. See SMinSampleValue (340) for non-integer data.
+
+  - code: 281
+    name: MaxSampleValue
+    since: "4.0"
+    last: null
+    status: current
+    conformance: baseline
+    container: both
+    types: [SHORT]
+    count: "SPP"
+    default: "2**BitsPerSample - 1"
+    required: no
+    defined_in: [T4, T5, T6B]
+    notes: Statistical only since 5.0, as for MinSampleValue (280).
+
+  - code: 282
+    name: XResolution
+    since: "4.0"
+    last: null
+    status: current
+    conformance: baseline
+    container: both
+    types: [RATIONAL]
+    count: "1"
+    default: null
+    required: yes
+    defined_in: [T4, T5, T6B]
+    notes: Pixels per ResolutionUnit (296) in the ImageWidth direction.
+
+  - code: 283
+    name: YResolution
+    since: "4.0"
+    last: null
+    status: current
+    conformance: baseline
+    container: both
+    types: [RATIONAL]
+    count: "1"
+    default: null
+    required: yes
+    defined_in: [T4, T5, T6B]
+
+  - code: 284
+    name: PlanarConfiguration
+    since: "4.0"
+    last: null
+    status: current
+    conformance: baseline
+    container: both
+    types: [SHORT]
+    count: "1"
+    default: 1
+    required: no
+    values:
+      1: "Chunky: components of each pixel stored contiguously"
+      2: "Planar: components stored in separate planes (extension; not required of baseline readers)"
+    default_history:
+      - {version: "4.0", default: null, notes: "No default in 4.0"}
+      - {version: "5.0", default: 1}
+    defined_in: [T4, T5, T6B]
+    notes: Irrelevant when SamplesPerPixel = 1 and should then be omitted.
+
+  - code: 285
+    name: PageName
+    since: "4.0"
+    last: null
+    status: current
+    conformance: extension
+    container: both
+    types: [ASCII]
+    count: "N"
+    default: null
+    required: no
+    defined_in: [T4, T5, T6X]
+
+  - code: 286
+    name: XPosition
+    since: "4.0"
+    last: null
+    status: current
+    conformance: extension
+    container: both
+    types: [RATIONAL]
+    count: "1"
+    default: null
+    required: no
+    defined_in: [T4, T5, T6X]
+    notes: In 4.0 the unit was inches; ResolutionUnits from 5.0.
+
+  - code: 287
+    name: YPosition
+    since: "4.0"
+    last: null
+    status: current
+    conformance: extension
+    container: both
+    types: [RATIONAL]
+    count: "1"
+    default: null
+    required: no
+    defined_in: [T4, T5, T6X]
+    notes: Always positive (positive Y is down in TIFF coordinates).
+
+  - code: 288
+    name: FreeOffsets
+    since: "4.0"
+    last: null
+    status: deprecated
+    conformance: extension
+    container: both
+    types: [LONG]
+    count: "N"
+    default: null
+    required: no
+    defined_in: [T4, T5, T6B]
+    notes: >
+      "No Longer Recommended" from 5.0; readers may ignore. Not recommended
+      for interchange in 6.0.
+
+  - code: 289
+    name: FreeByteCounts
+    since: "4.0"
+    last: null
+    status: deprecated
+    conformance: extension
+    container: both
+    types: [LONG]
+    count: "N"
+    default: null
+    required: no
+    defined_in: [T4, T5, T6B]
+    notes: As FreeOffsets (288).
+
+  - code: 290
+    name: GrayResponseUnit
+    since: "4.0"
+    last: null
+    status: current
+    conformance: baseline
+    container: both
+    types: [SHORT]
+    count: "1"
+    default: 2
+    required: no
+    values:
+      1: "Tenths of a unit"
+      2: "Hundredths of a unit"
+      3: "Thousandths of a unit (recommended for accuracy)"
+      4: "Ten-thousandths of a unit"
+      5: "Hundred-thousandths of a unit"
+    defined_in: [T4, T5, T6B]
+
+  - code: 291
+    name: GrayResponseCurve
+    since: "4.0"
+    last: null
+    status: current
+    conformance: baseline
+    container: both
+    types: [SHORT]
+    count: "2**BitsPerSample"
+    default: null
+    required: no
+    defined_in: [T4, T5, T6B]
+    notes: >
+      Optical density per possible pixel value, in GrayResponseUnit (290)
+      units. In 5.0, when present it overrides PhotometricInterpretation
+      for interpretation purposes.
+
+  - code: 292
+    name: T4Options
+    since: "4.0"
+    last: null
+    status: current
+    conformance: extension
+    container: both
+    types: [LONG]
+    count: "1"
+    default: 0
+    required: no
+    name_history:
+      - {version: "4.0", name: Group3Options}
+      - {version: "6.0", name: T4Options}
+    values:
+      bit0: "1 = 2-dimensional coding (else 1-D); each strip must begin with a 1-D coded line"
+      bit1: "1 = uncompressed mode used within the data"
+      bit2: "1 = fill bits added so EOL codes end on byte boundaries"
+    defined_in: [T4, T5, T6X]
+    notes: Meaningful only when Compression (259) = 3. Unused bits must be 0.
+
+  - code: 293
+    name: T6Options
+    since: "4.0"
+    last: null
+    status: current
+    conformance: extension
+    container: both
+    types: [LONG]
+    count: "1"
+    default: 0
+    required: no
+    name_history:
+      - {version: "4.0", name: Group4Options}
+      - {version: "6.0", name: T6Options}
+    values:
+      bit1: "1 = uncompressed mode allowed within the encoding"
+    defined_in: [T4, T5, T6X]
+    notes: Meaningful only when Compression (259) = 4. Bit 0 and unused bits must be 0.
+
+  - code: 296
+    name: ResolutionUnit
+    since: "4.0"
+    last: null
+    status: current
+    conformance: baseline
+    container: both
+    types: [SHORT]
+    count: "1"
+    default: 2
+    required: no
+    values:
+      1: "No absolute unit (non-square-pixel images without absolute scale)"
+      2: "Inch"
+      3: "Centimeter"
+    defined_in: [T4, T5, T6B]
+
+  - code: 297
+    name: PageNumber
+    since: "4.0"
+    last: null
+    status: current
+    conformance: extension
+    container: both
+    types: [SHORT]
+    count: "2"
+    default: null
+    required: no
+    defined_in: [T4, T5, T6X]
+    notes: >
+      Value 0 = page number (0-based), value 1 = total pages (0 if unknown,
+      6.0 rule). Pages need not appear in order.
+
+  - code: 300
+    name: ColorResponseUnit
+    since: "4.0"
+    last: "4.0"
+    status: retired
+    conformance: baseline
+    container: classic
+    types: [SHORT]
+    count: "1"
+    default: 2
+    required: no
+    values:
+      1: "Tenths of a unit"
+      2: "Hundredths of a unit"
+      3: "Thousandths of a unit"
+      4: "Ten-thousandths of a unit"
+      5: "Hundred-thousandths of a unit"
+    defined_in: [T4]
+    notes: >
+      Dropped in revision 5.0 (ColorResponseCurves values were redefined
+      against a 0..65535 scale). Readers may still encounter it in 4.0-era
+      files; writers must not emit it.
+
+  - code: 301
+    name: TransferFunction
+    since: "4.0"
+    last: null
+    status: current
+    conformance: extension
+    container: both
+    types: [SHORT]
+    count: "{1|3} * 2**BitsPerSample"
+    default: "A single table matching NTSC gamma 2.2"
+    required: no
+    name_history:
+      - {version: "4.0", name: ColorResponseCurves}
+      - {version: "6.0", name: TransferFunction}
+    count_history:
+      - {version: "4.0", count: "3 * 2**BitsPerSample", notes: "Three R,G,B curves; values on NTSC intensity scale in ColorResponseUnit (300) units"}
+      - {version: "5.0", count: "3 * 2**BitsPerSample", notes: "Values rescaled to 0..65535"}
+      - {version: "6.0", count: "{1|3} * 2**BitsPerSample", notes: "Single shared table now allowed; applies to RGB, Palette, YCbCr, WhiteIsZero, BlackIsZero"}
+    defined_in: [T4, T5, T6X]
+
+  - code: 305
+    name: Software
+    since: "5.0"
+    last: null
+    status: current
+    conformance: baseline
+    container: both
+    types: [ASCII]
+    count: "N"
+    default: null
+    required: no
+    defined_in: [T5, T6B]
+
+  - code: 306
+    name: DateTime
+    since: "5.0"
+    last: null
+    status: current
+    conformance: baseline
+    container: both
+    types: [ASCII]
+    count: "20"
+    default: null
+    required: no
+    defined_in: [T5, T6B]
+    notes: Format "YYYY:MM:DD HH:MM:SS", 24-hour clock, exactly 20 bytes including NUL.
+
+  - code: 315
+    name: Artist
+    since: "5.0"
+    last: null
+    status: current
+    conformance: baseline
+    container: both
+    types: [ASCII]
+    count: "N"
+    default: null
+    required: no
+    defined_in: [T5, T6B]
+    notes: Some older files used Artist for copyright; see Copyright (33432).
+
+  - code: 316
+    name: HostComputer
+    since: "5.0"
+    last: null
+    status: current
+    conformance: baseline
+    container: both
+    types: [ASCII]
+    count: "N"
+    default: null
+    required: no
+    defined_in: [T5, T6B]
+
+  - code: 317
+    name: Predictor
+    since: "5.0"
+    last: null
+    status: current
+    conformance: extension
+    container: both
+    types: [SHORT]
+    count: "1"
+    default: 1
+    required: no
+    values:
+      1: {meaning: "No prediction before coding", since: "5.0"}
+      2: {meaning: "Horizontal differencing (integer)", since: "5.0", notes: "Introduced as post-5.0 draft Appendix I; normative from 6.0"}
+      3: {meaning: "Floating point predictor: byte reordering to big-endian significance planes plus horizontal byte differencing", since: "TN3", conformance: TN3}
+      34892: {meaning: "Horizontal difference X2 (predict from pixel two to the left)", since: DNG, conformance: DNG, notes: "DNG 1.4+, for Compression 8 with mosaic/CFA data"}
+      34893: {meaning: "Horizontal difference X4 (predict from pixel four to the left)", since: DNG, conformance: DNG, notes: "DNG 1.4+"}
+      34894: {meaning: "Floating point X2", since: DNG, conformance: DNG, notes: "DNG 1.4+"}
+      34895: {meaning: "Floating point X4", since: DNG, conformance: DNG, notes: "DNG 1.4+"}
+    defined_in: [T5, T6X, TN3, PS, PM6, DNG]
+    notes: >
+      Defined by 6.0 for LZW only; the PS technote extends use to Deflate
+      (Compression 8), TN3 value 3 targets LZW and Deflate, and DNG 1.4
+      adds the X2/X4 variants for mosaic data under Deflate.
+
+  - code: 318
+    name: WhitePoint
+    since: "5.0"
+    last: null
+    status: current
+    conformance: extension
+    container: both
+    types: [RATIONAL]
+    count: "2"
+    default: null
+    required: conditional
+    default_history:
+      - {version: "5.0", default: "D65 (x=0.313, y=0.329)"}
+      - {version: "6.0", default: null, notes: "6.0 removed the default; PS technote sets D50 as the default for CIELab/ICCLab images"}
+    defined_in: [T5, T6X, PS]
+    notes: >
+      CIE 1931 chromaticity x,y of the image white point. TIFF 5.0
+      Appendix J separately proposed an unadopted tag "ColorImageType" with
+      the same code 318; treat any SHORT-typed count-1 value here in a
+      5.0-era file with suspicion (see constraints.yaml).
+
+  - code: 319
+    name: PrimaryChromaticities
+    since: "5.0"
+    last: null
+    status: current
+    conformance: extension
+    container: both
+    types: [RATIONAL]
+    count: "6"
+    default: null
+    required: conditional
+    default_history:
+      - {version: "5.0", default: "SMPTE: R(0.635,0.340) G(0.305,0.595) B(0.155,0.070)"}
+      - {version: "6.0", default: null}
+    defined_in: [T5, T6X]
+    notes: >
+      Order red-x, red-y, green-x, green-y, blue-x, blue-y. TIFF 5.0
+      Appendix J separately proposed unadopted tag "ColorList" with code
+      319 (BYTE/SHORT, variable count) - same caution as WhitePoint (318).
+
+  - code: 320
+    name: ColorMap
+    since: "5.0"
+    last: null
+    status: current
+    conformance: baseline
+    container: both
+    types: [SHORT]
+    count: "3 * 2**BitsPerSample"
+    default: null
+    required: conditional
+    defined_in: [T5, T6B, PM6]
+    notes: >
+      All red values first, then green, then blue; 0 = minimum, 65535 =
+      maximum intensity. Required when PhotometricInterpretation = 3, and
+      when Indexed (346) = 1 (PM6). PM6 generalizes the entry component
+      count for non-RGB indexed color spaces: 3 (RGB, CIELab), 4 (CMYK), or
+      NumberOfInks (334) components per entry.
+
+  - code: 321
+    name: HalftoneHints
+    since: "6.0"
+    last: null
+    status: current
+    conformance: extension
+    container: both
+    types: [SHORT]
+    count: "2"
+    default: null
+    required: no
+    defined_in: [T6X]
+    notes: Value 0 = highlight gray level, value 1 = shadow gray level.
+
+  - code: 322
+    name: TileWidth
+    since: "6.0"
+    last: null
+    status: current
+    conformance: extension
+    container: both
+    types: [SHORT, LONG]
+    count: "1"
+    default: null
+    required: conditional
+    defined_in: [T6X]
+    notes: Must be a multiple of 16. Required for tiled images.
+
+  - code: 323
+    name: TileLength
+    since: "6.0"
+    last: null
+    status: current
+    conformance: extension
+    container: both
+    types: [SHORT, LONG]
+    count: "1"
+    default: null
+    required: conditional
+    defined_in: [T6X]
+    notes: Must be a multiple of 16. Replaces RowsPerStrip for tiled images.
+
+  - code: 324
+    name: TileOffsets
+    since: "6.0"
+    last: null
+    status: current
+    conformance: extension
+    container: both
+    types: [LONG]
+    bigtiff_types: [LONG8]
+    count: "TilesPerImage (PlanarConfiguration=1) | SPP*TilesPerImage (PlanarConfiguration=2)"
+    default: null
+    required: conditional
+    defined_in: [T6X, BTF]
+    notes: >
+      Tiles ordered left-to-right, top-to-bottom, planes consecutive for
+      planar data. TIFF 6.0 allows LONG only; the BigTIFF document's blanket
+      "SHORT or LONG traditionally" statement is imprecise for this tag
+      (SHORT was never valid for TileOffsets in classic TIFF).
+
+  - code: 325
+    name: TileByteCounts
+    since: "6.0"
+    last: null
+    status: current
+    conformance: extension
+    container: both
+    types: [SHORT, LONG]
+    bigtiff_types: [LONG8]
+    count: "TilesPerImage (PlanarConfiguration=1) | SPP*TilesPerImage (PlanarConfiguration=2)"
+    default: null
+    required: conditional
+    defined_in: [T6X, BTF]
+
+  - code: 330
+    name: SubIFDs
+    since: "PM6"
+    last: null
+    status: current
+    conformance: PM6
+    container: both
+    types: [LONG, IFD]
+    bigtiff_types: [IFD8]
+    count: "N (number of child IFDs)"
+    default: null
+    required: no
+    defined_in: [PM6, BTF, PS]
+    notes: >
+      Offsets to child IFDs forming a TIFF tree (thumbnails/alternate
+      resolutions). The IFD type (13) is defined by the PM6 technote.
+      Multiple children of one parent are chained via their NextIFD fields
+      (last child NextIFD = 0). PS technote warning: readers encountering
+      SubIFDs with bit depth other than 8 should ignore the SubIFDs.
+      In BigTIFF, IFD8 (18) is preferred; LONG is valid but discouraged.
+
+  - code: 332
+    name: InkSet
+    since: "6.0"
+    last: null
+    status: current
+    conformance: extension
+    container: both
+    types: [SHORT]
+    count: "1"
+    default: 1
+    required: no
+    values:
+      1: "CMYK, in C,M,Y,K component order; InkNames must not be present"
+      2: "Not CMYK; see InkNames (333)"
+    defined_in: [T6X, PM6]
+
+  - code: 333
+    name: InkNames
+    since: "6.0"
+    last: null
+    status: current
+    conformance: extension
+    container: both
+    types: [ASCII]
+    count: "Total bytes of all NUL-terminated ink name strings"
+    default: null
+    required: conditional
+    defined_in: [T6X, PM6]
+    notes: Number of strings must equal NumberOfInks (334).
+
+  - code: 334
+    name: NumberOfInks
+    since: "6.0"
+    last: null
+    status: current
+    conformance: extension
+    container: both
+    types: [SHORT]
+    count: "1"
+    default: 4
+    required: no
+    defined_in: [T6X, PM6]
+    notes: Usually SamplesPerPixel minus extra samples.
+
+  - code: 336
+    name: DotRange
+    since: "6.0"
+    last: null
+    status: current
+    conformance: extension
+    container: both
+    types: [BYTE, SHORT]
+    count: "2 | 2*SPP"
+    default: "[0, 2**BitsPerSample - 1]"
+    required: no
+    defined_in: [T6X, PM6]
+    notes: >
+      Value 0 = 0% dot, value 1 = 100% dot; both within
+      [0, 2**BitsPerSample - 1] and DotRange[0] < DotRange[1].
+
+  - code: 337
+    name: TargetPrinter
+    since: "6.0"
+    last: null
+    status: current
+    conformance: extension
+    container: both
+    types: [ASCII]
+    count: "N"
+    default: null
+    required: no
+    defined_in: [T6X]
+
+  - code: 338
+    name: ExtraSamples
+    since: "6.0"
+    last: null
+    status: current
+    conformance: baseline
+    container: both
+    types: [SHORT]
+    count: "Number of extra components per pixel"
+    default: null
+    required: conditional
+    values:
+      0: "Unspecified data"
+      1: "Associated alpha (color premultiplied by alpha)"
+      2: "Unassociated alpha (soft matte)"
+    defined_in: [T6B, T6X]
+    notes: >
+      Must be present whenever SamplesPerPixel exceeds the count implied by
+      PhotometricInterpretation. TIFF 6.0 is internally inconsistent on the
+      type: Section 18 says SHORT, Appendix A says BYTE - accept both when
+      reading, write SHORT. Combining values 1 and 2 in one image is
+      undefined.
+
+  - code: 339
+    name: SampleFormat
+    since: "6.0"
+    last: null
+    status: current
+    conformance: extension
+    container: both
+    types: [SHORT]
+    count: "SPP"
+    default: 1
+    required: no
+    values:
+      1: {meaning: "Unsigned integer", since: "6.0"}
+      2: {meaning: "Two's complement signed integer", since: "6.0"}
+      3: {meaning: "IEEE floating point (TN3 extends to 16/24-bit widths)", since: "6.0"}
+      4: {meaning: "Undefined data format", since: "6.0"}
+    defined_in: [T6X, TN3]
+    notes: >
+      A baseline (6.0 §7) rule: readers that cannot handle SampleFormat != 1
+      must terminate gracefully.
+
+  - code: 340
+    name: SMinSampleValue
+    since: "6.0"
+    last: null
+    status: current
+    conformance: extension
+    container: both
+    types: [BYTE, ASCII, SHORT, LONG, RATIONAL, SBYTE, UNDEFINED, SSHORT, SLONG, SRATIONAL, FLOAT, DOUBLE]
+    count: "SPP"
+    default: "Full range of the sample data type"
+    required: no
+    defined_in: [T6X]
+    notes: Field type should match the sample data type.
+
+  - code: 341
+    name: SMaxSampleValue
+    since: "6.0"
+    last: null
+    status: current
+    conformance: extension
+    container: both
+    types: [BYTE, ASCII, SHORT, LONG, RATIONAL, SBYTE, UNDEFINED, SSHORT, SLONG, SRATIONAL, FLOAT, DOUBLE]
+    count: "SPP"
+    default: "Full range of the sample data type"
+    required: no
+    defined_in: [T6X]
+
+  - code: 342
+    name: TransferRange
+    since: "6.0"
+    last: null
+    status: current
+    conformance: extension
+    container: both
+    types: [SHORT]
+    count: "6"
+    default: "[0, NV, 0, NV, 0, NV] where NV = 2**BitsPerSample - 1"
+    required: no
+    defined_in: [T6X]
+    notes: Defined only for RGB and YCbCr images. Expands TransferFunction range.
+
+  - code: 343
+    name: ClipPath
+    since: "PM6"
+    last: null
+    status: current
+    conformance: PM6
+    container: both
+    types: [BYTE]
+    count: "N (bytes in the clip path data stream)"
+    default: null
+    required: no
+    values:
+      0: "no-op"
+      1: "newpath (no operands)"
+      2: "closepath (no operands)"
+      3: "moveto (x y)"
+      4: "lineto (x y)"
+      5: "reserved"
+      6: "reserved"
+      7: "reserved"
+      8: "curveto (x1 y1 x2 y2 x3 y3)"
+      9: "polyto (x1 y1 ...)"
+      10: "rpolyto (dx1 dy1 ...)"
+    defined_in: [PM6]
+    notes: >
+      PostScript-style clipping path: fixed header (byte-order marker,
+      version, reserved words) then operator/operand commands. Coordinates
+      normalized by X/YClipPathUnits (344/345).
+
+  - code: 344
+    name: XClipPathUnits
+    since: "PM6"
+    last: null
+    status: current
+    conformance: PM6
+    container: both
+    types: [LONG]
+    count: "1"
+    default: null
+    required: conditional
+    defined_in: [PM6]
+    notes: >
+      Required whenever ClipPath (343) is present; no default. The PM6
+      document calls the type "DWORD" (= LONG).
+
+  - code: 345
+    name: YClipPathUnits
+    since: "PM6"
+    last: null
+    status: current
+    conformance: PM6
+    container: both
+    types: [LONG]
+    count: "1"
+    default: "Equal to XClipPathUnits (344)"
+    required: no
+    defined_in: [PM6]
+
+  - code: 346
+    name: Indexed
+    since: "PM6"
+    last: null
+    status: current
+    conformance: PM6
+    container: both
+    types: [SHORT]
+    count: "1"
+    default: 0
+    required: no
+    values:
+      0: "Pixel values are direct color values"
+      1: "Pixel values are indices into ColorMap (320)"
+    defined_in: [PM6]
+    notes: >
+      Generalizes palette images to any color space.
+      PhotometricInterpretation = 3 is equivalent to (base color space RGB,
+      Indexed = 1) and must not be combined with Indexed = 1.
+
+  - code: 347
+    name: JPEGTables
+    since: "TN2"
+    last: null
+    status: current
+    conformance: TN2
+    container: both
+    types: [UNDEFINED]
+    count: "N (bytes in the tables datastream)"
+    default: null
+    required: conditional
+    defined_in: [TN2, PS]
+    notes: >
+      Abbreviated table-specification JPEG datastream (SOI ... EOI)
+      predefining quantization/Huffman tables for Compression = 7 image
+      segments. When absent, every segment must be self-contained.
+
+  - code: 351
+    name: OPIProxy
+    since: "PM6"
+    last: null
+    status: current
+    conformance: PM6
+    container: both
+    types: [SHORT]
+    count: "1"
+    default: 0
+    required: no
+    values:
+      0: "No higher-resolution version exists"
+      1: "A higher-resolution version exists, named by ImageID (32781)"
+    defined_in: [PM6]
+
+  - code: 512
+    name: JPEGProc
+    since: "6.0"
+    last: null
+    status: deprecated
+    conformance: extension
+    container: both
+    types: [SHORT]
+    count: "1"
+    default: null
+    required: conditional
+    values:
+      1: "Baseline sequential DCT process"
+      14: "Lossless process with Huffman coding"
+    defined_in: [T6X]
+    notes: >
+      Old-style JPEG (Compression = 6), deprecated by TN2 along with tags
+      513-521; read-only legacy support. Mandatory when Compression = 6.
+
+  - code: 513
+    name: JPEGInterchangeFormat
+    since: "6.0"
+    last: null
+    status: deprecated
+    conformance: extension
+    container: both
+    types: [LONG]
+    count: "1"
+    default: null
+    required: no
+    defined_in: [T6X]
+    notes: Non-zero = offset of a complete JPEG interchange bitstream (SOI marker).
+
+  - code: 514
+    name: JPEGInterchangeFormatLength
+    since: "6.0"
+    last: null
+    status: deprecated
+    conformance: extension
+    container: both
+    types: [LONG]
+    count: "1"
+    default: null
+    required: no
+    defined_in: [T6X]
+
+  - code: 515
+    name: JPEGRestartInterval
+    since: "6.0"
+    last: null
+    status: deprecated
+    conformance: extension
+    container: both
+    types: [SHORT]
+    count: "1"
+    default: null
+    required: no
+    defined_in: [T6X]
+    notes: MCUs between restart markers; 0 or absent = no restart markers.
+
+  - code: 517
+    name: JPEGLosslessPredictors
+    since: "6.0"
+    last: null
+    status: deprecated
+    conformance: extension
+    container: both
+    types: [SHORT]
+    count: "SPP"
+    default: null
+    required: conditional
+    values:
+      1: "A (left)"
+      2: "B (above)"
+      3: "C (diagonal left-above)"
+      4: "A+B-C"
+      5: "A+((B-C)/2)"
+      6: "B+((A-C)/2)"
+      7: "(A+B)/2"
+    defined_in: [T6X]
+    notes: Mandatory for lossless JPEG processes. Tag 516 was never assigned.
+
+  - code: 518
+    name: JPEGPointTransforms
+    since: "6.0"
+    last: null
+    status: deprecated
+    conformance: extension
+    container: both
+    types: [SHORT]
+    count: "SPP"
+    default: 0
+    required: no
+    defined_in: [T6X]
+
+  - code: 519
+    name: JPEGQTables
+    since: "6.0"
+    last: null
+    status: deprecated
+    conformance: extension
+    container: both
+    types: [LONG]
+    count: "SPP"
+    default: null
+    required: conditional
+    defined_in: [T6X]
+    notes: Offsets to 64-byte zigzag quantization tables; mandatory for DCT processes.
+
+  - code: 520
+    name: JPEGDCTables
+    since: "6.0"
+    last: null
+    status: deprecated
+    conformance: extension
+    container: both
+    types: [LONG]
+    count: "SPP"
+    default: null
+    required: conditional
+    defined_in: [T6X]
+    notes: Mandatory for all old-style JPEG processes.
+
+  - code: 521
+    name: JPEGACTables
+    since: "6.0"
+    last: null
+    status: deprecated
+    conformance: extension
+    container: both
+    types: [LONG]
+    count: "SPP"
+    default: null
+    required: conditional
+    defined_in: [T6X]
+    notes: Mandatory for DCT-based processes; not used for lossless.
+
+  - code: 529
+    name: YCbCrCoefficients
+    since: "6.0"
+    last: null
+    status: current
+    conformance: extension
+    container: both
+    types: [RATIONAL]
+    count: "3"
+    default: "[299/1000, 587/1000, 114/1000] (CCIR 601-1)"
+    required: no
+    defined_in: [T6X]
+    notes: LumaRed, LumaGreen, LumaBlue for the RGB-to-YCbCr transform.
+
+  - code: 530
+    name: YCbCrSubSampling
+    since: "6.0"
+    last: null
+    status: current
+    conformance: extension
+    container: both
+    types: [SHORT]
+    count: "2"
+    default: "[2, 2]"
+    required: no
+    values:
+      1: "Chroma dimension equal to luma dimension"
+      2: "Chroma dimension half of luma dimension"
+      4: "Chroma dimension one quarter of luma dimension"
+    defined_in: [T6X, TN2]
+    notes: >
+      Value 0 = horizontal (ChromaSubsampleHoriz), value 1 = vertical
+      (ChromaSubsampleVert); vertical must be <= horizontal. TN2 rewrites
+      the 6.0 field description (dimensions are measured in luma samples).
+      Only H,V combinations 1,1 2,1 2,2 4,1 4,4 (and 4,2) have defined
+      meaning; see constraints.yaml.
+
+  - code: 531
+    name: YCbCrPositioning
+    since: "6.0"
+    last: null
+    status: current
+    conformance: extension
+    container: both
+    types: [SHORT]
+    count: "1"
+    default: 1
+    required: no
+    values:
+      1: "Centered (PostScript Level 2 / QuickTime convention)"
+      2: "Cosited (CCIR 601-1 / digital video convention)"
+    defined_in: [T6X]
+
+  - code: 532
+    name: ReferenceBlackWhite
+    since: "6.0"
+    last: null
+    status: current
+    conformance: extension
+    container: both
+    types: [RATIONAL]
+    count: "6"
+    default: "[0, NV, 0, NV, 0, NV] where NV = 2**BitsPerSample - 1"
+    required: conditional
+    defined_in: [T6X, TN2]
+    notes: >
+      Headroom/footroom pairs (black, white) per component. RGB and YCbCr
+      only. Required with explicit values for YCbCr (the default suits RGB,
+      not video-range YCbCr). TIFF 6.0 internal inconsistency: Section 20
+      says RATIONAL count 6, Appendix A says LONG count 2*SPP - accept both
+      when reading, write RATIONAL count 6.
+
+  - code: 700
+    name: XMP
+    since: XMP
+    last: null
+    status: current
+    conformance: XMP
+    container: both
+    location: ifd0
+    types: [BYTE, UNDEFINED]
+    count: "N (byte length of the serialized XMP packet)"
+    default: null
+    required: no
+    defined_in: [XMP, PSFF]
+    notes: >
+      Serialized RDF/XML XMP packet, UTF-8. XMP Part 3 says the type
+      "should be" UNDEFINED or BYTE (not MUST) and restricts the tag to the
+      0th IFD. Native TIFF/Exif tag values take precedence over mirrored
+      XMP properties when both are present (single documented exception:
+      exif:ISOSpeedRating when the native tag saturates at 65535). A
+      duplicate copy as Photoshop image resource 0x0424 inside tag 34377
+      must not be written in TIFF files. See DEP-140 group.
+
+  - code: 32781
+    name: ImageID
+    since: "PM6"
+    last: null
+    status: current
+    conformance: PM6
+    container: both
+    types: [ASCII]
+    count: "N"
+    default: null
+    required: conditional
+    defined_in: [PM6]
+    notes: >
+      OPI identifier (usually full pathname) of the high-resolution
+      original. Required when OPIProxy (351) = 1.
+
+  - code: 33432
+    name: Copyright
+    since: "6.0"
+    last: null
+    status: current
+    conformance: baseline
+    container: both
+    types: [ASCII]
+    count: "N"
+    default: null
+    required: no
+    defined_in: [T6B]
+
+  - code: 33723
+    name: IPTC
+    since: XMP
+    last: null
+    status: current
+    conformance: XMP
+    container: both
+    location: ifd0
+    types: [UNDEFINED, BYTE]
+    count: "N (byte length of the IPTC-IIM DataSet block)"
+    default: null
+    required: no
+    defined_in: [XMP, PSFF, IPTC]
+    notes: >
+      Block of IPTC-IIM DataSets (record marker 0x1C, record:dataset
+      numbering; often called RichTIFFIPTC). The tag predates the vendored
+      sources (IPTC-NAA IIM ca. 1993, not vendored); none of them states
+      the TIFF field type, and files in the wild use LONG (count N/4,
+      libtiff historical behavior) as well as BYTE/UNDEFINED - see
+      tolerate.iptc-as-long. XMP Part 3 restricts the tag to the 0th IFD.
+      A duplicate copy commonly exists as Photoshop image resource 0x0404
+      inside tag 34377; no source document states which copy wins (flagged
+      in sources/PSFF.yaml and sources/IPTC.yaml).
+
+  - code: 34377
+    name: Photoshop
+    since: PSFF
+    last: null
+    status: current
+    conformance: PSFF
+    container: both
+    location: ifd0
+    types: [BYTE, UNDEFINED]
+    count: "N"
+    default: null
+    required: no
+    values:
+      1005: "ResolutionInfo structure (0x03ED)"
+      1028: "IPTC-NAA record (0x0404) - duplicates tag 33723"
+      1039: "Raw ICC profile bytes (0x040F) - duplicates tag 34675"
+      1058: "Exif metadata (0x0422) - Photoshop 6 wrote nested Exif here (quirk documented by XMP Part 3)"
+      1060: "XMP packet (0x0424) - duplicates tag 700; must NOT be present in TIFF files per XMP Part 3"
+      "2000-2997": "Path information / saved paths (0x07D0-0x0BB6), 26-byte path point records"
+      2999: "Name of clipping path (0x0BB7)"
+    defined_in: [PSFF, XMP]
+    notes: >
+      Photoshop image resources: a sequence of Image Resource Blocks, each
+      "8BIM" signature + 2-byte resource ID + even-padded Pascal-string
+      name + 4-byte size + even-padded data (all big-endian regardless of
+      TIFF byte order). PSFF states no TIFF type/count; BYTE/UNDEFINED
+      reflects practice. XMP Part 3 restricts the tag to the 0th IFD. The
+      `values` map lists resource IDs of interchange interest, not TIFF
+      tag values; PSFF defines no precedence rule for resources that
+      duplicate native TIFF tags.
+
+  - code: 34665
+    name: ExifIFDPointer
+    since: EXIF
+    last: null
+    status: current
+    conformance: EXIF
+    container: both
+    location: ifd0
+    types: [LONG]
+    bigtiff_types: [IFD8]
+    count: "1"
+    default: null
+    required: conditional
+    defined_in: [EXIF, PSFF, XMP]
+    notes: >
+      Offset (from the TIFF header) to the Exif IFD - TIFF IFD structure,
+      no image data; resident tags are registered in tags-exif.yaml.
+      Mandatory in IFD0 for Exif-compliant files (optional in the
+      thumbnail IFD1). Exif 2.3 defines type LONG; BigTIFF containers may
+      use IFD8. The pointer is an implicit link (nothing in the type marks
+      it as an IFD offset in classic TIFF), so editors must rewrite it
+      when relocating the Exif IFD. See DEP-141.
+
+  - code: 34675
+    name: ICCProfile
+    since: ICC
+    last: null
+    status: current
+    conformance: ICC
+    container: both
+    location: ifd0
+    types: [UNDEFINED]
+    count: "N (profile size in bytes)"
+    default: null
+    required: no
+    defined_in: [ICC, PSFF]
+    notes: >
+      Embedded ICC profile (historically named InterColorProfile). The
+      profile is big-endian regardless of TIFF byte order; its 128-byte
+      header carries a size field that must equal the tag count and the
+      'acsp' signature at offset 36 (see DEP-144/145). ICC.1:2022-05 no
+      longer defines the embedding itself - it delegates to ICC Technical
+      Note 10-2021 (not vendored; the tag definition here rests on the
+      historical Annex B via PSFF and ecosystem practice). A duplicate
+      copy commonly exists as Photoshop resource 0x040F inside tag 34377;
+      no vendored document states which copy wins.
+
+  - code: 34853
+    name: GPSInfoIFDPointer
+    since: EXIF
+    last: null
+    status: current
+    conformance: EXIF
+    container: both
+    location: ifd0
+    types: [LONG]
+    bigtiff_types: [IFD8]
+    count: "1"
+    default: null
+    required: no
+    defined_in: [EXIF, PSFF, XMP]
+    notes: >
+      Offset (from the TIFF header) to the GPS Info IFD - TIFF IFD
+      structure, no image data; resident tags are registered in
+      tags-exif.yaml. GPSVersionID (gps-ifd tag 0) is mandatory when the
+      GPS IFD is present. Same implicit-link editing caution as 34665.
+      See DEP-142.
+
+  - code: 37439
+    name: StoNits
+    since: LLV
+    last: null
+    status: current
+    conformance: LLV
+    container: both
+    types: [DOUBLE]
+    count: "1"
+    default: null
+    required: no
+    defined_in: [LLV]
+    notes: >
+      Multiplier converting decoded Y (luminance) sample values to
+      absolute luminance in candela/m^2; written when the source data is
+      calibrated. The paper states only "a single floating point value";
+      DOUBLE is the libtiff-registered type (see sources/LLV.yaml).
+
+  - code: 37724
+    name: ImageSourceData
+    since: "PS"
+    last: null
+    status: current
+    conformance: PS
+    container: both
+    types: [UNDEFINED]
+    count: "N"
+    default: null
+    required: no
+    defined_in: [PS, PSFF]
+    notes: >
+      Photoshop layer/mask data ("Adobe Photoshop Document Data Block");
+      begins with the NUL-terminated string identifier defined in the PS
+      technote (PSB variant: "Adobe Photoshop Document Data V0002", per
+      PSFF).
+
+  - code: 50255
+    name: PhotoshopAnnotations
+    since: PSFF
+    last: null
+    status: current
+    conformance: PSFF
+    container: both
+    types: [BYTE, UNDEFINED]
+    count: "N"
+    default: null
+    required: no
+    defined_in: [PSFF]
+    notes: >
+      Photoshop annotation data ('Anno' additional-layer-information block,
+      Photoshop 6.0). PSFF states no TIFF type/count and defers the block
+      layout to the PSD data model (out of registry scope); treated as an
+      opaque blob.
+
+# -----------------------------------------------------------------------------
+# Unadopted draft proposals sharing codes with adopted tags (TIFF 5.0 App. J).
+# Never valid for writing; listed so 5.0-era files using them are identifiable.
+# -----------------------------------------------------------------------------
+draft_proposals:
+  - code: 318
+    name: ColorImageType
+    proposed_in: T5
+    status: draft-proposal
+    types: [SHORT]
+    count: "1"
+    default: 1
+    values:
+      1: "Continuous tone, natural image"
+      2: "Synthetic image with a restricted color set (see ColorList 319)"
+    notes: >
+      TIFF 5.0 Appendix J draft; collides with the adopted WhitePoint (318).
+      Distinguishable by field type (SHORT vs RATIONAL) and count.
+
+  - code: 319
+    name: ColorList
+    proposed_in: T5
+    status: draft-proposal
+    types: [BYTE, SHORT]
+    count: "ColorsUsed * SPP"
+    default: null
+    notes: >
+      TIFF 5.0 Appendix J draft; collides with the adopted
+      PrimaryChromaticities (319). Distinguishable by field type.

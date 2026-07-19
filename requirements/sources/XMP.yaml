@@ -1,0 +1,1086 @@
+document: XMP
+title: "Adobe XMP Specification Part 3: Storage in Files"
+date: "January 2020"
+requirements:
+  - id: XMP-001
+    section: "1.1.6"
+    heading: "TIFF (Tagged Image File Format)"
+    page: 17
+    level: INFO
+    actor: file
+    category: structure
+    conformance: XMP
+    statement: >
+      A TIFF file begins with an 8-byte header: bytes 0-1 are the byte-order marker
+      ("II" = 0x4949 for little-endian, "MM" = 0x4D4D for big-endian); bytes 2-3 are the
+      value 42 encoded in that byte order (0x2A00 little-endian, 0x002A big-endian)
+      identifying the file as TIFF; bytes 4-7 are the absolute file offset of the first
+      (0th) Image File Directory (IFD).
+    notes: >
+      Restates the classic TIFF 6.0 file header; included only as background for the
+      XMP-in-TIFF embedding rules that follow. Duplicate of TIFF 6.0 baseline structure.
+
+  - id: XMP-002
+    section: "1.1.6"
+    heading: "TIFF (Tagged Image File Format)"
+    page: 17
+    level: MUST
+    actor: file
+    category: structure
+    conformance: XMP
+    statement: >
+      Each IFD begins with a 2-byte count of directory entries, followed by that many
+      12-byte directory entries, followed by a 4-byte offset to the next IFD; the last
+      IFD in the chain must have zero as its next-IFD offset.
+    notes: Duplicate of TIFF 6.0 baseline structure.
+
+  - id: XMP-003
+    section: "1.1.6"
+    heading: "TIFF (Tagged Image File Format)"
+    page: 17
+    level: MUST
+    actor: file
+    category: structure
+    conformance: XMP
+    statement: >
+      IFDs may occur anywhere in the file after the 8-byte header and in any order, but
+      each IFD must begin on an even (2-byte-aligned) file offset. A TIFF file must
+      contain at least one IFD, and each IFD must contain at least one entry.
+    notes: Duplicate of TIFF 6.0 baseline structure.
+
+  - id: XMP-004
+    section: "1.1.6"
+    heading: "TIFF (Tagged Image File Format)"
+    page: 18
+    level: MUST
+    actor: file
+    category: structure
+    conformance: XMP
+    statement: >
+      Within an IFD, directory entries must be sorted in ascending tag order. All
+      offsets recorded in a TIFF file are absolute, measured from the start of the file
+      header, not relative to any other position in the file.
+    notes: Duplicate of TIFF 6.0 baseline structure.
+
+  - id: XMP-005
+    section: "1.1.6"
+    heading: "TIFF (Tagged Image File Format)"
+    page: 18
+    level: MUST
+    actor: file
+    category: structure
+    conformance: XMP
+    statement: >
+      In a 12-byte IFD entry, a value that occupies 4 bytes or fewer must be stored
+      directly in the entry's value/offset field (in the lower-numbered bytes); a value
+      larger than 4 bytes is instead stored elsewhere in the file, with the entry's
+      value/offset field holding the value's absolute byte offset, which must itself be
+      even, though it may otherwise be located anywhere in the file regardless of IFD
+      order.
+    notes: Duplicate of TIFF 6.0 baseline structure.
+
+  - id: XMP-006
+    section: "1.1.6"
+    heading: "TIFF (Tagged Image File Format)"
+    page: 18
+    level: SHOULD
+    actor: writer
+    category: tag
+    conformance: XMP
+    tags: [700]
+    statement: >
+      The IFD entry for TIFF tag 700 (0x2BC, XMP packet) should use field type
+      UNDEFINED (7) or BYTE (1).
+    notes: >
+      Document text: "The field type should be UNDEFINED (7) or BYTE (1)" (Table 13).
+      Wording is normative "should", not "must".
+
+  - id: XMP-007
+    section: "1.1.6"
+    heading: "TIFF (Tagged Image File Format)"
+    page: 18
+    level: MUST
+    actor: file
+    category: tag
+    conformance: XMP
+    tags: [700]
+    statement: >
+      For TIFF tag 700 (0x2BC, XMP packet), the IFD entry's Count is the total byte
+      count of the XMP packet, and the value/offset field gives the byte offset of the
+      XMP packet data; the XMP packet data must be encoded as UTF-8.
+
+  - id: XMP-008
+    section: "1.1.1"
+    heading: "DNG (Digital Negative)"
+    page: 10
+    level: INFO
+    actor: file
+    category: metadata
+    conformance: XMP
+    tags: [700, 33723]
+    statement: >
+      DNG files are well-behaved TIFF files. They can embed metadata using TIFF/Exif
+      metadata tags, the IPTC metadata tag (33723), and/or the XMP metadata tag (700).
+
+  - id: XMP-009
+    section: "1.1.1"
+    heading: "DNG (Digital Negative)"
+    page: 10
+    level: INFO
+    actor: file
+    category: metadata
+    conformance: XMP
+    statement: >
+      TIFF and Exif use nearly the same metadata tag set, but classic TIFF stores its
+      tags in IFD 0 while Exif stores its tags in a separate (Exif) IFD. DNG allows
+      either location for the TIFF/Exif tag set, though the Exif-IFD location is
+      preferred.
+
+  - id: XMP-010
+    section: "3.1.1"
+    heading: "TIFF metadata"
+    page: 65
+    level: SHOULD
+    actor: writer
+    category: behavior
+    conformance: XMP
+    tags: [34665, 34853]
+    statement: >
+      Because TIFF pointer tags such as the Exif IFD pointer (34665) and GPS IFD
+      pointer (34853) are of type LONG with count 1 and are only implicitly
+      identifiable as links (nothing in the tag itself marks it as a pointer),
+      modification of TIFF files must be done carefully to preserve this linked
+      structure; new versions of Exif or private tags could introduce similar implicit
+      IFD pointers that a naive editor would not recognize.
+
+  - id: XMP-011
+    section: "3.1.1"
+    heading: "TIFF metadata"
+    page: 65
+    level: SHOULD
+    actor: writer
+    category: behavior
+    conformance: XMP
+    statement: >
+      Updates to TIFF files should be performed using one of two strategies: (a)
+      rewrite the entire file, outputting only tags that are explicitly understood, or
+      (b) update by append: append all new or resized IFDs and values to the end of the
+      file and adjust the known offsets that reference them.
+
+  - id: XMP-012
+    section: "3.1.1"
+    heading: "TIFF metadata"
+    page: 65
+    level: MUST
+    actor: writer
+    category: structure
+    conformance: XMP
+    statement: >
+      The TIFF specification does not allow a tag to be repeated within an IFD; a
+      writer must not write duplicate tags in one IFD and should write tags in
+      ascending tag order.
+
+  - id: XMP-013
+    section: "3.1.1"
+    heading: "TIFF metadata"
+    page: 65
+    level: SHOULD
+    actor: reader
+    category: structure
+    conformance: XMP
+    statement: A robust TIFF reader should tolerate directory entries that are out of tag order.
+
+  - id: XMP-014
+    section: "3.1.1"
+    heading: "TIFF metadata"
+    page: 65
+    level: INFO
+    actor: reader
+    category: structure
+    conformance: XMP
+    statement: >
+      If duplicate tags nonetheless occur within an IFD, Adobe practice is to keep the
+      value of the last-encountered occurrence of the tag.
+
+  - id: XMP-015
+    section: "3.1.2"
+    heading: "Exif metadata"
+    page: 65
+    level: INFO
+    actor: file
+    category: tag
+    conformance: XMP
+    tags: [34665, 34853]
+    statement: >
+      In a TIFF file, IFD0 contains the Exif IFD pointer (34665, 0x8769) and GPS IFD
+      pointer (34853, 0x8825); these tags point to subsidiary IFDs that in turn contain
+      tags pointing to further data blocks.
+
+  - id: XMP-016
+    section: "3.1.3"
+    heading: "Photoshop image resources"
+    page: 66
+    level: INFO
+    actor: file
+    category: metadata
+    conformance: XMP
+    tags: [34377, 700]
+    statement: >
+      In a TIFF file, TIFF tag 34377 (0x8649) points to a sequence of Photoshop image
+      resources (PSIR) that contain non-metadata resource data and possibly a
+      duplicate copy of IPTC metadata; the image resources reached via tag 34377 do not
+      contain XMP or TIFF/Exif metadata, since XMP and TIFF/Exif metadata each have
+      their own dedicated TIFF tags (700, and the native/Exif tag set respectively).
+
+  - id: XMP-017
+    section: "3.1.3"
+    heading: "Photoshop image resources"
+    page: 66
+    level: MUST
+    actor: file
+    category: structure
+    conformance: XMP
+    statement: >
+      Each Photoshop image resource has the form: 4-byte type signature "8BIM"; 2-byte
+      big-endian resource ID; a Pascal string resource name; a 4-byte big-endian
+      resource-data length; then the resource data itself. Image resources need not be
+      sorted in any way.
+
+  - id: XMP-018
+    section: "3.1.3"
+    heading: "Photoshop image resources"
+    page: 66
+    level: MUST
+    actor: file
+    category: structure
+    conformance: XMP
+    statement: >
+      The resource name and resource data within a Photoshop image resource are
+      followed by a 0x00 pad byte, if needed, so that the next component begins on an
+      even offset; the explicit length fields do not include this pad byte. This
+      padding is relative to the start of the image resource section itself, not to the
+      start of the overall file, so readers and writers must compute alignment relative
+      to the local image-resource section, not the base file offset.
+
+  - id: XMP-019
+    section: "3.1.3"
+    heading: "Photoshop image resources"
+    page: 67
+    level: MUST
+    actor: file
+    category: structure
+    conformance: XMP
+    statement: >
+      The resource ID and resource-data-length fields of a Photoshop image resource
+      must always be written big-endian, even when the image resources are embedded
+      within a little-endian TIFF file.
+
+  - id: XMP-020
+    section: "3.1.4"
+    heading: "IPTC (IIM) metadata"
+    page: 67
+    level: INFO
+    actor: file
+    category: metadata
+    conformance: XMP
+    tags: [33723]
+    statement: >
+      IPTC metadata (TIFF tag 33723) is stored as a sequence of IPTC IIM DataSets, each
+      identified as record:dataset (e.g. DataSet 2:50 is dataset 50 of record 2).
+      DataSets use either a standard form (tag marker 0x1C, 1-byte record number, 1-byte
+      DataSet number, 2-byte big-endian data length in range 0..32767, then data) or an
+      extended form (a variable-length big-endian "data length" field whose own length
+      is given by a 2-byte value ORed with 0x8000).
+
+  - id: XMP-021
+    section: "3.1.4"
+    heading: "IPTC (IIM) metadata"
+    page: 67
+    level: MUST
+    actor: file
+    category: structure
+    conformance: XMP
+    tags: [33723]
+    statement: >
+      IPTC DataSets must be clustered by Record number, with clusters written in
+      ascending Record order (DataSets within a Record cluster may be in any order).
+      The 16-bit DataSet data-length field is always stored big-endian, even when the
+      IPTC block is embedded within a little-endian TIFF file.
+
+  - id: XMP-022
+    section: "3.2.1"
+    heading: "Photoshop image resources for metadata"
+    page: 68
+    level: MUST
+    actor: both
+    category: metadata
+    conformance: XMP
+    statement: >
+      Reconciliation of Photoshop image resource 1034 (copyright flag, a 0/1 Boolean)
+      with XMP xmpRights:Marked: on import, set xmpRights:Marked to True if resource
+      1034 has length 1 and a non-zero value, otherwise leave the existing XMP value
+      unchanged; on export, set resource 1034 to 0 or 1 if xmpRights:Marked is present
+      and boolean, otherwise do not write resource 1034 at all.
+
+  - id: XMP-023
+    section: "3.2.1"
+    heading: "Photoshop image resources for metadata"
+    page: 68
+    level: INFO
+    actor: reader
+    category: metadata
+    conformance: XMP
+    statement: >
+      Photoshop image resources 1058 (Exif/TIFF, added in Photoshop 7) and 1060 (XMP,
+      added in Photoshop 7) can each contain a self-contained TIFF byte stream,
+      complete with its own 8-byte TIFF header, that may be little-endian even though
+      the containing image-resource section is otherwise big-endian; readers must
+      recognize and honor this inner TIFF header.
+
+  - id: XMP-024
+    section: "3.2.1"
+    heading: "Photoshop image resources for metadata"
+    page: 68
+    level: INFO
+    actor: reader
+    category: metadata
+    conformance: XMP
+    statement: >
+      The full set of individual Photoshop-image-resource-to-XMP property mappings
+      (source document Table 36) is not enumerated here per extraction scope; see XMP
+      Specification Part 2 for the namespace and property details.
+
+  - id: XMP-025
+    section: "3.2.2"
+    heading: "IPTC DataSets for metadata"
+    page: 69
+    level: MUST
+    actor: reader
+    category: metadata
+    conformance: XMP
+    tags: [33723]
+    statement: >
+      For a non-repeatable IPTC DataSet that maps to a simple XMP property, if the
+      DataSet is improperly repeated in the file, a robust reader keeps the last value
+      encountered.
+
+  - id: XMP-026
+    section: "3.2.2"
+    heading: "IPTC DataSets for metadata"
+    page: 69
+    level: MUST
+    actor: both
+    category: metadata
+    conformance: XMP
+    tags: [33723]
+    statement: >
+      For a repeatable IPTC DataSet that maps to a simple (non-array) XMP property
+      (e.g. 2:85 to photoshop:AuthorsPosition, 2:122 to photoshop:CaptionWriter), the
+      last repeated value encountered is kept on import. DataSet 2:80 (By-line) is
+      repeatable but maps only to the first item of the dc:creator array: only the last
+      2:80 value is kept on import, and only the first item of the dc:creator array is
+      written back as a single 2:80 DataSet on export.
+
+  - id: XMP-027
+    section: "3.2.2"
+    heading: "IPTC DataSets for metadata"
+    page: 69
+    level: MUST
+    actor: both
+    category: metadata
+    conformance: XMP
+    tags: [33723]
+    statement: >
+      For a repeatable IPTC DataSet that maps to an XMP array property (e.g. 2:25
+      Keywords to dc:subject), all repeated DataSet values are imported and exported as
+      separate array items.
+
+  - id: XMP-028
+    section: "3.2.2"
+    heading: "IPTC DataSets for metadata"
+    page: 69
+    level: SHOULD
+    actor: both
+    category: metadata
+    conformance: XMP
+    tags: [33723]
+    statement: >
+      Adobe practice for IPTC DataSets is to preserve the full value on import to XMP
+      even if it exceeds the DataSet's nominal maximum size; when exporting from XMP
+      back to the native IPTC DataSet, oversized values are truncated to the DataSet's
+      allowed maximum size.
+
+  - id: XMP-029
+    section: "3.2.2"
+    heading: "IPTC DataSets for metadata"
+    page: 69
+    level: INFO
+    actor: reader
+    category: metadata
+    conformance: XMP
+    tags: [33723]
+    statement: >
+      The full set of IPTC-DataSet-to-XMP property mappings (source document Tables 37
+      and 38) is not enumerated here per extraction scope; see XMP Specification Part 2
+      for the namespace and property details.
+
+  - id: XMP-030
+    section: "3.2.3"
+    heading: "TIFF and Exif tags for metadata"
+    page: 71
+    level: MUST
+    actor: file
+    category: structure
+    conformance: XMP
+    tags: [700, 33723, 34377, 34665, 34853]
+    statement: >
+      Of the TIFF/Exif metadata tags, five are pointers to subsidiary IFDs or blocks of
+      metadata in another format rather than individual property values: XMP packet
+      (700, 0x2BC), IPTC DataSets (33723, 0x83BB), Photoshop image resources (34377,
+      0x8649), Exif IFD offset (34665, 0x8769), and GPS IFD offset (34853, 0x8825).
+      These five tags must appear in the TIFF first (0th) IFD; they are not permitted
+      in other IFDs (e.g. a thumbnail IFD1).
+    notes: >
+      This is the document's answer to "one XMP packet per IFD": tag 700 is only valid,
+      and only meaningful, in IFD0.
+
+  - id: XMP-031
+    section: "3.2.3.1"
+    heading: "Text encoding and tags with substructure"
+    page: 72
+    level: SHOULD
+    actor: writer
+    category: metadata
+    conformance: XMP
+    statement: >
+      Although most TIFF and Exif tags of type ASCII are formally restricted to 7-bit
+      ASCII, Adobe practice is to write UTF-8 in these ASCII-type tags, so that all
+      Unicode characters present in the XMP can be preserved when exporting to the
+      native tag.
+
+  - id: XMP-032
+    section: "3.2.3.1"
+    heading: "Text encoding and tags with substructure"
+    page: 72
+    level: MUST
+    actor: both
+    category: metadata
+    conformance: XMP
+    tags: [315]
+    statement: >
+      For the Artist tag (315), multiple names are separated by semicolons per Exif
+      convention (e.g. "Camera owner, John Smith; Photographer, Michael Brown"). When
+      importing to XMP, split the tag value at semicolons into separate items of the
+      dc:creator array. When exporting from XMP to the tag, concatenate the dc:creator
+      array items using semicolons.
+
+  - id: XMP-033
+    section: "3.2.3.1"
+    heading: "Text encoding and tags with substructure"
+    page: 72
+    level: MUST
+    actor: both
+    category: metadata
+    conformance: XMP
+    tags: [33432]
+    statement: >
+      For the Copyright tag (33432), Exif recommends separating an individual
+      photographer copyright and an editor copyright with an internal NULL byte. When
+      importing to XMP, convert any internal NULL byte in the tag value to a linefeed
+      (U+000A). When exporting from XMP back to the tag, no conversion is performed
+      (linefeeds are not converted back to NULL bytes).
+
+  - id: XMP-034
+    section: "3.2.3.1"
+    heading: "Text encoding and tags with substructure"
+    page: 72
+    level: INFO
+    actor: file
+    category: tag
+    conformance: XMP
+    tags: [37510, 27, 28]
+    statement: >
+      Three TIFF/Exif tags of physical type UNDEFINED actually carry text with an
+      explicit encoding: UserComment (37510), GPSProcessingMethod (27), and
+      GPSAreaInformation (28). Each value begins with an 8-byte ASCII, NULL-padded
+      encoding header: "ASCII\0\0\0" for ISO 646 / 7-bit ASCII, "JIS\0\0\0\0\0" for JIS
+      X208-1990, "UNICODE\0" for UTF-16, or 8 NULL bytes for an undefined/local-OS
+      encoding, followed by the encoded text with no NULL termination and no concept of
+      multiple internal strings.
+
+  - id: XMP-035
+    section: "3.2.3.1"
+    heading: "Text encoding and tags with substructure"
+    page: 72
+    level: INFO
+    actor: reader
+    category: tag
+    conformance: XMP
+    tags: [37510]
+    statement: >
+      The Exif specification does not state whether the UTF-16 text form used in tags
+      such as UserComment (37510) should be big- or little-endian; a reasonable
+      presumption is to follow the byte order given in the TIFF file header.
+
+  - id: XMP-036
+    section: "3.2.3.2"
+    heading: "Writeback tags"
+    page: 72
+    level: MUST-NOT
+    actor: both
+    category: metadata
+    conformance: XMP
+    statement: >
+      Except for a specific writeback list (see XMP-037), TIFF, Exif, and GPS tags that
+      are mapped to XMP properties are read-only from the XMP's point of view: edits to
+      the XMP value must not be written back to the corresponding native tag.
+
+  - id: XMP-037
+    section: "3.2.3.2"
+    heading: "Writeback tags"
+    page: 72
+    level: INFO
+    actor: writer
+    category: tag
+    conformance: XMP
+    tags: [270, 274, 282, 283, 296, 305, 306, 315, 33432, 37510, 40964]
+    statement: >
+      The only TIFF, Exif, and GPS tags to which modified XMP property values may be
+      written back are: TIFF ImageDescription (270), TIFF Orientation (274), TIFF
+      XResolution (282), TIFF YResolution (283), TIFF ResolutionUnit (296), TIFF
+      Software (305), TIFF DateTime (306), TIFF Artist (315), TIFF Copyright (33432),
+      Exif UserComment (37510), and Exif RelatedSoundFile (40964).
+
+  - id: XMP-038
+    section: "3.2.3.3"
+    heading: "Value conversions for TIFF and Exif tag values"
+    page: 73
+    level: INFO
+    actor: both
+    category: metadata
+    conformance: XMP
+    statement: >
+      Value conversions from TIFF/Exif to XMP: integer values convert to decimal
+      strings (C printf "%d" style); RATIONAL/SRATIONAL values convert to
+      "numerator/denominator" form; signed rationals are normalized so that only a
+      single leading minus sign, if any, appears (e.g. the pair (123,-456) becomes
+      "-123/456" and (-123,-456) becomes "123/456").
+
+  - id: XMP-039
+    section: "3.2.3.3"
+    heading: "Value conversions for TIFF and Exif tag values"
+    page: 73
+    level: INFO
+    actor: reader
+    category: metadata
+    conformance: XMP
+    statement: >
+      ASCII-type TIFF/Exif tag values are imported to XMP as-is if they already form a
+      valid UTF-8 sequence; otherwise a local-encoding-to-UTF-8 conversion is
+      performed. It is possible, though unlikely, for a locally encoded value to look
+      like valid UTF-8 and be erroneously imported as such.
+
+  - id: XMP-040
+    section: "3.2.3.3"
+    heading: "Value conversions for TIFF and Exif tag values"
+    page: 73
+    level: MUST-NOT
+    actor: reader
+    category: metadata
+    conformance: XMP
+    statement: >
+      Exif/TIFF date/time values (a 20-byte NULL-terminated ASCII string formatted
+      "YYYY:MM:DD HH:MM:SS", with numeric portions optionally blank if unknown, plus a
+      separate NULL-terminated, optionally space-padded ASCII fractional-seconds
+      string) are converted to ISO 8601 notation for XMP. Because Exif date/time has no
+      timezone component, applications must not arbitrarily add timezone information
+      when importing an Exif date/time value to XMP, even though strict ISO 8601
+      normally requires a timezone.
+
+  - id: XMP-041
+    section: "3.2.3.3"
+    heading: "Value conversions for TIFF and Exif tag values"
+    page: 73
+    level: INFO
+    actor: both
+    category: metadata
+    conformance: XMP
+    statement: >
+      GPS latitude/longitude values combine the native 3-RATIONAL degrees/minutes/
+      seconds value with its single-letter compass reference ('N', 'S', 'E', or 'W')
+      into one XMP coordinate string: if all three denominators are 1, the format is
+      "deg,min,secRef" (e.g. (12/1,34/1,56/1) with ref 'N' becomes "12,34,56N");
+      otherwise the coordinate is normalized to "deg,min.fracRef" using floating-point
+      arithmetic with enough fractional-minute digits to cover the largest denominator
+      (e.g. (12/1,34/1,56789/1000) with ref 'N' becomes "12,34.946N").
+
+  - id: XMP-042
+    section: "3.2.3.4"
+    heading: "TIFF and Exif digests"
+    page: 73
+    level: SHOULD-NOT
+    actor: both
+    category: metadata
+    conformance: XMP
+    statement: >
+      The tiff:NativeDigest and exif:NativeDigest XMP properties, formerly used to
+      detect changes to the native TIFF/Exif tags, are deprecated per Metadata Working
+      Group guidance: readers should ignore them if found, and writers should remove
+      them from the XMP when updating a file.
+
+  - id: XMP-043
+    section: "3.3.4"
+    heading: "Metadata storage in TIFF files"
+    page: 76
+    level: MUST
+    actor: both
+    category: structure
+    conformance: XMP
+    tags: [700, 33723, 34377]
+    statement: >
+      When processing the metadata blocks referenced by TIFF tags 700 (XMP), 33723
+      (IPTC), and 34377 (Photoshop image resources), the tag's declared physical type
+      (BYTE, SHORT, LONG, etc.) must be taken into account: the stored byte range may
+      include up to 3 appended 0x00 padding bytes so that the total size is a multiple
+      of the physical unit's size, so software loops that process the data must be
+      prepared to terminate 1 to 3 bytes before the nominal end, depending on the
+      physical unit.
+
+  - id: XMP-044
+    section: "3.3.4"
+    heading: "Metadata storage in TIFF files"
+    page: 76
+    level: MUST-NOT
+    actor: writer
+    category: metadata
+    conformance: XMP
+    tags: [34377]
+    statement: >
+      A TIFF file should not contain Photoshop image resource 1060 (XMP) within tag
+      34377, since XMP is instead carried directly in TIFF tag 700; a TIFF file might,
+      however, contain image resource 1058 (a nested Exif/TIFF stream) due to a
+      Photoshop 6 writing quirk (see XMP-047).
+    notes: This is the extraction target for interaction with Photoshop image resource 0x0424 (1060, XMP) inside tag 34377.
+
+  - id: XMP-045
+    section: "3.3.4"
+    heading: "Metadata storage in TIFF files"
+    page: 76
+    level: INFO
+    actor: file
+    category: metadata
+    conformance: XMP
+    tags: [34377]
+    statement: >
+      The Photoshop image resources usable as metadata within a TIFF file's tag 34377
+      are: 1028 (0x404, IPTC DataSets), 1034 (0x40A, copyright flag), 1035 (0x40B,
+      copyright information URL text), and 1061 (0x425, MD5 digest of the IPTC
+      DataSets).
+
+  - id: XMP-046
+    section: "3.3.4"
+    heading: "Metadata storage in TIFF files"
+    page: 76
+    level: INFO
+    actor: file
+    category: metadata
+    conformance: XMP
+    tags: [33723, 34377]
+    statement: >
+      A TIFF file can contain up to 3 copies of IPTC metadata: directly via TIFF tag
+      33723, duplicated inside Photoshop image resource 1028 (itself inside TIFF tag
+      34377), and potentially a third copy in a Mac OS "ANPA" 10000 file resource. For
+      reconciliation of multiply-defined values, the Mac OS ANPA 10000 copy, where
+      present, takes priority.
+    notes: >
+      The priority rule is stated in section 3.3.5 (Mac OS file resources), which is
+      outside strict TIFF-container scope but is cross-referenced directly from this
+      TIFF-file NOTE, so it is retained here.
+
+  - id: XMP-047
+    section: "3.3.4.1"
+    heading: "Photoshop 6 and TIFF"
+    page: 76
+    level: INFO
+    actor: file
+    category: metadata
+    conformance: XMP
+    tags: [34377, 34665]
+    statement: >
+      Photoshop 6 wrote most TIFF/Exif metadata inside Photoshop image resource 1058
+      (itself inside TIFF tag 34377) rather than in the native 0th IFD. In particular,
+      the Exif IFD pointer (tag 34665) was written only inside the 0th IFD nested
+      within resource 1058, not in the outer/native 0th IFD, while tags 259, 270, 282,
+      and 296 were duplicated in both the outer native 0th IFD and the 0th IFD nested
+      within resource 1058.
+
+  - id: XMP-048
+    section: "3.3.4.1"
+    heading: "Photoshop 6 and TIFF"
+    page: 77
+    level: INFO
+    actor: file
+    category: metadata
+    conformance: XMP
+    statement: >
+      Photoshop 7 and Photoshop CS2 (version 9) and later no longer write Photoshop
+      image resource 1058 in TIFF files; from Photoshop 7 onward, TIFF/Exif metadata is
+      written using the native TIFF tags and the Exif subsidiary IFD (tag 34665)
+      directly in the outer IFD structure.
+
+  - id: XMP-049
+    section: "3.3.4.1"
+    heading: "Photoshop 6 and TIFF"
+    page: 77
+    level: SHOULD
+    actor: reader
+    category: behavior
+    conformance: XMP
+    tags: [34377, 34665]
+    statement: >
+      Because of the Photoshop-6-era nesting behavior, TIFF readers should be prepared
+      to find Exif/TIFF metadata, including the Exif IFD pointer, inside Photoshop
+      image resource 1058 (within tag 34377) rather than, or in addition to, the native
+      0th IFD tags.
+
+  - id: XMP-050
+    section: "Embedding metadata in files"
+    heading: "Embedding metadata in files"
+    page: 7
+    level: INFO
+    actor: file
+    category: metadata
+    conformance: XMP
+    statement: >
+      XMP metadata is serialized into XML, specifically RDF/XML, for storage in files;
+      the serialized data is called an XMP packet. The XMP packet is completely
+      self-contained and independent of any particular file format.
+
+  - id: XMP-051
+    section: "Native metadata"
+    heading: "Native metadata"
+    page: 7
+    level: MUST
+    actor: both
+    category: behavior
+    conformance: XMP
+    statement: >
+      An application that supports XMP must read metadata values from native metadata
+      formats present in a file (e.g. TIFF, Exif, IPTC) and represent them correctly in
+      XMP; when modifying XMP metadata, the application is responsible for correctly
+      reflecting the changes in any other metadata formats present in the file, since a
+      later application relying on a native format must see the change properly
+      represented.
+
+  - id: XMP-052
+    section: "2.1.2"
+    heading: "Native metadata export and import"
+    page: 52
+    level: MUST
+    actor: writer
+    category: behavior
+    conformance: XMP
+    statement: >
+      All forms of a given metadata item stored in a file must be kept synchronized:
+      existing native-metadata items must be either updated or deleted when the
+      corresponding value changes. The general policy is to export from the XMP to the
+      native forms written to the file, applying appropriate conversions.
+
+  - id: XMP-053
+    section: "2.1.2"
+    heading: "Native metadata export and import"
+    page: 52
+    level: SHOULD
+    actor: reader
+    category: behavior
+    conformance: XMP
+    statement: >
+      When more than one form of a metadata item (native and XMP) might be present in a
+      file, a robust reader must locate all forms and select the most appropriate one,
+      preferably the most recently written form; if recency cannot conveniently be
+      determined, prefer the native form for compatibility with XMP-unaware software.
+
+  - id: XMP-054
+    section: "2.1.2"
+    heading: "Native metadata export and import"
+    page: 52
+    level: SHOULD
+    actor: reader
+    category: behavior
+    conformance: XMP
+    statement: >
+      To reliably determine whether a native value and an XMP value actually differ,
+      accounting for representation and encoding differences and possible lossy export,
+      a reader should predict the native value from the XMP value and compare that
+      prediction to the actual native value, rather than comparing raw values directly.
+
+  - id: XMP-055
+    section: "2.1.3"
+    heading: "Use of native metadata digests"
+    page: 53
+    level: MAY
+    actor: both
+    category: behavior
+    conformance: XMP
+    statement: >
+      A digest of a native metadata block may be used as an optimization to detect
+      whether that block has changed: compute and save the digest (e.g. in the XMP)
+      after formatting an update; on later open, recompute the digest and compare — if
+      it matches, the native metadata can be treated as unchanged and skipped for
+      reconciliation; if it differs, per-item reconciliation must be applied. Metadata
+      items that exist only in a native form must still be imported regardless of
+      digest match.
+
+  - id: XMP-056
+    section: "2.4.1"
+    heading: "Reconciliation issues"
+    page: 63
+    level: SHOULD
+    actor: both
+    category: behavior
+    conformance: XMP
+    statement: >
+      In general, XMP properties in the tiff: and exif: namespaces (which mirror native
+      TIFF/Exif technical metadata) should be ignored for JPEG, TIFF, and PSD files
+      whenever the corresponding native TIFF/Exif tag exists in the file: on conflict
+      between an XMP tiff:/exif: property and the native tag, the native tag value
+      takes precedence.
+    notes: >
+      This is the document's normative statement of "which wins when native and XMP
+      disagree" for the tiff:/exif: namespace properties. Per the Metadata Working
+      Group guidelines referenced here, only the native TIFF/Exif tags -- not XMP
+      copies -- should be stored for these technical-metadata items.
+
+  - id: XMP-057
+    section: "2.4.1"
+    heading: "Reconciliation issues"
+    page: 63
+    level: INFO
+    actor: reader
+    category: behavior
+    conformance: XMP
+    tags: [34855]
+    statement: >
+      An exception to the native-tag-wins rule (XMP-056) is exif:ISOSpeedRating when
+      the native Exif ISO tag has the value 65535: because the native Exif ISO tag is a
+      16-bit unsigned value that cannot represent ISO speeds used by some recent
+      cameras, some applications extract the true ISO value from the proprietary
+      MakerNote tag and store it in the XMP property exif:ISOSpeedRating instead of
+      relying on the capped native value.
+
+  - id: XMP-058
+    section: "2.4.2"
+    heading: "Encoding of text in metadata"
+    page: 64
+    level: INFO
+    actor: file
+    category: metadata
+    conformance: XMP
+    tags: [37510, 27, 28]
+    statement: >
+      XMP text is always Unicode (UTF-8 for PSD, TIFF, JPEG, JPEG 2000, GIF, PNG, DNG,
+      and camera raw files). TIFF/Exif tags of type ASCII are formally 7-bit ASCII,
+      except UserComment (37510), GPSProcessingMethod (27), and GPSAreaInformation
+      (28), which carry an explicit encoding header (see XMP-034). IPTC values are all
+      ISO 646 (7-bit ASCII with national variants).
+    notes: Overlaps with XMP-034/XMP-020; retained as it restates the rule in the general encoding-comparison context.
+
+  - id: XMP-059
+    section: "2.4.2"
+    heading: "Encoding of text in metadata"
+    page: 64
+    level: INFO
+    actor: file
+    category: metadata
+    conformance: XMP
+    tags: [270, 37510]
+    statement: >
+      Contrary to the Exif recommendation to use UserComment (37510) instead of
+      ImageDescription (270) for non-ASCII text, Photoshop always writes TIFF
+      ImageDescription and never writes Exif UserComment.
+    notes: Documented real-world deviation from the Exif specification's own recommendation.
+
+tags:
+  - code: 700
+    hex: "0x02BC"
+    name: XMPPacket
+    types: [BYTE, UNDEFINED]
+    count: "N (total byte count of the serialized XMP packet)"
+    default: null
+    required: conditional
+    conformance: XMP
+    location: ifd0
+    section: "3.2.3"
+    page: 71
+    description: >
+      Points to a serialized RDF/XML XMP packet embedded in the TIFF file, encoded as
+      UTF-8. Must appear only in the TIFF 0th IFD (not in a thumbnail or other IFD).
+      Field type should be UNDEFINED (7) or BYTE (1).
+    interacts_with: [33723, 34377, 34665, 34853]
+
+  - code: 33723
+    hex: "0x83BB"
+    name: IPTC
+    count: "N (byte length of the IPTC DataSet block)"
+    default: null
+    required: conditional
+    conformance: XMP
+    location: ifd0
+    section: "3.2.3"
+    page: 71
+    description: >
+      Points to a block of IPTC IIM DataSets embedded in the TIFF 0th IFD. Must appear
+      only in the TIFF 0th IFD. This document does not state the tag's TIFF value type.
+    interacts_with: [700, 34377]
+
+  - code: 34377
+    hex: "0x8649"
+    name: Photoshop
+    count: "N (byte length of the Photoshop image resource block)"
+    default: null
+    required: no
+    conformance: XMP
+    location: ifd0
+    section: "3.2.3"
+    page: 71
+    description: >
+      Points to a sequence of Photoshop Image Resources (PSIR) embedded in the TIFF
+      0th IFD. Contains non-metadata resources and may contain metadata resources 1028
+      (IPTC), 1034 (copyright flag), 1035 (copyright URL), 1061 (IPTC MD5 digest), and,
+      for files written by Photoshop 6, resource 1058 (nested Exif/TIFF); must not
+      contain resource 1060 (XMP). Must appear only in the TIFF 0th IFD. This document
+      does not state the tag's TIFF value type.
+    interacts_with: [700, 33723]
+
+  - code: 34665
+    hex: "0x8769"
+    name: ExifIFD
+    types: [LONG]
+    count: "1"
+    default: null
+    required: no
+    conformance: XMP
+    location: ifd0
+    section: "3.1.1"
+    page: 65
+    description: >
+      Offset to the Exif subsidiary IFD. Must appear only in the TIFF 0th IFD. Written
+      as an implicit link (type LONG, count 1) with nothing in the tag itself marking
+      it as a pointer, so file-update strategies must preserve it carefully.
+    interacts_with: [34853]
+
+  - code: 34853
+    hex: "0x8825"
+    name: GPSIFD
+    types: [LONG]
+    count: "1"
+    default: null
+    required: no
+    conformance: XMP
+    location: ifd0
+    section: "3.1.1"
+    page: 65
+    description: >
+      Offset to the GPS subsidiary IFD. Must appear only in the TIFF 0th IFD. Written
+      as an implicit link (type LONG, count 1) with nothing in the tag itself marking
+      it as a pointer, so file-update strategies must preserve it carefully.
+    interacts_with: [34665]
+
+dependencies:
+  - id: XMP-DEP-001
+    requirement: XMP-030
+    when: "tag in [XMPPacket(700), IPTC(33723), Photoshop(34377), ExifIFD(34665), GPSIFD(34853)] is present in a TIFF file"
+    then: "the tag must appear in the TIFF 0th IFD (IFD0); it is not valid in any other IFD"
+    kind: constrains-value
+    tags: [700, 33723, 34377, 34665, 34853]
+
+  - id: XMP-DEP-002
+    requirement: XMP-007
+    when: "TIFF tag XMPPacket(700) is present"
+    then: "field type must be UNDEFINED(7) or BYTE(1); Count = total byte length of the XMP packet; value/offset = byte offset of the UTF-8-encoded XMP packet"
+    kind: constrains-value
+    tags: [700]
+
+  - id: XMP-DEP-003
+    requirement: XMP-044
+    when: "TIFF tag Photoshop(34377) is present in a TIFF file"
+    then: "the referenced PSIR block must not contain image resource 1060 (XMP); it may contain image resource 1058 (nested Exif/TIFF) only for files written by Photoshop 6"
+    kind: forbids
+    tags: [34377]
+
+  - id: XMP-DEP-004
+    requirement: XMP-056
+    when: "a native TIFF/Exif tag corresponding to a tiff: or exif: namespace XMP property exists and has a value"
+    then: "the native tag value takes precedence; the XMP tiff:/exif: property should be ignored, except exif:ISOSpeedRating when the native Exif ISO tag == 65535 (see XMP-DEP-005)"
+    kind: modifies-meaning
+    tags: []
+
+  - id: XMP-DEP-005
+    requirement: XMP-057
+    when: "native Exif ISOSpeedRatings tag(34855) == 65535"
+    then: "exif:ISOSpeedRating in XMP may hold the true ISO value extracted from the proprietary MakerNote tag, overriding the capped native value"
+    kind: modifies-meaning
+    tags: [34855]
+
+  - id: XMP-DEP-006
+    requirement: XMP-036
+    when: "a TIFF/Exif/GPS tag mapped to an XMP property is NOT one of [ImageDescription(270), Orientation(274), XResolution(282), YResolution(283), ResolutionUnit(296), Software(305), DateTime(306), Artist(315), Copyright(33432), UserComment(37510), RelatedSoundFile(40964)]"
+    then: "edits to the mapped XMP property must not be written back to the native tag"
+    kind: forbids
+    tags: [270, 274, 282, 283, 296, 305, 306, 315, 33432, 37510, 40964]
+
+  - id: XMP-DEP-007
+    requirement: XMP-032
+    when: "Artist(315) value contains semicolon-separated names"
+    then: "on import, split into separate dc:creator array items at each semicolon; on export, concatenate dc:creator items with semicolons to form the tag value"
+    kind: modifies-meaning
+    tags: [315]
+
+  - id: XMP-DEP-008
+    requirement: XMP-033
+    when: "Copyright(33432) value contains an internal NULL byte"
+    then: "on import, convert the internal NULL to a linefeed (U+000A) in the XMP value; on export, no reverse conversion is performed"
+    kind: modifies-meaning
+    tags: [33432]
+
+  - id: XMP-DEP-009
+    requirement: XMP-034
+    when: "tag is one of [UserComment(37510), GPSProcessingMethod(27), GPSAreaInformation(28)]"
+    then: "the first 8 bytes of the value are an ASCII, NULL-padded encoding header ('ASCII\\0\\0\\0', 'JIS\\0\\0\\0\\0\\0', 'UNICODE\\0', or 8 NULL bytes) selecting the encoding of the remaining, non-NULL-terminated text"
+    kind: modifies-meaning
+    tags: [37510, 27, 28]
+
+  - id: XMP-DEP-010
+    requirement: XMP-011
+    when: "a writer updates or adds IFD pointer tags such as ExifIFD(34665) or GPSIFD(34853) in an existing TIFF file"
+    then: "the writer must use either a whole-file rewrite (outputting only understood tags) or an append-only update (appending new/resized IFDs and values, then adjusting known offsets) to avoid breaking the implicit link structure"
+    kind: requires
+    tags: [34665, 34853]
+
+  - id: XMP-DEP-011
+    requirement: XMP-055
+    when: "a saved digest of a native metadata block matches the digest recomputed on open"
+    then: "reconciliation for that block may be skipped; if the digest differs, per-item reconciliation must be applied; items that exist only in native form must still be imported regardless of digest match"
+    kind: constrains-value
+    tags: []
+
+  - id: XMP-DEP-012
+    requirement: XMP-047
+    when: "a TIFF file was written by Photoshop 6"
+    then: "the Exif IFD pointer(34665) and several other tags (259, 270, 282, 296) may be found only inside Photoshop image resource 1058 (within tag 34377) rather than, or in addition to, the outer native 0th IFD; readers should check both locations"
+    kind: modifies-meaning
+    tags: [34377, 34665]
+
+  - id: XMP-DEP-013
+    requirement: XMP-022
+    when: "PSIR 1034 (copyright flag) has length 1 and a non-zero value"
+    then: "on import, set xmpRights:Marked to True; otherwise leave XMP unchanged. On export, write resource 1034 as 0/1 only if xmpRights:Marked is present and boolean; otherwise omit resource 1034"
+    kind: modifies-meaning
+    tags: [34377]
+
+  - id: XMP-DEP-014
+    requirement: XMP-025
+    when: "an IPTC DataSet(33723 content) is non-repeatable and mapped to a simple XMP property, or is repeatable DataSet 2:80 (By-line) mapped to only the first dc:creator item, and is improperly repeated in the file"
+    then: "a robust reader keeps the last value encountered (for 2:80, only the last value is kept on import, and only the first dc:creator array item is exported back as a single 2:80 DataSet)"
+    kind: constrains-value
+    tags: [33723]

@@ -1,0 +1,2037 @@
+# =============================================================================
+# Exif tag registry: tags resident in the Exif, GPS and Interoperability IFDs
+# =============================================================================
+#
+# Source: Exif 2.3 (CIPA DC-008-2010) — see sources/EXIF.yaml for per-tag
+# section/page citations, and specifications.md for the document registry.
+#
+# Same field conventions as tags.yaml, plus:
+#   location            exif-ifd | gps-ifd | interop-ifd — the IFD the tag
+#                       resides in. Tag codes are only unique per location
+#                       (e.g. code 1 is GPSLatitudeRef in gps-ifd and
+#                       InteroperabilityIndex in interop-ifd).
+#   supplement_version  Exif edition that introduced the tag, where the
+#                       document states it (bare entries are Exif 2.2-era or
+#                       older; this document is the 2.3 edition).
+#   description         short semantic summary (the classic registry keeps
+#                       this in prose files; Exif tags are numerous enough
+#                       that the summary lives here).
+#
+# The IFD-pointer tags that *reach* these IFDs live in tags.yaml:
+#   34665 ExifIFDPointer (IFD0), 34853 GPSInfoIFDPointer (IFD0);
+#   40965 InteroperabilityIFDPointer resides in the Exif IFD and is listed
+#   here. Placement rules are DEP-140.. in constraints.yaml.
+#
+# Implied generic rules per entry: TAG-<code>-TYPE/COUNT/VALUE as defined in
+# tags.yaml, evaluated against the location-qualified code.
+# =============================================================================
+
+tags:
+- code: 0
+  name: GPSVersionID
+  since: EXIF
+  last: null
+  status: current
+  conformance: EXIF
+  container: both
+  location: gps-ifd
+  types:
+  - BYTE
+  count: '4'
+  default: 2.3.0.0
+  required: conditional
+  values:
+    2.3.0.0: Version 2.3
+  defined_in:
+  - EXIF
+  description: >
+    Version of the GPS Info IFD; 2.3.0.0 for this standard. Mandatory when the GPS Info IFD
+    is present.
+  notes: Table 19 lists O, but text says mandatory when GPS Info tag present.
+- code: 1
+  name: GPSLatitudeRef
+  since: EXIF
+  last: null
+  status: current
+  conformance: EXIF
+  container: both
+  location: gps-ifd
+  types:
+  - ASCII
+  count: '2'
+  default: null
+  required: 'no'
+  values:
+    N: North latitude
+    S: South latitude
+  defined_in:
+  - EXIF
+  description: Whether latitude is north or south.
+  notes: Optional (O) all cases.
+- code: 1
+  name: InteroperabilityIndex
+  since: EXIF
+  last: null
+  status: current
+  conformance: EXIF
+  container: both
+  location: interop-ifd
+  types:
+  - ASCII
+  count: Any
+  default: null
+  required: conditional
+  values:
+    R98: Exif R98 file / DCF basic file
+    THM: DCF thumbnail file
+    R03: DCF Option File
+  defined_in:
+  - EXIF
+  description: >
+    Identification of the interoperability rule (4 bytes incl. NULL). Note: tag code 1 collides
+    with GPSLatitudeRef but resides in a different IFD (Interoperability IFD).
+  notes: 'In Exif IFD''s Interoperability IFD: N for uncompressed, Optional (O) for compressed.'
+- code: 2
+  name: GPSLatitude
+  since: EXIF
+  last: null
+  status: current
+  conformance: EXIF
+  container: both
+  location: gps-ifd
+  types:
+  - RATIONAL
+  count: '3'
+  default: null
+  required: 'no'
+  defined_in:
+  - EXIF
+  description: Latitude as degrees, minutes, seconds (3 RATIONALs).
+  notes: Optional (O) all cases.
+- code: 3
+  name: GPSLongitudeRef
+  since: EXIF
+  last: null
+  status: current
+  conformance: EXIF
+  container: both
+  location: gps-ifd
+  types:
+  - ASCII
+  count: '2'
+  default: null
+  required: 'no'
+  values:
+    E: East longitude
+    W: West longitude
+  defined_in:
+  - EXIF
+  description: Whether longitude is east or west.
+  notes: Optional (O) all cases.
+- code: 4
+  name: GPSLongitude
+  since: EXIF
+  last: null
+  status: current
+  conformance: EXIF
+  container: both
+  location: gps-ifd
+  types:
+  - RATIONAL
+  count: '3'
+  default: null
+  required: 'no'
+  defined_in:
+  - EXIF
+  description: Longitude as degrees, minutes, seconds (3 RATIONALs).
+  notes: Optional (O) all cases.
+- code: 5
+  name: GPSAltitudeRef
+  since: EXIF
+  last: null
+  status: current
+  conformance: EXIF
+  container: both
+  location: gps-ifd
+  types:
+  - BYTE
+  count: '1'
+  default: 0
+  required: 'no'
+  values:
+    0: Sea level (at/above)
+    1: Below sea level (GPSAltitude is absolute value)
+  defined_in:
+  - EXIF
+  description: Reference altitude (unit meters). BYTE type unlike other reference tags.
+  notes: Optional (O) all cases.
+- code: 6
+  name: GPSAltitude
+  since: EXIF
+  last: null
+  status: current
+  conformance: EXIF
+  container: both
+  location: gps-ifd
+  types:
+  - RATIONAL
+  count: '1'
+  default: null
+  required: 'no'
+  defined_in:
+  - EXIF
+  description: Altitude based on GPSAltitudeRef, in meters.
+  notes: Optional (O) all cases.
+- code: 7
+  name: GPSTimeStamp
+  since: EXIF
+  last: null
+  status: current
+  conformance: EXIF
+  container: both
+  location: gps-ifd
+  types:
+  - RATIONAL
+  count: '3'
+  default: null
+  required: 'no'
+  defined_in:
+  - EXIF
+  description: UTC time as hour, minute, second (3 RATIONALs).
+  notes: Optional (O) all cases.
+- code: 8
+  name: GPSSatellites
+  since: EXIF
+  last: null
+  status: current
+  conformance: EXIF
+  container: both
+  location: gps-ifd
+  types:
+  - ASCII
+  count: Any
+  default: null
+  required: 'no'
+  defined_in:
+  - EXIF
+  description: GPS satellites used (free ASCII format). If receiver cannot measure, set to
+    NULL.
+  notes: Optional (O) all cases.
+- code: 9
+  name: GPSStatus
+  since: EXIF
+  last: null
+  status: current
+  conformance: EXIF
+  container: both
+  location: gps-ifd
+  types:
+  - ASCII
+  count: '2'
+  default: null
+  required: 'no'
+  values:
+    A: Measurement in progress
+    V: Measurement interoperability (in-progress/void)
+  defined_in:
+  - EXIF
+  description: GPS receiver status at capture.
+  notes: Optional (O) all cases. 'V' text garbled in source as "Interoperability".
+- code: 10
+  name: GPSMeasureMode
+  since: EXIF
+  last: null
+  status: current
+  conformance: EXIF
+  container: both
+  location: gps-ifd
+  types:
+  - ASCII
+  count: '2'
+  default: null
+  required: 'no'
+  values:
+    '2': 2-dimensional measurement
+    '3': 3-dimensional measurement
+  defined_in:
+  - EXIF
+  description: GPS measurement mode.
+  notes: Optional (O) all cases.
+- code: 11
+  name: GPSDOP
+  since: EXIF
+  last: null
+  status: current
+  conformance: EXIF
+  container: both
+  location: gps-ifd
+  types:
+  - RATIONAL
+  count: '1'
+  default: null
+  required: 'no'
+  defined_in:
+  - EXIF
+  description: GPS degree of precision (HDOP for 2D, PDOP for 3D).
+  notes: Optional (O) all cases.
+- code: 12
+  name: GPSSpeedRef
+  since: EXIF
+  last: null
+  status: current
+  conformance: EXIF
+  container: both
+  location: gps-ifd
+  types:
+  - ASCII
+  count: '2'
+  default: K
+  required: 'no'
+  values:
+    K: Kilometers per hour
+    M: Miles per hour
+    N: Knots
+  defined_in:
+  - EXIF
+  description: Unit for GPSSpeed.
+  notes: Optional (O) all cases.
+- code: 13
+  name: GPSSpeed
+  since: EXIF
+  last: null
+  status: current
+  conformance: EXIF
+  container: both
+  location: gps-ifd
+  types:
+  - RATIONAL
+  count: '1'
+  default: null
+  required: 'no'
+  defined_in:
+  - EXIF
+  description: Speed of GPS receiver movement.
+  notes: Optional (O) all cases.
+- code: 14
+  name: GPSTrackRef
+  since: EXIF
+  last: null
+  status: current
+  conformance: EXIF
+  container: both
+  location: gps-ifd
+  types:
+  - ASCII
+  count: '2'
+  default: T
+  required: 'no'
+  values:
+    T: True direction
+    M: Magnetic direction
+  defined_in:
+  - EXIF
+  description: Reference for direction of movement.
+  notes: Optional (O) all cases.
+- code: 15
+  name: GPSTrack
+  since: EXIF
+  last: null
+  status: current
+  conformance: EXIF
+  container: both
+  location: gps-ifd
+  types:
+  - RATIONAL
+  count: '1'
+  default: null
+  required: 'no'
+  defined_in:
+  - EXIF
+  description: Direction of movement, 0.00-359.99.
+  notes: Optional (O) all cases.
+- code: 16
+  name: GPSImgDirectionRef
+  since: EXIF
+  last: null
+  status: current
+  conformance: EXIF
+  container: both
+  location: gps-ifd
+  types:
+  - ASCII
+  count: '2'
+  default: T
+  required: 'no'
+  values:
+    T: True direction
+    M: Magnetic direction
+  defined_in:
+  - EXIF
+  description: Reference for direction of the image.
+  notes: Optional (O) all cases.
+- code: 17
+  name: GPSImgDirection
+  since: EXIF
+  last: null
+  status: current
+  conformance: EXIF
+  container: both
+  location: gps-ifd
+  types:
+  - RATIONAL
+  count: '1'
+  default: null
+  required: 'no'
+  defined_in:
+  - EXIF
+  description: Direction of the image when captured, 0.00-359.99.
+  notes: Optional (O) all cases.
+- code: 18
+  name: GPSMapDatum
+  since: EXIF
+  last: null
+  status: current
+  conformance: EXIF
+  container: both
+  location: gps-ifd
+  types:
+  - ASCII
+  count: Any
+  default: null
+  required: 'no'
+  defined_in:
+  - EXIF
+  description: >
+    Geodetic survey data used (e.g. 'TOKYO', 'WGS-84'). Strongly recommended when GPS Info
+    recorded.
+  notes: Optional (O) all cases; strongly recommended per text.
+- code: 19
+  name: GPSDestLatitudeRef
+  since: EXIF
+  last: null
+  status: current
+  conformance: EXIF
+  container: both
+  location: gps-ifd
+  types:
+  - ASCII
+  count: '2'
+  default: null
+  required: 'no'
+  values:
+    N: North latitude
+    S: South latitude
+  defined_in:
+  - EXIF
+  description: Whether destination latitude is north or south.
+  notes: Optional (O) all cases.
+- code: 20
+  name: GPSDestLatitude
+  since: EXIF
+  last: null
+  status: current
+  conformance: EXIF
+  container: both
+  location: gps-ifd
+  types:
+  - RATIONAL
+  count: '3'
+  default: null
+  required: 'no'
+  defined_in:
+  - EXIF
+  description: Destination latitude as degrees, minutes, seconds.
+  notes: Optional (O) all cases.
+- code: 21
+  name: GPSDestLongitudeRef
+  since: EXIF
+  last: null
+  status: current
+  conformance: EXIF
+  container: both
+  location: gps-ifd
+  types:
+  - ASCII
+  count: '2'
+  default: null
+  required: 'no'
+  values:
+    E: East longitude
+    W: West longitude
+  defined_in:
+  - EXIF
+  description: Whether destination longitude is east or west.
+  notes: Optional (O) all cases.
+- code: 22
+  name: GPSDestLongitude
+  since: EXIF
+  last: null
+  status: current
+  conformance: EXIF
+  container: both
+  location: gps-ifd
+  types:
+  - RATIONAL
+  count: '3'
+  default: null
+  required: 'no'
+  defined_in:
+  - EXIF
+  description: Destination longitude as degrees, minutes, seconds.
+  notes: Optional (O) all cases.
+- code: 23
+  name: GPSDestBearingRef
+  since: EXIF
+  last: null
+  status: current
+  conformance: EXIF
+  container: both
+  location: gps-ifd
+  types:
+  - ASCII
+  count: '2'
+  default: T
+  required: 'no'
+  values:
+    T: True direction
+    M: Magnetic direction
+  defined_in:
+  - EXIF
+  description: Reference for bearing to destination.
+  notes: Optional (O) all cases.
+- code: 24
+  name: GPSDestBearing
+  since: EXIF
+  last: null
+  status: current
+  conformance: EXIF
+  container: both
+  location: gps-ifd
+  types:
+  - RATIONAL
+  count: '1'
+  default: null
+  required: 'no'
+  defined_in:
+  - EXIF
+  description: Bearing to destination, 0.00-359.99.
+  notes: Optional (O) all cases.
+- code: 25
+  name: GPSDestDistanceRef
+  since: EXIF
+  last: null
+  status: current
+  conformance: EXIF
+  container: both
+  location: gps-ifd
+  types:
+  - ASCII
+  count: '2'
+  default: K
+  required: 'no'
+  values:
+    K: Kilometers
+    M: Miles
+    N: Nautical miles
+  defined_in:
+  - EXIF
+  description: Unit for distance to destination.
+  notes: Optional (O) all cases.
+- code: 26
+  name: GPSDestDistance
+  since: EXIF
+  last: null
+  status: current
+  conformance: EXIF
+  container: both
+  location: gps-ifd
+  types:
+  - RATIONAL
+  count: '1'
+  default: null
+  required: 'no'
+  defined_in:
+  - EXIF
+  description: Distance to destination.
+  notes: Optional (O) all cases.
+- code: 27
+  name: GPSProcessingMethod
+  since: EXIF
+  last: null
+  status: current
+  conformance: EXIF
+  container: both
+  location: gps-ifd
+  types:
+  - UNDEFINED
+  count: Any
+  default: null
+  required: 'no'
+  defined_in:
+  - EXIF
+  description: >
+    Name of location-finding method; first byte is the character-code ID (Table 9/10), then
+    the name. Not NULL-terminated. May record 'GPS','CELLID','WLAN','MANUAL' etc.
+  notes: Optional (O) all cases.
+- code: 28
+  name: GPSAreaInformation
+  since: EXIF
+  last: null
+  status: current
+  conformance: EXIF
+  container: both
+  location: gps-ifd
+  types:
+  - UNDEFINED
+  count: Any
+  default: null
+  required: 'no'
+  defined_in:
+  - EXIF
+  description: >
+    Name of the GPS area; first byte is character-code ID (Table 9/10), then the name. Not
+    NULL-terminated.
+  notes: Optional (O) all cases.
+- code: 29
+  name: GPSDateStamp
+  since: EXIF
+  last: null
+  status: current
+  conformance: EXIF
+  container: both
+  location: gps-ifd
+  types:
+  - ASCII
+  count: '11'
+  default: null
+  required: 'no'
+  defined_in:
+  - EXIF
+  description: UTC date "YYYY:MM:DD", 11 bytes incl. NULL.
+  notes: Optional (O) all cases.
+- code: 30
+  name: GPSDifferential
+  since: EXIF
+  last: null
+  status: current
+  conformance: EXIF
+  container: both
+  location: gps-ifd
+  types:
+  - SHORT
+  count: '1'
+  default: null
+  required: 'no'
+  values:
+    0: Measurement without differential correction
+    1: Differential correction applied
+  defined_in:
+  - EXIF
+  description: Whether differential correction was applied.
+  notes: Optional (O) all cases.
+- code: 31
+  name: GPSHPositioningError
+  since: EXIF
+  last: null
+  status: current
+  conformance: EXIF
+  container: both
+  location: gps-ifd
+  supplement_version: '2.3'
+  types:
+  - RATIONAL
+  count: '1'
+  default: null
+  required: 'no'
+  defined_in:
+  - EXIF
+  description: Horizontal positioning error in meters.
+  notes: Optional (O) all cases.
+- code: 33434
+  name: ExposureTime
+  since: EXIF
+  last: null
+  status: current
+  conformance: EXIF
+  container: both
+  location: exif-ifd
+  types:
+  - RATIONAL
+  count: '1'
+  default: null
+  required: 'no'
+  defined_in:
+  - EXIF
+  description: Exposure time in seconds.
+  notes: Recommended (R) all cases.
+- code: 33437
+  name: FNumber
+  since: EXIF
+  last: null
+  status: current
+  conformance: EXIF
+  container: both
+  location: exif-ifd
+  types:
+  - RATIONAL
+  count: '1'
+  default: null
+  required: 'no'
+  defined_in:
+  - EXIF
+  description: F number.
+  notes: Optional (O) all cases.
+- code: 34850
+  name: ExposureProgram
+  since: EXIF
+  last: null
+  status: current
+  conformance: EXIF
+  container: both
+  location: exif-ifd
+  types:
+  - SHORT
+  count: '1'
+  default: 0
+  required: 'no'
+  values:
+    0: Not defined
+    1: Manual
+    2: Normal program
+    3: Aperture priority
+    4: Shutter priority
+    5: Creative program (biased toward depth of field)
+    6: Action program (biased toward fast shutter speed)
+    7: Portrait mode
+    8: Landscape mode
+  defined_in:
+  - EXIF
+  description: Exposure program class used to set exposure.
+  notes: Optional (O) all cases.
+- code: 34852
+  name: SpectralSensitivity
+  since: EXIF
+  last: null
+  status: current
+  conformance: EXIF
+  container: both
+  location: exif-ifd
+  types:
+  - ASCII
+  count: Any
+  default: null
+  required: 'no'
+  defined_in:
+  - EXIF
+  description: Spectral sensitivity of each channel (ASTM-compatible ASCII string).
+  notes: Optional (O) all cases.
+- code: 34855
+  name: PhotographicSensitivity
+  since: EXIF
+  last: null
+  status: current
+  conformance: EXIF
+  container: both
+  location: exif-ifd
+  types:
+  - SHORT
+  count: Any
+  default: null
+  required: 'no'
+  defined_in:
+  - EXIF
+  description: >
+    Camera/input-device sensitivity per ISO 12232 (SOS, REI, or ISO speed). Clamped to 65535
+    max; recommended to use only 1 count and to also record SensitivityType (34864).
+  notes: Optional (O) all cases. Renamed from ISOSpeedRatings (used up to v2.21).
+- code: 34856
+  name: OECF
+  since: EXIF
+  last: null
+  status: current
+  conformance: EXIF
+  container: both
+  location: exif-ifd
+  types:
+  - UNDEFINED
+  count: Any
+  default: null
+  required: 'no'
+  defined_in:
+  - EXIF
+  description: >
+    Opto-Electric Conversion Function per ISO 14524 (structured: n cols, m rows, column names,
+    SRATIONAL values).
+  notes: Optional (O) all cases.
+- code: 34864
+  name: SensitivityType
+  since: EXIF
+  last: null
+  status: current
+  conformance: EXIF
+  container: both
+  location: exif-ifd
+  supplement_version: '2.3'
+  types:
+  - SHORT
+  count: '1'
+  default: null
+  required: 'no'
+  values:
+    0: Unknown
+    1: Standard output sensitivity (SOS)
+    2: Recommended exposure index (REI)
+    3: ISO speed
+    4: SOS and REI
+    5: SOS and ISO speed
+    6: REI and ISO speed
+    7: SOS and REI and ISO speed
+  defined_in:
+  - EXIF
+  description: >
+    Which ISO 12232 parameter the PhotographicSensitivity tag represents. Should be recorded
+    when PhotographicSensitivity is recorded.
+  notes: Optional (O) all cases.
+- code: 34865
+  name: StandardOutputSensitivity
+  since: EXIF
+  last: null
+  status: current
+  conformance: EXIF
+  container: both
+  location: exif-ifd
+  supplement_version: '2.3'
+  types:
+  - LONG
+  count: '1'
+  default: null
+  required: 'no'
+  defined_in:
+  - EXIF
+  description: >
+    Standard output sensitivity (SOS) per ISO 12232. Requires PhotographicSensitivity and
+    SensitivityType also recorded.
+  notes: Optional (O) all cases.
+- code: 34866
+  name: RecommendedExposureIndex
+  since: EXIF
+  last: null
+  status: current
+  conformance: EXIF
+  container: both
+  location: exif-ifd
+  supplement_version: '2.3'
+  types:
+  - LONG
+  count: '1'
+  default: null
+  required: 'no'
+  defined_in:
+  - EXIF
+  description: >
+    Recommended exposure index (REI) per ISO 12232. Requires PhotographicSensitivity and SensitivityType
+    also recorded.
+  notes: Optional (O) all cases.
+- code: 34867
+  name: ISOSpeed
+  since: EXIF
+  last: null
+  status: current
+  conformance: EXIF
+  container: both
+  location: exif-ifd
+  supplement_version: '2.3'
+  types:
+  - LONG
+  count: '1'
+  default: null
+  required: 'no'
+  defined_in:
+  - EXIF
+  description: >
+    ISO speed per ISO 12232. Requires PhotographicSensitivity and SensitivityType also recorded.
+  notes: Optional (O) all cases.
+- code: 34868
+  name: ISOSpeedLatitudeyyy
+  since: EXIF
+  last: null
+  status: current
+  conformance: EXIF
+  container: both
+  location: exif-ifd
+  supplement_version: '2.3'
+  types:
+  - LONG
+  count: '1'
+  default: null
+  required: conditional
+  defined_in:
+  - EXIF
+  description: >
+    ISO speed latitude yyy per ISO 12232. Shall not be recorded without ISOSpeed and ISOSpeedLatitudezzz.
+  notes: Optional (O) all cases.
+- code: 34869
+  name: ISOSpeedLatitudezzz
+  since: EXIF
+  last: null
+  status: current
+  conformance: EXIF
+  container: both
+  location: exif-ifd
+  supplement_version: '2.3'
+  types:
+  - LONG
+  count: '1'
+  default: null
+  required: conditional
+  defined_in:
+  - EXIF
+  description: >
+    ISO speed latitude zzz per ISO 12232. Shall not be recorded without ISOSpeed and ISOSpeedLatitudeyyy.
+  notes: Optional (O) all cases.
+- code: 36864
+  name: ExifVersion
+  since: EXIF
+  last: null
+  status: current
+  conformance: EXIF
+  container: both
+  location: exif-ifd
+  types:
+  - UNDEFINED
+  count: '4'
+  default: '0230'
+  required: 'yes'
+  defined_in:
+  - EXIF
+  description: >
+    Exif standard version supported; 4-byte ASCII "0230", not NULL-terminated. Absence means
+    the file is non-conformant.
+  notes: Mandatory (M) all cases.
+- code: 36867
+  name: DateTimeOriginal
+  since: EXIF
+  last: null
+  status: current
+  conformance: EXIF
+  container: both
+  location: exif-ifd
+  types:
+  - ASCII
+  count: '20'
+  default: null
+  required: 'no'
+  defined_in:
+  - EXIF
+  description: >
+    Date/time original image data was generated (capture time for a DSC), "YYYY:MM:DD HH:MM:SS",
+    20 bytes incl. NULL.
+  notes: Optional (O) all cases.
+- code: 36868
+  name: DateTimeDigitized
+  since: EXIF
+  last: null
+  status: current
+  conformance: EXIF
+  container: both
+  location: exif-ifd
+  types:
+  - ASCII
+  count: '20'
+  default: null
+  required: 'no'
+  defined_in:
+  - EXIF
+  description: >
+    Date/time the image was stored as digital data, "YYYY:MM:DD HH:MM:SS", 20 bytes incl.
+    NULL.
+  notes: Optional (O) all cases.
+- code: 37121
+  name: ComponentsConfiguration
+  since: EXIF
+  last: null
+  status: current
+  conformance: EXIF
+  container: both
+  location: exif-ifd
+  types:
+  - UNDEFINED
+  count: '4'
+  default: 4 5 6 0 (RGB uncompressed) or 1 2 3 0 (other)
+  required: conditional
+  values:
+    0: does not exist
+    1: Y
+    2: Cb
+    3: Cr
+    4: R
+    5: G
+    6: B
+  defined_in:
+  - EXIF
+  description: Meaning/order of each of the 4 components. Mainly for compressed data.
+  notes: 'Uncompressed: N (not allowed); Compressed: Mandatory (M).'
+- code: 37122
+  name: CompressedBitsPerPixel
+  since: EXIF
+  last: null
+  status: current
+  conformance: EXIF
+  container: both
+  location: exif-ifd
+  types:
+  - RATIONAL
+  count: '1'
+  default: null
+  required: conditional
+  defined_in:
+  - EXIF
+  description: Compression mode in bits per pixel.
+  notes: 'Uncompressed: N; Compressed: Optional (O).'
+- code: 37377
+  name: ShutterSpeedValue
+  since: EXIF
+  last: null
+  status: current
+  conformance: EXIF
+  container: both
+  location: exif-ifd
+  types:
+  - SRATIONAL
+  count: '1'
+  default: null
+  required: 'no'
+  defined_in:
+  - EXIF
+  description: Shutter speed in APEX units.
+  notes: Optional (O) all cases.
+- code: 37378
+  name: ApertureValue
+  since: EXIF
+  last: null
+  status: current
+  conformance: EXIF
+  container: both
+  location: exif-ifd
+  types:
+  - RATIONAL
+  count: '1'
+  default: null
+  required: 'no'
+  defined_in:
+  - EXIF
+  description: Lens aperture in APEX units.
+  notes: Optional (O) all cases.
+- code: 37379
+  name: BrightnessValue
+  since: EXIF
+  last: null
+  status: current
+  conformance: EXIF
+  container: both
+  location: exif-ifd
+  types:
+  - SRATIONAL
+  count: '1'
+  default: null
+  required: 'no'
+  defined_in:
+  - EXIF
+  description: Brightness in APEX units (typ. -99.99..99.99). Numerator FFFFFFFF.H => Unknown.
+  notes: Optional (O) all cases.
+- code: 37380
+  name: ExposureBiasValue
+  since: EXIF
+  last: null
+  status: current
+  conformance: EXIF
+  container: both
+  location: exif-ifd
+  types:
+  - SRATIONAL
+  count: '1'
+  default: null
+  required: 'no'
+  defined_in:
+  - EXIF
+  description: Exposure bias in APEX units (typ. -99.99..99.99).
+  notes: Optional (O) all cases.
+- code: 37381
+  name: MaxApertureValue
+  since: EXIF
+  last: null
+  status: current
+  conformance: EXIF
+  container: both
+  location: exif-ifd
+  types:
+  - RATIONAL
+  count: '1'
+  default: null
+  required: 'no'
+  defined_in:
+  - EXIF
+  description: Smallest F number of the lens in APEX units.
+  notes: Optional (O) all cases.
+- code: 37382
+  name: SubjectDistance
+  since: EXIF
+  last: null
+  status: current
+  conformance: EXIF
+  container: both
+  location: exif-ifd
+  types:
+  - RATIONAL
+  count: '1'
+  default: null
+  required: 'no'
+  defined_in:
+  - EXIF
+  description: Distance to subject in meters. Numerator FFFFFFFF.H => Infinity; numerator
+    0 => unknown.
+  notes: Optional (O) all cases.
+- code: 37383
+  name: MeteringMode
+  since: EXIF
+  last: null
+  status: current
+  conformance: EXIF
+  container: both
+  location: exif-ifd
+  types:
+  - SHORT
+  count: '1'
+  default: 0
+  required: 'no'
+  values:
+    0: unknown
+    1: Average
+    2: CenterWeightedAverage
+    3: Spot
+    4: MultiSpot
+    5: Pattern
+    6: Partial
+    255: other
+  defined_in:
+  - EXIF
+  description: Metering mode.
+  notes: Optional (O) all cases.
+- code: 37384
+  name: LightSource
+  since: EXIF
+  last: null
+  status: current
+  conformance: EXIF
+  container: both
+  location: exif-ifd
+  types:
+  - SHORT
+  count: '1'
+  default: 0
+  required: 'no'
+  values:
+    0: unknown
+    1: Daylight
+    2: Fluorescent
+    3: Tungsten (incandescent)
+    4: Flash
+    9: Fine weather
+    10: Cloudy weather
+    11: Shade
+    12: Daylight fluorescent (D 5700-7100K)
+    13: Day white fluorescent (N 4600-5500K)
+    14: Cool white fluorescent (W 3800-4500K)
+    15: White fluorescent (WW 3250-3800K)
+    16: Warm white fluorescent (L 2600-3250K)
+    17: Standard light A
+    18: Standard light B
+    19: Standard light C
+    20: D55
+    21: D65
+    22: D75
+    23: D50
+    24: ISO studio tungsten
+    255: other light source
+  defined_in:
+  - EXIF
+  description: Kind of light source.
+  notes: Optional (O) all cases. Values 12-16 (fluorescent variants) added/changed in v2.3.
+- code: 37385
+  name: Flash
+  since: EXIF
+  last: null
+  status: current
+  conformance: EXIF
+  container: both
+  location: exif-ifd
+  types:
+  - SHORT
+  count: '1'
+  default: null
+  required: 'no'
+  values:
+    0: bit0=0 Flash did not fire; bit0=1 Flash fired
+    1: 'bits1-2: 00=no return-detection, 10=return not detected, 11=return detected (01 reserved)'
+    2: 'bits3-4: 00=unknown, 01=compulsory firing, 10=compulsory suppression, 11=auto'
+    3: 'bit5: 0=flash function present, 1=no flash function'
+    4: 'bit6: 0=no red-eye mode/unknown, 1=red-eye reduction supported'
+  defined_in:
+  - EXIF
+  description: >
+    Flash status bit field: bit0 fired; bits1-2 return; bits3-4 mode; bit5 function present;
+    bit6 red-eye.
+  notes: Recommended (R) all cases. Values field summarizes bit semantics, not enumerated
+    integers.
+- code: 37386
+  name: FocalLength
+  since: EXIF
+  last: null
+  status: current
+  conformance: EXIF
+  container: both
+  location: exif-ifd
+  types:
+  - RATIONAL
+  count: '1'
+  default: null
+  required: 'no'
+  defined_in:
+  - EXIF
+  description: Actual lens focal length in mm (not converted to 35mm equivalent).
+  notes: Optional (O) all cases.
+- code: 37396
+  name: SubjectArea
+  since: EXIF
+  last: null
+  status: current
+  conformance: EXIF
+  container: both
+  location: exif-ifd
+  types:
+  - SHORT
+  count: 2 or 3 or 4
+  default: null
+  required: 'no'
+  defined_in:
+  - EXIF
+  description: >
+    Location/area of main subject; count determines point(2)/circle(3)/rectangle(4). Coordinates
+    relative to upper-left origin, before Orientation rotation.
+  notes: Optional (O) all cases.
+- code: 37500
+  name: MakerNote
+  since: EXIF
+  last: null
+  status: current
+  conformance: EXIF
+  container: both
+  location: exif-ifd
+  types:
+  - UNDEFINED
+  count: Any
+  default: null
+  required: 'no'
+  defined_in:
+  - EXIF
+  description: >
+    Manufacturer-defined information; shall not be used for any other than its intended purpose.
+  notes: Optional (O) all cases.
+- code: 37510
+  name: UserComment
+  since: EXIF
+  last: null
+  status: current
+  conformance: EXIF
+  container: both
+  location: exif-ifd
+  types:
+  - UNDEFINED
+  count: Any
+  default: null
+  required: 'no'
+  defined_in:
+  - EXIF
+  description: >
+    Keywords/comments with an 8-byte leading character-code ID (ASCII/JIS/Unicode/Undefined),
+    allowing non-ASCII text. Not NULL-terminated (UNDEFINED type).
+  notes: Optional (O) all cases. Reader must be able to determine the ID code if it uses this
+    tag.
+- code: 37520
+  name: SubSecTime
+  since: EXIF
+  last: null
+  status: current
+  conformance: EXIF
+  container: both
+  location: exif-ifd
+  types:
+  - ASCII
+  count: Any
+  default: null
+  required: 'no'
+  defined_in:
+  - EXIF
+  description: Fractional seconds for DateTime (306).
+  notes: Optional (O) all cases. Recorded in Exif IFD though DateTime is in 0th IFD.
+- code: 37521
+  name: SubSecTimeOriginal
+  since: EXIF
+  last: null
+  status: current
+  conformance: EXIF
+  container: both
+  location: exif-ifd
+  types:
+  - ASCII
+  count: Any
+  default: null
+  required: 'no'
+  defined_in:
+  - EXIF
+  description: Fractional seconds for DateTimeOriginal (36867).
+  notes: Optional (O) all cases.
+- code: 37522
+  name: SubSecTimeDigitized
+  since: EXIF
+  last: null
+  status: current
+  conformance: EXIF
+  container: both
+  location: exif-ifd
+  types:
+  - ASCII
+  count: Any
+  default: null
+  required: 'no'
+  defined_in:
+  - EXIF
+  description: Fractional seconds for DateTimeDigitized (36868).
+  notes: Optional (O) all cases.
+- code: 40960
+  name: FlashpixVersion
+  since: EXIF
+  last: null
+  status: current
+  conformance: EXIF
+  container: both
+  location: exif-ifd
+  types:
+  - UNDEFINED
+  count: '4'
+  default: '0100'
+  required: 'yes'
+  values:
+    '0100': Flashpix Format Version 1.0
+  defined_in:
+  - EXIF
+  description: Flashpix format version supported; 4-byte ASCII, not NULL-terminated.
+  notes: Mandatory (M) all cases.
+- code: 40961
+  name: ColorSpace
+  since: EXIF
+  last: null
+  status: current
+  conformance: EXIF
+  container: both
+  location: exif-ifd
+  types:
+  - SHORT
+  count: '1'
+  default: null
+  required: 'yes'
+  values:
+    1: sRGB
+    65535: Uncalibrated (FFFF.H)
+  defined_in:
+  - EXIF
+  description: >
+    Color space specifier; always recorded. sRGB normally used; Uncalibrated when a non-sRGB
+    space is used.
+  notes: Mandatory (M) all cases.
+- code: 40962
+  name: PixelXDimension
+  since: EXIF
+  last: null
+  status: current
+  conformance: EXIF
+  container: both
+  location: exif-ifd
+  types:
+  - SHORT
+  - LONG
+  count: '1'
+  default: null
+  required: conditional
+  defined_in:
+  - EXIF
+  description: >
+    Valid (meaningful) image width for compressed data, regardless of padding/restart markers.
+    Shall not exist in an uncompressed file.
+  notes: 'Uncompressed: N; Compressed: Mandatory (M).'
+- code: 40963
+  name: PixelYDimension
+  since: EXIF
+  last: null
+  status: current
+  conformance: EXIF
+  container: both
+  location: exif-ifd
+  types:
+  - SHORT
+  - LONG
+  count: '1'
+  default: null
+  required: conditional
+  defined_in:
+  - EXIF
+  description: >
+    Valid (meaningful) image height for compressed data. Equals the line count in the SOF
+    (no vertical padding). Shall not exist in an uncompressed file.
+  notes: 'Uncompressed: N; Compressed: Mandatory (M).'
+- code: 40964
+  name: RelatedSoundFile
+  since: EXIF
+  last: null
+  status: current
+  conformance: EXIF
+  container: both
+  location: exif-ifd
+  types:
+  - ASCII
+  count: '13'
+  default: null
+  required: 'no'
+  defined_in:
+  - EXIF
+  description: Name+extension (8.3) of a related Exif audio file, NULL-terminated; no path.
+  notes: Optional (O) all cases.
+- code: 40965
+  name: InteroperabilityIFDPointer
+  since: EXIF
+  last: null
+  status: current
+  conformance: EXIF
+  container: both
+  location: exif-ifd
+  types:
+  - LONG
+  count: '1'
+  default: null
+  required: conditional
+  defined_in:
+  - EXIF
+  description: >
+    Offset (from TIFF header) to the Interoperability IFD; this pointer tag is located in
+    the Exif IFD. The Interoperability IFD has TIFF IFD structure but no image data.
+  notes: 'In Exif IFD: N (not allowed) for uncompressed, Optional (O) for compressed.'
+- code: 41483
+  name: FlashEnergy
+  since: EXIF
+  last: null
+  status: current
+  conformance: EXIF
+  container: both
+  location: exif-ifd
+  types:
+  - RATIONAL
+  count: '1'
+  default: null
+  required: 'no'
+  defined_in:
+  - EXIF
+  description: Strobe energy in Beam Candle Power Seconds (BCPS).
+  notes: Optional (O) all cases.
+- code: 41484
+  name: SpatialFrequencyResponse
+  since: EXIF
+  last: null
+  status: current
+  conformance: EXIF
+  container: both
+  location: exif-ifd
+  types:
+  - UNDEFINED
+  count: Any
+  default: null
+  required: 'no'
+  defined_in:
+  - EXIF
+  description: >
+    Spatial frequency response table per ISO 12233 (structured: n cols, m rows, names, RATIONAL
+    values).
+  notes: Optional (O) all cases.
+- code: 41486
+  name: FocalPlaneXResolution
+  since: EXIF
+  last: null
+  status: current
+  conformance: EXIF
+  container: both
+  location: exif-ifd
+  types:
+  - RATIONAL
+  count: '1'
+  default: null
+  required: 'no'
+  defined_in:
+  - EXIF
+  description: Pixels per FocalPlaneResolutionUnit in the image-width direction on the focal
+    plane.
+  notes: Optional (O) all cases.
+- code: 41487
+  name: FocalPlaneYResolution
+  since: EXIF
+  last: null
+  status: current
+  conformance: EXIF
+  container: both
+  location: exif-ifd
+  types:
+  - RATIONAL
+  count: '1'
+  default: null
+  required: 'no'
+  defined_in:
+  - EXIF
+  description: Pixels per FocalPlaneResolutionUnit in the image-height direction on the focal
+    plane.
+  notes: Optional (O) all cases.
+- code: 41488
+  name: FocalPlaneResolutionUnit
+  since: EXIF
+  last: null
+  status: current
+  conformance: EXIF
+  container: both
+  location: exif-ifd
+  types:
+  - SHORT
+  count: '1'
+  default: 2
+  required: 'no'
+  values:
+    2: inches
+    3: centimeters
+  defined_in:
+  - EXIF
+  description: Unit for FocalPlaneX/YResolution; same value semantics as ResolutionUnit (296).
+  notes: Optional (O) all cases. Default 2 (inch).
+- code: 41492
+  name: SubjectLocation
+  since: EXIF
+  last: null
+  status: current
+  conformance: EXIF
+  container: both
+  location: exif-ifd
+  types:
+  - SHORT
+  count: '2'
+  default: null
+  required: 'no'
+  defined_in:
+  - EXIF
+  description: >
+    Pixel at center of main subject (X column, Y row), before Orientation rotation. SubjectArea
+    (37396) is recommended instead.
+  notes: Optional (O) all cases.
+- code: 41493
+  name: ExposureIndex
+  since: EXIF
+  last: null
+  status: current
+  conformance: EXIF
+  container: both
+  location: exif-ifd
+  types:
+  - RATIONAL
+  count: '1'
+  default: null
+  required: 'no'
+  defined_in:
+  - EXIF
+  description: Exposure index selected on the device at capture.
+  notes: Optional (O) all cases.
+- code: 41495
+  name: SensingMethod
+  since: EXIF
+  last: null
+  status: current
+  conformance: EXIF
+  container: both
+  location: exif-ifd
+  types:
+  - SHORT
+  count: '1'
+  default: null
+  required: 'no'
+  values:
+    1: Not defined
+    2: One-chip color area sensor
+    3: Two-chip color area sensor
+    4: Three-chip color area sensor
+    5: Color sequential area sensor
+    7: Trilinear sensor
+    8: Color sequential linear sensor
+  defined_in:
+  - EXIF
+  description: Image sensor type.
+  notes: Optional (O) all cases.
+- code: 41728
+  name: FileSource
+  since: EXIF
+  last: null
+  status: current
+  conformance: EXIF
+  container: both
+  location: exif-ifd
+  types:
+  - UNDEFINED
+  count: '1'
+  default: 3
+  required: 'no'
+  values:
+    0: others
+    1: scanner of transparent type
+    2: scanner of reflex type
+    3: DSC
+  defined_in:
+  - EXIF
+  description: Image source; a DSC shall set this to 3.
+  notes: Optional (O) all cases.
+- code: 41729
+  name: SceneType
+  since: EXIF
+  last: null
+  status: current
+  conformance: EXIF
+  container: both
+  location: exif-ifd
+  types:
+  - UNDEFINED
+  count: '1'
+  default: 1
+  required: 'no'
+  values:
+    1: A directly photographed image
+  defined_in:
+  - EXIF
+  description: Scene type; a DSC shall set this to 1 (directly photographed).
+  notes: Optional (O) all cases.
+- code: 41730
+  name: CFAPattern
+  since: EXIF
+  last: null
+  status: current
+  conformance: EXIF
+  container: both
+  location: exif-ifd
+  types:
+  - UNDEFINED
+  count: Any
+  default: null
+  required: 'no'
+  defined_in:
+  - EXIF
+  description: >
+    Color filter array geometric pattern (structured: n, m, then BYTE CFA values; 0=Red,1=Green,2=Blue,3=Cyan,4=Magenta,5=Yellow,6=White).
+  notes: Optional (O) all cases.
+- code: 41985
+  name: CustomRendered
+  since: EXIF
+  last: null
+  status: current
+  conformance: EXIF
+  container: both
+  location: exif-ifd
+  types:
+  - SHORT
+  count: '1'
+  default: 0
+  required: 'no'
+  values:
+    0: Normal process
+    1: Custom process
+  defined_in:
+  - EXIF
+  description: Whether special output-oriented processing was applied.
+  notes: Optional (O) all cases.
+- code: 41986
+  name: ExposureMode
+  since: EXIF
+  last: null
+  status: current
+  conformance: EXIF
+  container: both
+  location: exif-ifd
+  types:
+  - SHORT
+  count: '1'
+  default: null
+  required: 'no'
+  values:
+    0: Auto exposure
+    1: Manual exposure
+    2: Auto bracket
+  defined_in:
+  - EXIF
+  description: Exposure mode set at capture.
+  notes: Recommended (R) all cases.
+- code: 41987
+  name: WhiteBalance
+  since: EXIF
+  last: null
+  status: current
+  conformance: EXIF
+  container: both
+  location: exif-ifd
+  types:
+  - SHORT
+  count: '1'
+  default: null
+  required: 'no'
+  values:
+    0: Auto white balance
+    1: Manual white balance
+  defined_in:
+  - EXIF
+  description: White balance mode set at capture.
+  notes: Recommended (R) all cases.
+- code: 41988
+  name: DigitalZoomRatio
+  since: EXIF
+  last: null
+  status: current
+  conformance: EXIF
+  container: both
+  location: exif-ifd
+  types:
+  - RATIONAL
+  count: '1'
+  default: null
+  required: 'no'
+  defined_in:
+  - EXIF
+  description: Digital zoom ratio; numerator 0 => digital zoom not used.
+  notes: Optional (O) all cases.
+- code: 41989
+  name: FocalLengthIn35mmFilm
+  since: EXIF
+  last: null
+  status: current
+  conformance: EXIF
+  container: both
+  location: exif-ifd
+  types:
+  - SHORT
+  count: '1'
+  default: null
+  required: 'no'
+  defined_in:
+  - EXIF
+  description: 35mm-equivalent focal length in mm; 0 => unknown. Differs from FocalLength
+    (37386).
+  notes: Optional (O) all cases.
+- code: 41990
+  name: SceneCaptureType
+  since: EXIF
+  last: null
+  status: current
+  conformance: EXIF
+  container: both
+  location: exif-ifd
+  types:
+  - SHORT
+  count: '1'
+  default: 0
+  required: 'no'
+  values:
+    0: Standard
+    1: Landscape
+    2: Portrait
+    3: Night scene
+  defined_in:
+  - EXIF
+  description: Type of scene shot. Differs from SceneType (41729).
+  notes: Recommended (R) all cases.
+- code: 41991
+  name: GainControl
+  since: EXIF
+  last: null
+  status: current
+  conformance: EXIF
+  container: both
+  location: exif-ifd
+  types:
+  - RATIONAL
+  count: '1'
+  default: null
+  required: 'no'
+  values:
+    0: None
+    1: Low gain up
+    2: High gain up
+    3: Low gain down
+    4: High gain down
+  defined_in:
+  - EXIF
+  description: Overall image gain adjustment.
+  notes: >
+    Optional (O) all cases. Type listed as RATIONAL in Table 8; enumerated values 0-4 given
+    in section 4.6.5.G text (which lists Type SHORT). Ambiguity: Table 8 says RATIONAL, per-tag
+    detail says SHORT.
+- code: 41992
+  name: Contrast
+  since: EXIF
+  last: null
+  status: current
+  conformance: EXIF
+  container: both
+  location: exif-ifd
+  types:
+  - SHORT
+  count: '1'
+  default: 0
+  required: 'no'
+  values:
+    0: Normal
+    1: Soft
+    2: Hard
+  defined_in:
+  - EXIF
+  description: Direction of contrast processing applied.
+  notes: Optional (O) all cases.
+- code: 41993
+  name: Saturation
+  since: EXIF
+  last: null
+  status: current
+  conformance: EXIF
+  container: both
+  location: exif-ifd
+  types:
+  - SHORT
+  count: '1'
+  default: 0
+  required: 'no'
+  values:
+    0: Normal
+    1: Low saturation
+    2: High saturation
+  defined_in:
+  - EXIF
+  description: Direction of saturation processing applied.
+  notes: Optional (O) all cases.
+- code: 41994
+  name: Sharpness
+  since: EXIF
+  last: null
+  status: current
+  conformance: EXIF
+  container: both
+  location: exif-ifd
+  types:
+  - SHORT
+  count: '1'
+  default: 0
+  required: 'no'
+  values:
+    0: Normal
+    1: Soft
+    2: Hard
+  defined_in:
+  - EXIF
+  description: Direction of sharpness processing applied.
+  notes: Optional (O) all cases.
+- code: 41995
+  name: DeviceSettingDescription
+  since: EXIF
+  last: null
+  status: current
+  conformance: EXIF
+  container: both
+  location: exif-ifd
+  types:
+  - UNDEFINED
+  count: Any
+  default: null
+  required: 'no'
+  defined_in:
+  - EXIF
+  description: >
+    Picture-taking conditions for a particular camera model (structured: SHORT display columns/rows,
+    then UNDEFINED camera settings in NULL-terminated Unicode UCS-2 per ISO/IEC 10646-1).
+  notes: Optional (O) all cases.
+- code: 41996
+  name: SubjectDistanceRange
+  since: EXIF
+  last: null
+  status: current
+  conformance: EXIF
+  container: both
+  location: exif-ifd
+  types:
+  - SHORT
+  count: '1'
+  default: null
+  required: 'no'
+  values:
+    0: unknown
+    1: Macro
+    2: Close view
+    3: Distant view
+  defined_in:
+  - EXIF
+  description: Distance range to the subject.
+  notes: Optional (O) all cases.
+- code: 42016
+  name: ImageUniqueID
+  since: EXIF
+  last: null
+  status: current
+  conformance: EXIF
+  container: both
+  location: exif-ifd
+  types:
+  - ASCII
+  count: '33'
+  default: null
+  required: 'no'
+  defined_in:
+  - EXIF
+  description: >
+    Unique image identifier, 128-bit fixed-length value as a hexadecimal ASCII string (32
+    chars + NULL = 33).
+  notes: Optional (O) all cases.
+- code: 42032
+  name: CameraOwnerName
+  since: EXIF
+  last: null
+  status: current
+  conformance: EXIF
+  container: both
+  location: exif-ifd
+  supplement_version: '2.3'
+  types:
+  - ASCII
+  count: Any
+  default: null
+  required: 'no'
+  defined_in:
+  - EXIF
+  description: Owner of the camera as an ASCII string.
+  notes: Optional (O) all cases.
+- code: 42033
+  name: BodySerialNumber
+  since: EXIF
+  last: null
+  status: current
+  conformance: EXIF
+  container: both
+  location: exif-ifd
+  supplement_version: '2.3'
+  types:
+  - ASCII
+  count: Any
+  default: null
+  required: 'no'
+  defined_in:
+  - EXIF
+  description: Serial number of the camera body as an ASCII string.
+  notes: Optional (O) all cases.
+- code: 42034
+  name: LensSpecification
+  since: EXIF
+  last: null
+  status: current
+  conformance: EXIF
+  container: both
+  location: exif-ifd
+  supplement_version: '2.3'
+  types:
+  - RATIONAL
+  count: '4'
+  default: null
+  required: 'no'
+  defined_in:
+  - EXIF
+  description: >
+    Lens specification: [1] min focal length (mm), [2] max focal length (mm), [3] min F number
+    at min focal length, [4] min F number at max focal length. Unknown min F number noted
+    as 0/0.
+  notes: Optional (O) all cases.
+- code: 42035
+  name: LensMake
+  since: EXIF
+  last: null
+  status: current
+  conformance: EXIF
+  container: both
+  location: exif-ifd
+  supplement_version: '2.3'
+  types:
+  - ASCII
+  count: Any
+  default: null
+  required: 'no'
+  defined_in:
+  - EXIF
+  description: Lens manufacturer as an ASCII string.
+  notes: Optional (O) all cases.
+- code: 42036
+  name: LensModel
+  since: EXIF
+  last: null
+  status: current
+  conformance: EXIF
+  container: both
+  location: exif-ifd
+  supplement_version: '2.3'
+  types:
+  - ASCII
+  count: Any
+  default: null
+  required: 'no'
+  defined_in:
+  - EXIF
+  description: Lens model name/number as an ASCII string.
+  notes: Optional (O) all cases.
+- code: 42037
+  name: LensSerialNumber
+  since: EXIF
+  last: null
+  status: current
+  conformance: EXIF
+  container: both
+  location: exif-ifd
+  supplement_version: '2.3'
+  types:
+  - ASCII
+  count: Any
+  default: null
+  required: 'no'
+  defined_in:
+  - EXIF
+  description: Serial number of the interchangeable lens as an ASCII string.
+  notes: Optional (O) all cases.
+- code: 42240
+  name: Gamma
+  since: EXIF
+  last: null
+  status: current
+  conformance: EXIF
+  container: both
+  location: exif-ifd
+  supplement_version: '2.3'
+  types:
+  - RATIONAL
+  count: '1'
+  default: null
+  required: 'no'
+  defined_in:
+  - EXIF
+  description: >
+    Gamma coefficient of the transfer function (reproduced = input^gamma, values normalized
+    0..1).
+  notes: Optional (O) all cases.

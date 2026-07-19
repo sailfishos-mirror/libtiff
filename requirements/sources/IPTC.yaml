@@ -1,0 +1,195 @@
+document: IPTC
+title: IPTC Photo Metadata User Guide
+date: "November 2025 R0 (2025-11-26)"
+requirements:
+  - id: IPTC-001
+    section: "Introduction"
+    heading: "Introduction"
+    level: INFO
+    actor: file
+    category: metadata
+    conformance: IPTC
+    statement: >
+      The IPTC Photo Metadata Standard groups its metadata fields (properties) into
+      categories: General image content; Person(s) shown in the image; Locations
+      relevant to the image; Other things shown in the image, including artwork;
+      Rights assertion and license usage; and Administration and Commissioning
+      details. Individual field definitions are opaque at the TIFF container level
+      and are not enumerated here; see the guide's Field Reference Table.
+    notes: >
+      Scope-limited summary per extraction brief: internal IPTC field semantics are
+      not TIFF-container-relevant and are not itemized.
+
+  - id: IPTC-002
+    section: "How IPTC Photo Metadata Evolved Over Time"
+    heading: "How IPTC Photo Metadata Evolved Over Time"
+    level: INFO
+    actor: file
+    category: metadata
+    conformance: IPTC
+    statement: >
+      The Information Interchange Model (IIM), IPTC's original 1991 metadata
+      standard, defines a set of metadata properties and a binary data format for
+      embedding values into image files. A subset of IIM properties, known as the
+      "IPTC Fields", was adopted by Adobe Photoshop in the early 1990s and can be
+      embedded into JPEG, TIFF, and PSD files.
+    notes: >
+      This is the only place the document mentions TIFF specifically, and it is
+      purely descriptive/historical. The document never names the RichTIFFIPTC tag
+      (33723 / 0x8649), never states its TIFF field type (the historical LONG vs
+      BYTE/UNDEFINED ambiguity), and never describes where within a TIFF IFD it is
+      located. No RichTIFFIPTC-specific content exists anywhere in this document.
+
+  - id: IPTC-003
+    section: "How IPTC Photo Metadata Evolved Over Time"
+    heading: "How IPTC Photo Metadata Evolved Over Time"
+    level: SHOULD
+    actor: writer
+    category: metadata
+    conformance: IPTC
+    statement: >
+      When an IPTC Core field is embedded in both the IIM format and the XMP format
+      within the same image file, the image management software creating/editing
+      the file is responsible for keeping the two copies' values synchronised.
+    notes: >
+      Stated generically for "image files"; not phrased in terms of specific TIFF
+      tags (e.g. does not name tag 33723 for IIM or tag 700 for XMP).
+
+  - id: IPTC-004
+    section: "Photo Metadata - Under the Hood"
+    heading: "Photo Metadata - Under the Hood"
+    level: INFO
+    actor: file
+    category: metadata
+    conformance: IPTC
+    statement: >
+      Structurally, the IIM datastream is a sequence of bytes in which each
+      metadata field is identified by a numeric "record:dataset" identifier (for
+      example 2:80 for Creator, 2:120 for Caption/Description), in contrast to XMP
+      which is a single XML text string with fields identified by qualified names
+      such as dc:creator.
+    notes: >
+      This is the full extent of IIM binary-structure discussion in the document.
+      It does NOT describe the record marker byte (0x1C), the envelope-record vs
+      application-record distinction, tag/length encoding, or any other IIM
+      datastream framing detail — the guide treats IIM purely as a black box
+      identified by these record:dataset numbers, for the purpose of cross-
+      referencing IIM field names to their XMP equivalents.
+
+  - id: IPTC-005
+    section: "Photo Metadata - Under the Hood"
+    heading: "Photo Metadata - Under the Hood"
+    level: MUST
+    actor: both
+    category: metadata
+    conformance: IPTC
+    statement: >
+      When metadata is read back from an image file, software must verify whether
+      the IIM-format value and the XMP-format value for a shared field are the
+      same; if they are not, precedence rules determine which value takes effect,
+      and after reconciliation the IIM and XMP values must be equal.
+    notes: >
+      AMBIGUITY: the document explicitly says "there are rules about which value
+      should take precedence" but does not state what those rules are anywhere in
+      this guide (no IIM-wins vs XMP-wins statement, and no mention of the
+      Photoshop Image Resource 0x0404 / TIFF tag 34377 copy at all). This is the
+      closest the document comes to a precedence statement between IIM and XMP;
+      it is a gap, not a stated rule.
+
+  - id: IPTC-006
+    section: "Fundamental Guidelines for the Preservation of Embedded Metadata"
+    heading: "Fundamental Guidelines for the Preservation of Embedded Metadata"
+    level: MUST
+    actor: writer
+    category: metadata
+    conformance: IPTC
+    statement: >
+      Per the "Embedded Metadata Manifesto" principle endorsed by IPTC: metadata
+      field semantics and values must not change depending on which embedding
+      technology is used (e.g. IIM vs XMP within the same file); where multiple
+      technologies are available for embedding the same field, software vendors
+      must guarantee the values are synchronised across the technologies without
+      loss of data or ambiguity.
+    notes: >
+      This is one of five guiding principles IPTC "strongly recommends" adherence
+      to (i.e. the overall endorsement is SHOULD-level), but the clause itself uses
+      "must" wording, so it is recorded here as MUST. Restates/reinforces IPTC-003.
+
+  - id: IPTC-007
+    section: "Fundamental Guidelines for the Preservation of Embedded Metadata"
+    heading: "Fundamental Guidelines for the Preservation of Embedded Metadata"
+    level: MUST-NOT
+    actor: writer
+    category: metadata
+    conformance: IPTC
+    statement: >
+      Copyright management information metadata (identifying the image, creator,
+      owner, and associated rights) must never be removed from an image file.
+    notes: "Embedded Metadata Manifesto principle 4."
+
+  - id: IPTC-008
+    section: "Fundamental Guidelines for the Preservation of Embedded Metadata"
+    heading: "Fundamental Guidelines for the Preservation of Embedded Metadata"
+    level: SHOULD-NOT
+    actor: writer
+    category: metadata
+    conformance: IPTC
+    statement: >
+      Metadata other than copyright management information should only be removed
+      from an image file by agreement with the copyright holder(s).
+    notes: "Embedded Metadata Manifesto principle 5."
+
+  - id: IPTC-009
+    section: "IPTC Photo Metadata and Google Images"
+    heading: "IPTC Photo Metadata and Google Images"
+    level: INFO
+    actor: reader
+    category: metadata
+    conformance: IPTC
+    statement: >
+      As a real-world example of IIM/XMP precedence in a reading application:
+      Google Images reads the XMP field first (dc:creator, dc:rights,
+      photoshop:Credit) and falls back to the corresponding legacy IIM field
+      (2:80 Creator, 2:116 Copyright Notice, 2:110 Credit respectively) only if
+      the XMP field is empty.
+    notes: >
+      This is presented as one named third party's (Google's) implementation
+      choice, not as a normative rule IPTC itself mandates for all readers/writers.
+      It is the only concrete XMP-over-IIM precedence example stated anywhere in
+      the document.
+
+  - id: IPTC-010
+    section: "IIM Metadata deprecated in IPTC Core"
+    heading: "IIM Metadata deprecated in IPTC Core"
+    level: INFO
+    actor: file
+    category: metadata
+    conformance: IPTC
+    statement: >
+      Some legacy IIM properties (e.g. Urgency; Category and Supplemental
+      Category, both since superseded by Subject NewsCodes) are deprecated in the
+      IPTC Core schema but their data remains physically present in the file's IIM
+      header even though IPTC-Core-compliant software will not display them; these
+      deprecated IIM fields continue to be synchronised with their corresponding
+      XMP properties (photoshop:Urgency, photoshop:Category,
+      photoshop:SupplementalCategories).
+    notes: >
+      Confirms deprecated fields are not to be stripped from the IIM datastream on
+      write, only hidden from Core-compliant UIs; reinforces the sync obligation
+      of IPTC-003/IPTC-006.
+
+tags: []
+
+dependencies:
+  - id: IPTC-DEP-001
+    requirement: IPTC-003
+    when: "A metadata field's value is embedded in both the IIM datastream and XMP within the same image file"
+    then: "The writing/editing software must keep the IIM copy and the XMP copy of that field's value synchronised (identical)"
+    kind: requires
+    tags: []
+  - id: IPTC-DEP-002
+    requirement: IPTC-005
+    when: "On read, the IIM-format value and the XMP-format value for a shared field differ"
+    then: "Reading software must apply precedence rules to select the authoritative value; this document does not state what those precedence rules are (e.g. no IIM-vs-XMP-vs-Photoshop-image-resource winner is specified)"
+    kind: constrains-value
+    tags: []

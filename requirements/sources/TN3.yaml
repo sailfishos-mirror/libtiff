@@ -1,0 +1,373 @@
+document: TN3
+title: "Adobe Photoshop(R) TIFF Technical Note 3 (16 and 24 bit Floating Point Values; Floating Point Predictor)"
+date: "April 8, 2005 (Draft 2; supersedes an earlier Draft 1 also dated April 8, 2005)"
+requirements:
+  - id: TN3-001
+    section: "0"
+    heading: "Front Matter"
+    page: 1
+    level: INFO
+    actor: reader
+    category: metadata
+    conformance: extension
+    tags: []
+    statement: >
+      This document describes additions to the TIFF specification to improve support for
+      floating point sample values. Readers are advised to cross-reference terms and
+      discussions in this document with the TIFF 6.0 specification (TIFF6.pdf), the TIFF
+      Technical Note for Adobe PageMaker 6.0 (TIFF-PM6.pdf), and the File Formats
+      Specification for Adobe Photoshop (Photoshop File Formats.pdf).
+    notes: >
+      Draft 2 adds a Copyright notice and an MIT-style License block on page 1 that are not
+      present in Draft 1; these are legal/administrative text, not technical requirements,
+      and are not otherwise extracted here.
+
+  - id: TN3-002
+    section: "1"
+    heading: "16 and 24 bit Floating Point Values - Introduction"
+    page: 2
+    level: MAY
+    actor: writer
+    category: data-layout
+    conformance: extension
+    tags: [339, 258]
+    statement: >
+      A TIFF writer may set SampleFormat (tag 339, 0x153) to value 3 (IEEE floating point
+      data) together with BitsPerSample (tag 258, 0x102) equal to 16 or 24 (per
+      SamplesPerPixel channel) to store image samples in the reduced-width 16-bit or 24-bit
+      IEEE-like floating point formats defined by this technical note, instead of
+      conventional 32-bit or 64-bit floating point samples, in order to reduce file size.
+    notes: >
+      Both drafts state Count for SampleFormat and BitsPerSample as "SamplesPerPixel";
+      Draft 1 additionally writes it as "N = SamplesPerPixel" (a notational difference
+      only, not a semantic one).
+
+  - id: TN3-003
+    section: "1"
+    heading: "16 and 24 bit Floating Point Values - Introduction"
+    page: 2
+    level: INFO
+    actor: both
+    category: data-layout
+    conformance: extension
+    tags: [339, 258]
+    statement: >
+      The loss of numeric range and precision inherent in using 16-bit or 24-bit floating
+      point sample formats (versus 32-bit or 64-bit floating point) may be acceptable for
+      many imaging applications.
+    notes: null
+
+  - id: TN3-004
+    section: "1"
+    heading: "16 and 24 bit Floating Point Values - Introduction"
+    page: 2
+    level: INFO
+    actor: both
+    category: data-layout
+    conformance: extension
+    tags: [258, 339]
+    statement: >
+      The 16-bit floating point format defined by this technical note is designed to match
+      the HALF data type used by OpenEXR and by video graphics card vendors.
+    notes: >
+      Draft 2 adds a second reference URL (http://oss.sgi.com/projects/ogl-sample/registry/ARB/half_float_pixel.txt)
+      alongside the OpenEXR documentation link present in both drafts; this is bibliographic
+      only.
+
+  - id: TN3-005
+    section: "1"
+    heading: "16 and 24 bit Floating Point Values - Implementation"
+    page: 2
+    level: MUST
+    actor: file
+    category: data-layout
+    conformance: extension
+    tags: [258, 339]
+    statement: >
+      When BitsPerSample (258) = 16 and SampleFormat (339) = 3, each 16-bit sample is a
+      floating point value laid out, most-significant bit first, as bit 15 = sign (S),
+      bits 14-10 = a 5-bit exponent (E) biased by 15, and bits 9-0 = a 10-bit mantissa (M):
+      "S EEEEE MMMMMMMMMM" occupying bits 15..0. The interpretation of sign, exponent and
+      mantissa is analogous to IEEE-754 floating point numbers, and the format supports
+      normalized numbers, denormalized numbers, infinities, and NaNs (Not A Number).
+    notes: >
+      Draft 1 states the exponent bias as 16; Draft 2 corrects this to 15 (which matches
+      the standard IEEE-754 half-precision bias of 2^(5-1)-1 = 15). This is a substantive
+      correction between drafts, not merely wording - flagged per the task brief as a
+      draft-1-vs-draft-2 difference in a normative value.
+
+  - id: TN3-006
+    section: "1"
+    heading: "16 and 24 bit Floating Point Values - Implementation"
+    page: 2
+    level: MUST
+    actor: file
+    category: data-layout
+    conformance: extension
+    tags: [258, 339]
+    statement: >
+      When BitsPerSample (258) = 24 and SampleFormat (339) = 3, each 24-bit sample is a
+      floating point value laid out, most-significant bit first, as bit 23 = sign (S), bits
+      22-16 = a 7-bit exponent (E) biased by 63, and bits 15-0 = a 16-bit mantissa (M):
+      "S EEEEEEE MMMMMMMMMMMMMMMM" occupying bits 23..0. The interpretation of sign,
+      exponent and mantissa is analogous to IEEE-754 floating point numbers, and the format
+      supports normalized numbers, denormalized numbers, infinities, and NaNs (Not A
+      Number).
+    notes: >
+      Draft 1 states the exponent bias as 64; Draft 2 corrects this to 63 (matching
+      2^(7-1)-1 = 63). Substantive correction between drafts, flagged as required by the
+      task brief.
+
+  - id: TN3-007
+    section: "2"
+    heading: "Floating Point Predictor - Introduction"
+    page: 3
+    level: INFO
+    actor: file
+    category: compression
+    conformance: extension
+    tags: [317]
+    statement: >
+      Predictor (tag 317, 0x13D) value 3 designates the "Floating Point predictor": a byte
+      reordering of the image sample values followed by horizontal byte differencing,
+      defined by this technical note to improve compression of floating point image data.
+      Predictor is a SHORT with Count 1.
+    notes: null
+
+  - id: TN3-008
+    section: "2"
+    heading: "Floating Point Predictor - Introduction"
+    page: 3
+    level: INFO
+    actor: both
+    category: compression
+    conformance: extension
+    tags: [317, 259]
+    statement: >
+      The floating point predictor (Predictor (317) = 3) works well for both Deflate and
+      LZW compression methods (Compression (259) values 8 and 5 respectively).
+    notes: null
+
+  - id: TN3-009
+    section: "2"
+    heading: "Floating Point Predictor - Introduction"
+    page: 3
+    level: SHOULD
+    actor: writer
+    category: compression
+    conformance: extension
+    tags: [317, 258]
+    statement: >
+      The floating point predictor (Predictor (317) = 3) should only be applied to floating
+      point sample data for which BitsPerSample (258) is a multiple of 8.
+    notes: null
+
+  - id: TN3-010
+    section: "2"
+    heading: "Floating Point Predictor - Algorithm"
+    page: 3
+    level: MUST
+    actor: both
+    category: compression
+    conformance: extension
+    tags: [317, 258]
+    statement: >
+      When encoding with the floating point predictor (Predictor (317) = 3), for each
+      sample of bytesPerSample bytes, the bytes are separated by position/significance and
+      regrouped across the row: all "byte 0" positions (containing the sign and exponent,
+      the most significant byte) are gathered together first, followed by the next most
+      significant byte of the mantissa, and so on down to the least significant byte of the
+      mantissa gathered last. This groups the slowest-changing data (sign and exponent)
+      first, the next-slowest-changing data (most significant mantissa bytes) next, and the
+      fastest-changing, most noise-like data (least significant mantissa bytes) last.
+    notes: >
+      Rationale given in the text: in floating point image data, sign and exponent change
+      little from pixel to pixel, the most significant mantissa bits change little, while
+      the least significant mantissa bits are effectively noise; grouping bytes this way
+      before differencing improves LZW/Deflate compression. An illustrative (non-normative)
+      C implementation (EncodeFPDelta/DecodeFPDelta and EncodeDeltaBytes/DecodeDeltaBytes)
+      is given on pages 3-5 of both drafts; identical in both drafts.
+
+  - id: TN3-011
+    section: "2"
+    heading: "Floating Point Predictor - Algorithm"
+    page: 3
+    level: MUST
+    actor: both
+    category: compression
+    conformance: extension
+    tags: [317]
+    statement: >
+      After the byte-reordering step described in TN3-010, horizontal byte differencing is
+      applied to the reordered buffer: each byte is replaced by the arithmetic difference
+      (modulo 256) between it and the byte at the same reordered byte-plane and same
+      channel position in the preceding column/pixel.
+    notes: >
+      Per the sample code, differencing is computed treating the reordered buffer as
+      "cols*bytesPerSample" columns by "channels" interleaved values, i.e. the differencing
+      operates on the reordered planes exactly as TIFF Predictor 2 (horizontal differencing)
+      operates on ordinary samples.
+
+  - id: TN3-012
+    section: "2"
+    heading: "Floating Point Predictor - Algorithm"
+    page: 3
+    level: SHOULD-NOT
+    actor: both
+    category: compression
+    conformance: extension
+    tags: [317]
+    statement: >
+      The floating point predictor (Predictor (317) = 3) reorders sample bytes into a
+      semi-BigEndian order (most significant byte plane first) regardless of the TIFF
+      file's actual byte order as declared in the file header. TIFF readers and writers
+      should not change the byte order of the image data outside of the operation of this
+      predictor.
+    notes: null
+
+  - id: TN3-013
+    section: "2"
+    heading: "Floating Point Predictor - Algorithm"
+    page: 3
+    level: INFO
+    actor: file
+    category: compression
+    conformance: extension
+    tags: [317]
+    statement: >
+      The floating point predictor (Predictor (317) = 3) preserves the ordering of
+      interleaved color channels: byte differencing is applied independently per channel
+      position across columns, not across channels.
+    notes: null
+
+  - id: TN3-014
+    section: "2"
+    heading: "Floating Point Predictor - Algorithm"
+    page: 3
+    level: MUST
+    actor: reader
+    category: compression
+    conformance: extension
+    tags: [317]
+    statement: >
+      To decode data compressed with the floating point predictor (Predictor (317) = 3), a
+      reader must first reverse the horizontal byte differencing (undoing TN3-011) on the
+      decompressed, still byte-reordered buffer, and then reverse the byte reordering
+      (undoing TN3-010) to restore the sample bytes to their native byte order, in that
+      order (undo differencing, then undo reordering).
+    notes: null
+
+  - id: TN3-015
+    section: "2"
+    heading: "Floating Point Predictor - Algorithm"
+    page: 3
+    level: MUST
+    actor: both
+    category: compression
+    conformance: extension
+    tags: [317]
+    statement: >
+      Horizontal byte differencing performed by the floating point predictor (Predictor
+      (317) = 3) resets at the start of each row: the first column's bytes (for each
+      channel and reordered byte-plane) are stored as absolute values, and each subsequent
+      column's byte value is the difference (modulo 256) from the value at the same
+      channel/byte-plane position in the immediately preceding column of that same row.
+    notes: >
+      Inferred from the illustrative EncodeDeltaBytes/DecodeDeltaBytes C code, whose column
+      loop begins differencing at COL = 1 (encode) / accumulates from COL = 1 (decode),
+      leaving COL = 0 (the first column) untouched by the difference operation - the same
+      row-reset convention used by baseline TIFF Predictor 2.
+
+tags:
+  - code: 339
+    hex: "0x0153"
+    name: SampleFormat
+    types: [SHORT]
+    count: "SamplesPerPixel"
+    default: null
+    required: conditional
+    conformance: extension
+    section: "1"
+    page: 2
+    description: >
+      Specifies how to interpret sample data. This technical note uses value 3 (IEEE
+      floating point data) together with BitsPerSample (258) values of 16 or 24 to signal
+      the reduced-width floating point formats defined herein.
+    values:
+      3: "IEEE floating point data (extended by this note to cover 16- and 24-bit widths in addition to the 32/64-bit widths defined in TIFF 6.0)"
+    interacts_with: [258]
+
+  - code: 258
+    hex: "0x0102"
+    name: BitsPerSample
+    types: [SHORT]
+    count: "SamplesPerPixel"
+    default: null
+    required: conditional
+    conformance: extension
+    section: "1"
+    page: 2
+    description: >
+      Number of bits per component sample. This technical note extends the set of allowed
+      values (when SampleFormat (339) = 3) to include 16 and 24, denoting the reduced-width
+      floating point sample formats defined in this document.
+    values:
+      16: "16-bit floating point sample (1 sign, 5 exponent bits biased 15, 10 mantissa bits); matches OpenEXR/GPU HALF type"
+      24: "24-bit floating point sample (1 sign, 7 exponent bits biased 63, 16 mantissa bits)"
+    interacts_with: [339, 317]
+
+  - code: 317
+    hex: "0x013D"
+    name: Predictor
+    types: [SHORT]
+    count: "1"
+    default: null
+    required: no
+    conformance: extension
+    section: "2"
+    page: 3
+    description: >
+      Predictor applied to sample data before compression. This technical note defines
+      value 3, the floating point predictor, which reorders sample bytes by
+      significance and applies horizontal byte differencing, to improve compression of
+      floating point image samples (typically with Deflate (Compression=8) or LZW
+      (Compression=5)).
+    values:
+      3: "Floating point predictor (byte reordering into semi-BigEndian byte-significance planes, followed by horizontal per-channel byte differencing), defined by this technical note"
+    interacts_with: [258, 259]
+
+dependencies:
+  - id: TN3-DEP-001
+    requirement: TN3-005
+    when: "SampleFormat(339) == 3 and BitsPerSample(258) == 16"
+    then: "Sample data is interpreted as the 16-bit floating point layout defined in this note: bit 15 sign, bits 14-10 exponent (bias 15), bits 9-0 mantissa"
+    kind: modifies-meaning
+    tags: [339, 258]
+
+  - id: TN3-DEP-002
+    requirement: TN3-006
+    when: "SampleFormat(339) == 3 and BitsPerSample(258) == 24"
+    then: "Sample data is interpreted as the 24-bit floating point layout defined in this note: bit 23 sign, bits 22-16 exponent (bias 63), bits 15-0 mantissa"
+    kind: modifies-meaning
+    tags: [339, 258]
+
+  - id: TN3-DEP-003
+    requirement: TN3-009
+    when: "Predictor(317) == 3"
+    then: "BitsPerSample(258) should be a multiple of 8; the predictor should only be applied under this condition"
+    kind: constrains-value
+    tags: [317, 258]
+
+  - id: TN3-DEP-004
+    requirement: TN3-008
+    when: "Predictor(317) == 3"
+    then: "Compression(259) is typically LZW (5) or Deflate/AdobeDeflate (8); the predictor is documented to work well with these two compression methods"
+    kind: constrains-value
+    tags: [317, 259]
+
+  - id: TN3-DEP-005
+    requirement: TN3-012
+    when: "Predictor(317) == 3"
+    then: "Sample bytes are reordered into semi-BigEndian byte-significance order for the purposes of differencing/compression, independent of the TIFF file's declared byte order; readers must undo this reordering (after undoing the differencing) to recover native-order sample bytes, and must not otherwise alter the byte order of the image data"
+    kind: modifies-meaning
+    tags: [317, 258, 339]

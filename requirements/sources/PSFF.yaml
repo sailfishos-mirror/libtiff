@@ -1,0 +1,908 @@
+document: PSFF
+title: "Adobe Photoshop File Formats Specification"
+date: "November 2019"
+requirements:
+  - id: PSFF-001
+    section: "Image Resource Blocks"
+    heading: "Image Resource Blocks"
+    level: MUST
+    actor: file
+    category: data-layout
+    conformance: PSFF
+    tags: [34377]
+    statement: >
+      An Image Resource Block (the repeating unit inside TIFF tag 34377,
+      Photoshop image resources) begins with a 4-byte signature that must equal
+      '8BIM'.
+    notes: >
+      This structure is defined generically (it is shared by Photoshop's native
+      PSD/PSB format, JPEG, and TIFF) and is not TIFF-specific in itself, but it
+      is the mandatory content structure of TIFF tag 34377. Scope limited per
+      extraction brief to the structural rule needed to parse tag 34377's value.
+  - id: PSFF-002
+    section: "Image Resource Blocks"
+    heading: "Image Resource Blocks"
+    level: MUST
+    actor: file
+    category: data-layout
+    conformance: PSFF
+    tags: [34377]
+    statement: >
+      Following the '8BIM' signature, an Image Resource Block contains a 2-byte
+      unique identifier (the resource ID) selecting the resource type, as listed
+      in the Image Resource IDs table.
+  - id: PSFF-003
+    section: "Image Resource Blocks"
+    heading: "Image Resource Blocks"
+    level: MUST
+    actor: file
+    category: data-layout
+    conformance: PSFF
+    tags: [34377]
+    statement: >
+      Following the resource ID, an Image Resource Block contains a Name field:
+      a Pascal string (1-byte length prefix followed by that many characters),
+      padded with a trailing zero byte if necessary to make the field's total
+      size even. A null (empty) name is encoded as two bytes of zero (length
+      byte 0 plus one pad byte).
+  - id: PSFF-004
+    section: "Image Resource Blocks"
+    heading: "Image Resource Blocks"
+    level: MUST
+    actor: file
+    category: data-layout
+    conformance: PSFF
+    tags: [34377]
+    statement: >
+      Following the Name field, an Image Resource Block contains a 4-byte field
+      giving the actual size (in bytes) of the resource data that follows.
+  - id: PSFF-005
+    section: "Image Resource Blocks"
+    heading: "Image Resource Blocks"
+    level: MUST
+    actor: file
+    category: data-layout
+    conformance: PSFF
+    tags: [34377]
+    statement: >
+      The resource data area of an Image Resource Block is padded with a
+      trailing zero byte if necessary to make its stored size even, even though
+      the preceding 4-byte size field records the true (unpadded) data length.
+    notes: >
+      Consequently a parser must use the declared size field to know how many
+      data bytes are meaningful, then skip one extra pad byte if that size is
+      odd before reading the next Image Resource Block.
+  - id: PSFF-006
+    section: "Image Resource IDs"
+    heading: "Image Resource IDs"
+    level: INFO
+    actor: file
+    category: metadata
+    conformance: PSFF
+    tags: [34377]
+    statement: >
+      Image Resource ID 0x03ED (1005), "ResolutionInfo structure", stores
+      image resolution information as one of the resource blocks that may occur
+      inside TIFF tag 34377 (Photoshop image resources). The document does not
+      give the internal layout of the ResolutionInfo structure here (it refers
+      to "Appendix A in Photoshop API Guide.pdf", not part of this document).
+  - id: PSFF-007
+    section: "Image Resource IDs"
+    heading: "Image Resource IDs"
+    level: INFO
+    actor: file
+    category: metadata
+    conformance: PSFF
+    tags: [34377]
+    statement: >
+      Image Resource ID 0x0404 (1028), "IPTC-NAA record", contains the same
+      File Info information a application stores via IPTC, and may occur as a
+      resource block inside TIFF tag 34377 (Photoshop image resources).
+    notes: >
+      TIFF tag 33723 is separately documented by this specification as also
+      holding "File information (IPTC-NAA record 2)". The document does not
+      state which of the two locations takes precedence if both are present in
+      the same TIFF file, nor does it require them to be kept in sync; this is
+      an ambiguity in the source document worth flagging for the merged
+      database.
+  - id: PSFF-008
+    section: "Image Resource IDs"
+    heading: "Image Resource IDs"
+    level: INFO
+    actor: file
+    category: metadata
+    conformance: PSFF
+    tags: [34377]
+    statement: >
+      Image Resource ID 0x040F (1039), "ICC Profile" (introduced Photoshop
+      5.0), contains the raw bytes of an ICC (International Color Consortium)
+      format profile, and may occur as a resource block inside TIFF tag 34377
+      (Photoshop image resources).
+    notes: >
+      TIFF tag 34675 is separately documented by this specification as also
+      holding "ICC Profiles". The document does not state a precedence rule
+      between the native TIFF tag and the duplicate copy inside tag 34377's
+      resource 0x040F.
+  - id: PSFF-009
+    section: "Image Resource IDs"
+    heading: "Image Resource IDs"
+    level: INFO
+    actor: file
+    category: metadata
+    conformance: PSFF
+    tags: [34377]
+    statement: >
+      Image Resource ID 0x0424 (1060), "XMP metadata" (introduced Photoshop
+      7.0), contains "File info as XML description" (XMP) and may occur as a
+      resource block inside TIFF tag 34377 (Photoshop image resources).
+    notes: >
+      TIFF tag 700 is separately documented by this specification as also
+      holding "XMP metadata". The document does not state a precedence rule
+      between the native TIFF tag and the duplicate copy inside tag 34377's
+      resource 0x0424.
+  - id: PSFF-010
+    section: "Image Resource IDs"
+    heading: "Image Resource IDs"
+    level: INFO
+    actor: file
+    category: metadata
+    conformance: PSFF
+    tags: [34377]
+    statement: >
+      Image Resource IDs in the range 0x07D0-0x0BB6 (2000-2997), "Path
+      Information (saved paths)", store Photoshop clipping/work paths and may
+      occur as resource blocks inside TIFF tag 34377 (Photoshop image
+      resources). These path resource blocks consist of a series of 26-byte
+      path point records, so the resource's data length must always be a
+      multiple of 26. IDs in this range are reserved for Photoshop's use, and
+      the resource's Name field carries the path's user-visible name.
+  - id: PSFF-011
+    section: "Image Resource IDs"
+    heading: "Image Resource IDs"
+    level: INFO
+    actor: file
+    category: metadata
+    conformance: PSFF
+    tags: [34377]
+    statement: >
+      Image Resource ID 0x0BB7 (2999), "Name of clipping path", if present,
+      contains a Pascal string giving the name of the clipping path (one of the
+      0x07D0-0x0BB6 path resources) to use when the image is saved/output as
+      EPS, followed by a 4-byte fixed-point flatness value and a 2-byte fill
+      rule (0 = same fill rule, 1 = even-odd, 2 = non-zero winding). This
+      resource may occur inside TIFF tag 34377 (Photoshop image resources).
+    notes: "The document states the fill rule value is ignored by Photoshop itself."
+  - id: PSFF-012
+    section: "TIFF files"
+    heading: "TIFF files"
+    level: INFO
+    actor: reader
+    category: behavior
+    conformance: PSFF
+    statement: >
+      When reading a TIFF file, Photoshop reads only the first Image File
+      Directory (IFD) of the file.
+    notes: >
+      Implies Photoshop, as a TIFF reader, does not process additional IFDs
+      (e.g. thumbnail or multi-page IFDs chained via the next-IFD offset)
+      beyond the first.
+  - id: PSFF-013
+    section: "TIFF files"
+    heading: "TIFF files"
+    level: INFO
+    actor: writer
+    category: behavior
+    conformance: PSFF
+    statement: >
+      When writing a TIFF file, Photoshop writes exactly one IFD per file.
+    notes: "I.e. Photoshop does not write multi-page/multi-image TIFF files."
+  - id: PSFF-014
+    section: "TIFF Tags"
+    heading: "TIFF Tags"
+    level: INFO
+    actor: both
+    category: tag
+    conformance: PSFF
+    tags: [254]
+    statement: >
+      For TIFF tag 254 (NewSubFileType): Photoshop ignores this tag's value
+      when reading, and writes the value 0 when writing.
+  - id: PSFF-015
+    section: "TIFF Tags"
+    heading: "TIFF Tags"
+    level: INFO
+    actor: both
+    category: tag
+    conformance: PSFF
+    tags: [256]
+    statement: >
+      For TIFF tag 256 (ImageWidth): Photoshop reads and writes values in the
+      range 1 to 30000.
+  - id: PSFF-016
+    section: "TIFF Tags"
+    heading: "TIFF Tags"
+    level: INFO
+    actor: both
+    category: tag
+    conformance: PSFF
+    tags: [257]
+    statement: >
+      For TIFF tag 257 (ImageLength): Photoshop reads and writes values in the
+      range 1 to 30000.
+  - id: PSFF-017
+    section: "TIFF Tags"
+    heading: "TIFF Tags"
+    level: INFO
+    actor: both
+    category: tag
+    conformance: PSFF
+    tags: [258]
+    statement: >
+      For TIFF tag 258 (BitsPerSample): Photoshop reads values of 1, 2, 4, 8,
+      or 16 (with all samples required to be the same value), and writes only
+      1, 8, or 16.
+  - id: PSFF-018
+    section: "TIFF Tags"
+    heading: "TIFF Tags"
+    level: INFO
+    actor: both
+    category: compression
+    conformance: PSFF
+    tags: [259]
+    statement: >
+      For TIFF tag 259 (Compression): Photoshop reads values 1 (uncompressed),
+      2 (CCITT), 5 (LZW), 7 (JPEG), 8 (ZIP), and 32773 (PackBits), but writes
+      only 1, 5, 7, or 8. See "Photoshop TIFF.pdf" (not part of this document)
+      for additional information about this tag.
+    notes: "Photoshop reads PackBits (32773) and CCITT (2) compressed TIFF files but never writes them."
+  - id: PSFF-019
+    section: "TIFF Tags"
+    heading: "TIFF Tags"
+    level: INFO
+    actor: both
+    category: color
+    conformance: PSFF
+    tags: [262]
+    statement: >
+      For TIFF tag 262 (PhotometricInterpretation): Photoshop reads values 0,
+      1, 2, 3, 5, 8, and 9, but writes only 0 (for 1-bit images), 1 (for 8-bit
+      images), 2, 3, 5, or 8. See "Photoshop TIFF.pdf" (not part of this
+      document) for additional information about this tag.
+    notes: "Value 9 (CIE L*a*b*) is read but never written by Photoshop, per this table."
+  - id: PSFF-020
+    section: "TIFF Tags"
+    heading: "TIFF Tags"
+    level: INFO
+    actor: both
+    category: tag
+    conformance: PSFF
+    tags: [266]
+    statement: >
+      For TIFF tag 266 (FillOrder): Photoshop reads only value 1 and does not
+      write this tag at all.
+  - id: PSFF-021
+    section: "TIFF Tags"
+    heading: "TIFF Tags"
+    level: INFO
+    actor: both
+    category: tag
+    conformance: PSFF
+    tags: [270]
+    statement: >
+      For TIFF tag 270 (ImageDescription): Photoshop reads and writes this tag
+      as the image's printing caption text.
+  - id: PSFF-022
+    section: "TIFF Tags"
+    heading: "TIFF Tags"
+    level: INFO
+    actor: both
+    category: tag
+    conformance: PSFF
+    tags: [271, 272, 305, 306, 315]
+    statement: >
+      TIFF tags 271 (Make), 272 (Model), 305 (Software), 306 (DateTime), and
+      315 (Artist) are listed by this document as Exif-related tags Photoshop
+      supports; the document's table gives no specific value constraint for
+      Photoshop's reading or writing of them (the corresponding table cells are
+      blank).
+  - id: PSFF-023
+    section: "TIFF Tags"
+    heading: "TIFF Tags"
+    level: INFO
+    actor: both
+    category: tag
+    conformance: PSFF
+    tags: [273]
+    statement: >
+      For TIFF tag 273 (StripOffsets): Photoshop reads and writes this tag.
+  - id: PSFF-024
+    section: "TIFF Tags"
+    heading: "TIFF Tags"
+    level: INFO
+    actor: both
+    category: tag
+    conformance: PSFF
+    tags: [277]
+    statement: >
+      For TIFF tag 277 (SamplesPerPixel): Photoshop reads and writes values in
+      the range 1 to 24.
+  - id: PSFF-025
+    section: "TIFF Tags"
+    heading: "TIFF Tags"
+    level: INFO
+    actor: writer
+    category: data-layout
+    conformance: PSFF
+    tags: [278, 259]
+    statement: >
+      For TIFF tag 278 (RowsPerStrip): Photoshop reads any value, but as a
+      writer it emits a single strip covering the whole image when Compression
+      (259) indicates the image is not compressed, and multiple strips when the
+      image is compressed.
+  - id: PSFF-026
+    section: "TIFF Tags"
+    heading: "TIFF Tags"
+    level: INFO
+    actor: both
+    category: tag
+    conformance: PSFF
+    tags: [279, 259]
+    statement: >
+      For TIFF tag 279 (StripByteCounts): Photoshop requires this tag to be
+      present when reading a compressed image (Compression (259) not equal to
+      1), and always writes it.
+  - id: PSFF-027
+    section: "TIFF Tags"
+    heading: "TIFF Tags"
+    level: INFO
+    actor: both
+    category: tag
+    conformance: PSFF
+    tags: [282]
+    statement: >
+      For TIFF tag 282 (XResolution): Photoshop reads and writes this tag.
+  - id: PSFF-028
+    section: "TIFF Tags"
+    heading: "TIFF Tags"
+    level: INFO
+    actor: both
+    category: tag
+    conformance: PSFF
+    tags: [283]
+    statement: >
+      For TIFF tag 283 (YResolution): Photoshop ignores this tag's value when
+      reading, assuming square pixels, but writes it.
+  - id: PSFF-029
+    section: "TIFF Tags"
+    heading: "TIFF Tags"
+    level: INFO
+    actor: both
+    category: tag
+    conformance: PSFF
+    tags: [284]
+    statement: >
+      For TIFF tag 284 (PlanarConfiguration): Photoshop reads values 1 or 2,
+      but writes only value 1 (chunky/interleaved).
+  - id: PSFF-030
+    section: "TIFF Tags"
+    heading: "TIFF Tags"
+    level: INFO
+    actor: both
+    category: tag
+    conformance: PSFF
+    tags: [296]
+    statement: >
+      For TIFF tag 296 (ResolutionUnit): Photoshop reads values 2 or 3, but
+      writes only value 2 (inches).
+  - id: PSFF-031
+    section: "TIFF Tags"
+    heading: "TIFF Tags"
+    level: INFO
+    actor: both
+    category: tag
+    conformance: PSFF
+    tags: [317]
+    statement: >
+      For TIFF tag 317 (Predictor): Photoshop reads and writes values 1 or 2.
+  - id: PSFF-032
+    section: "TIFF Tags"
+    heading: "TIFF Tags"
+    level: INFO
+    actor: both
+    category: tag
+    conformance: PSFF
+    tags: [320]
+    statement: >
+      For TIFF tag 320 (ColorMap): Photoshop reads and writes this tag.
+  - id: PSFF-033
+    section: "TIFF Tags"
+    heading: "TIFF Tags"
+    level: INFO
+    actor: both
+    category: tag
+    conformance: PSFF
+    tags: [322, 323, 324, 325]
+    statement: >
+      For TIFF tags 322 (TileWidth), 323 (TileLength), and 324 (TileOffsets):
+      Photoshop reads these tags but never writes tiled TIFF files (writes:
+      No). For TIFF tag 325 (TileByteCounts), Photoshop requires it to be
+      present when reading a compressed tiled image, but likewise never writes
+      it.
+    notes: "Photoshop as a TIFF writer only produces strip-based (non-tiled) TIFF files, per this table."
+  - id: PSFF-034
+    section: "TIFF Tags"
+    heading: "TIFF Tags"
+    level: INFO
+    actor: both
+    category: color
+    conformance: PSFF
+    tags: [332]
+    statement: >
+      For TIFF tag 332 (InkSet): Photoshop reads only value 1 and never writes
+      this tag.
+  - id: PSFF-035
+    section: "TIFF Tags"
+    heading: "TIFF Tags"
+    level: INFO
+    actor: both
+    category: tag
+    conformance: PSFF
+    tags: [336, 262]
+    statement: >
+      For TIFF tag 336 (DotRange): Photoshop requires this tag to be present
+      when reading a CMYK image, and always writes it.
+  - id: PSFF-036
+    section: "TIFF Tags"
+    heading: "TIFF Tags"
+    level: INFO
+    actor: both
+    category: tag
+    conformance: PSFF
+    tags: [338]
+    statement: >
+      For TIFF tag 338 (ExtraSamples): Photoshop ignores the tag's value when
+      reading except for its count (number of extra samples). Photoshop 5.5 and
+      earlier always writes value 0 for each extra sample; Photoshop 6.0 and
+      later writes 0 or 1 per extra sample according to the TIFF 6.0
+      specification's meaning (0 = unspecified data, 1 = associated alpha).
+    notes: "Version-dependent writer behavior explicitly stated by the document."
+  - id: PSFF-037
+    section: "TIFF Tags"
+    heading: "TIFF Tags"
+    level: INFO
+    actor: reader
+    category: metadata
+    conformance: PSFF
+    tags: [259, 262]
+    statement: >
+      The document refers readers to an external file, "Photoshop TIFF.pdf"
+      (not part of this document), for additional information about TIFF tags
+      259 (Compression) and 262 (PhotometricInterpretation) as used by
+      Photoshop.
+  - id: PSFF-038
+    section: "Photoshop-specific TIFF Tags"
+    heading: "Photoshop-specific TIFF Tags"
+    level: INFO
+    actor: file
+    category: tag
+    conformance: PSFF
+    tags: [330]
+    location: ifd0
+    statement: >
+      TIFF tag 330 ("tSubIFD") is used by Photoshop as documented in the
+      "TIFF-PM6.pdf" file (not part of this document) as a PageMaker extension.
+  - id: PSFF-039
+    section: "Photoshop-specific TIFF Tags"
+    heading: "Photoshop-specific TIFF Tags"
+    level: INFO
+    actor: file
+    category: tag
+    conformance: PSFF
+    tags: [437]
+    location: any-ifd
+    statement: >
+      TIFF tag 437 holds JPEG tables data. See "Photoshop TIFF.pdf" (not part
+      of this document) for more information; this document does not further
+      define the tag's internal structure.
+  - id: PSFF-040
+    section: "Photoshop-specific TIFF Tags"
+    heading: "Photoshop-specific TIFF Tags"
+    level: INFO
+    actor: file
+    category: metadata
+    conformance: PSFF
+    tags: [700]
+    location: any-ifd
+    statement: >
+      TIFF tag 700 holds XMP metadata for the file. The document does not
+      define the tag's internal structure here, referring instead to the XMP
+      specification at adobe.com/devnet/xmp.
+  - id: PSFF-041
+    section: "Photoshop-specific TIFF Tags"
+    heading: "Photoshop-specific TIFF Tags"
+    level: INFO
+    actor: file
+    category: metadata
+    conformance: PSFF
+    tags: [33723]
+    location: any-ifd
+    statement: >
+      TIFF tag 33723 holds "File information" as an IPTC-NAA record 2. The
+      document does not further define this tag's internal structure here,
+      referring instead to documentation in the IPTC folder (not part of this
+      document).
+  - id: PSFF-042
+    section: "Photoshop-specific TIFF Tags"
+    heading: "Photoshop-specific TIFF Tags"
+    level: MUST
+    actor: file
+    category: metadata
+    conformance: PSFF
+    tags: [34377]
+    location: any-ifd
+    statement: >
+      TIFF tag 34377 ("Photoshop image resources") contains a sequence of
+      Image Resource Blocks, structured as defined in the "Image Resources
+      Section" of this document (see requirements PSFF-001 through PSFF-005:
+      repeating blocks each beginning with signature '8BIM', a 2-byte resource
+      ID, a Pascal-string name padded to even length, a 4-byte data-size field,
+      and resource data padded to even length).
+  - id: PSFF-043
+    section: "Photoshop-specific TIFF Tags"
+    heading: "Photoshop-specific TIFF Tags"
+    level: INFO
+    actor: file
+    category: metadata
+    conformance: PSFF
+    tags: [34665]
+    location: ifd0
+    statement: >
+      TIFF tag 34665 is the Exif IFD pointer, referencing the Exif
+      specification (Kodak-hosted PDF cited by the document, not part of this
+      document) for its structure.
+  - id: PSFF-044
+    section: "Photoshop-specific TIFF Tags"
+    heading: "Photoshop-specific TIFF Tags"
+    level: INFO
+    actor: file
+    category: color
+    conformance: PSFF
+    tags: [34675]
+    location: any-ifd
+    statement: >
+      TIFF tag 34675 holds ICC Profiles, referencing the ICC.1v42_2006-05 ICC
+      profile specification (not part of this document) for its structure.
+    notes: >
+      Listed by the document's table row label as tag 34675, immediately after
+      34665 and before 34853; this is the standard ICC Profile tag.
+  - id: PSFF-045
+    section: "Photoshop-specific TIFF Tags"
+    heading: "Photoshop-specific TIFF Tags"
+    level: INFO
+    actor: file
+    category: metadata
+    conformance: PSFF
+    tags: [34853]
+    location: ifd0
+    statement: >
+      TIFF tag 34853 is the Exif GPS info IFD pointer (GPSIFD), referencing the
+      Exif specification (not part of this document) for its structure.
+  - id: PSFF-046
+    section: "Photoshop-specific TIFF Tags"
+    heading: "Photoshop-specific TIFF Tags"
+    level: MUST
+    actor: file
+    category: structure
+    conformance: PSFF
+    tags: [37724]
+    location: any-ifd
+    statement: >
+      TIFF tag 37724 ("tImageSourceData") begins with the null-terminated
+      ASCII string "Adobe Photoshop Document Data Block" identifying its
+      content, followed by data of various types (structure not further
+      defined in this document; see "Photoshop TIFF.pdf", not part of this
+      document, for a list of the data blocks it can contain).
+  - id: PSFF-047
+    section: "Photoshop-specific TIFF Tags"
+    heading: "Photoshop-specific TIFF Tags"
+    level: MUST
+    actor: file
+    category: structure
+    conformance: PSFF
+    tags: [37724]
+    supplement_version: "PSB"
+    statement: >
+      In the Large Document Format (PSB), the content of TIFF tag 37724
+      ("tImageSourceData") begins with the null-terminated ASCII string "Adobe
+      Photoshop Document Data V0002" instead of "Adobe Photoshop Document Data
+      Block".
+  - id: PSFF-048
+    section: "Photoshop-specific TIFF Tags"
+    heading: "Photoshop-specific TIFF Tags"
+    level: INFO
+    actor: file
+    category: metadata
+    conformance: PSFF
+    tags: [50255]
+    location: any-ifd
+    statement: >
+      TIFF tag 50255 ("tAnnotations") holds annotation data; the document
+      cross-references its own "Annotations" section (Photoshop 6.0 'Anno'
+      additional layer information block format) for the data's format rather
+      than defining a distinct TIFF-level structure.
+    notes: >
+      Out of scope for this extraction per the addendum's metadata-carrier
+      scope rule: the internal 'Anno' block layout is PSD-internal data and not
+      re-extracted here.
+  - id: PSFF-049
+    section: "TIFF Files on Mac OS"
+    heading: "TIFF Files on Mac OS"
+    level: INFO
+    actor: file
+    category: structure
+    conformance: PSFF
+    statement: >
+      On Mac OS, all information needed to interpret a Photoshop-written TIFF
+      file is stored in the file's data fork (i.e. in the standard TIFF
+      structure); for interoperability with other Mac OS applications, some of
+      that information is additionally duplicated into resources stored in the
+      file's resource fork.
+  - id: PSFF-050
+    section: "TIFF Files on Mac OS"
+    heading: "TIFF Files on Mac OS"
+    level: INFO
+    actor: writer
+    category: metadata
+    conformance: PSFF
+    statement: >
+      For a Mac OS TIFF file, Photoshop duplicates cataloging information into
+      the resource fork: a 'pnot' resource with id 0 references thumbnail,
+      keyword, and caption information; the thumbnail picture is stored in a
+      'PICT' resource; keywords are stored in an 'STR#' resource with id 128;
+      caption text is stored in a 'TEXT' resource with id 128; all File Info
+      dialog data is stored in an 'ANPA' resource with id 10000 (as an
+      IPTC-NAA record 2); an 'STR ' resource with id -16396 contains a string
+      naming the application that created the TIFF file; and 'icl8' and
+      'ICN#' resources, both with id -16455, contain thumbnail images shown in
+      the Mac OS Finder.
+    notes: >
+      This resource-fork duplication is distinct from, and not stated by the
+      document to interact with, the in-file duplication between TIFF tag
+      34377's resource blocks and native TIFF tags (see notes on PSFF-007,
+      PSFF-008, PSFF-009).
+  - id: PSFF-051
+    section: "Photoshop File Format / Windows"
+    heading: "Windows"
+    level: INFO
+    actor: file
+    category: structure
+    conformance: PSFF
+    statement: >
+      This document states that Photoshop's own native PSD/PSB format (not
+      TIFF) always stores multi-byte values in big-endian byte order, and that
+      on Windows, short and long integers must be byte-swapped when reading or
+      writing. The document makes no separate byte-order statement specific to
+      TIFF files; TIFF's own header-encoded byte order ("II"/"MM") governs
+      instead.
+    notes: >
+      Included as INFO because the extraction brief item 3 asked about
+      byte-order statements; this document does not state a Photoshop-specific
+      TIFF byte-order rule distinct from the TIFF 6.0 specification's own
+      byte-order marker mechanism.
+  - id: PSFF-052
+    section: "Photoshop File Format"
+    heading: "Photoshop File Format (out of scope PSD internals)"
+    level: INFO
+    actor: file
+    category: structure
+    conformance: PSFF
+    statement: >
+      The bulk of this document (the "Photoshop File Format" chapter covering
+      the PSD/PSB file header, color mode data, layer and mask information,
+      additional layer information records, and the "Additional File Formats"
+      chapter covering load files such as Actions, Curves, Duotone Options,
+      etc.) describes Photoshop's native PSD/PSB document format and auxiliary
+      load-file formats, which are not TIFF structures and are out of scope for
+      this extraction per the addendum's metadata-carrier scope rule. Only the
+      Image Resource Block container structure (reused by TIFF tag 34377) and
+      the "Other Document File Formats > TIFF files" chapter were extracted in
+      full.
+tags:
+  - code: 330
+    hex: "0x014A"
+    name: SubIFDs (tSubIFD)
+    types: []
+    count: null
+    default: null
+    required: no
+    conformance: PSFF
+    location: ifd0
+    section: "Photoshop-specific TIFF Tags"
+    description: >
+      Used by Photoshop as documented in "TIFF-PM6.pdf" (not part of this
+      document) as a PageMaker extension. This document does not define the
+      tag's type, count, or internal structure.
+  - code: 437
+    hex: "0x01B5"
+    name: JPEGTables
+    types: []
+    count: null
+    default: null
+    required: no
+    conformance: PSFF
+    location: any-ifd
+    section: "Photoshop-specific TIFF Tags"
+    description: >
+      Holds JPEG tables data. This document does not define the tag's type,
+      count, or internal structure, referring instead to "Photoshop TIFF.pdf"
+      (not part of this document).
+  - code: 700
+    hex: "0x02BC"
+    name: XMP
+    types: []
+    count: null
+    default: null
+    required: no
+    conformance: PSFF
+    location: any-ifd
+    section: "Photoshop-specific TIFF Tags"
+    description: >
+      Holds XMP metadata (File info as XML description). This document does
+      not define the tag's type, count, or internal structure, referring
+      instead to the XMP specification at adobe.com/devnet/xmp.
+    interacts_with: [34377]
+  - code: 33723
+    hex: "0x83BB"
+    name: IPTC (File information)
+    types: []
+    count: null
+    default: null
+    required: no
+    conformance: PSFF
+    location: any-ifd
+    section: "Photoshop-specific TIFF Tags"
+    description: >
+      Holds "File information" as an IPTC-NAA record 2. This document does not
+      define the tag's type, count, or internal structure, referring instead
+      to documentation in the IPTC folder (not part of this document).
+    interacts_with: [34377]
+  - code: 34377
+    hex: "0x8649"
+    name: Photoshop (ImageResources)
+    types: []
+    count: null
+    default: null
+    required: no
+    conformance: PSFF
+    location: any-ifd
+    section: "Photoshop-specific TIFF Tags"
+    description: >
+      "Photoshop image resources": contains a sequence of Image Resource
+      Blocks (see the Image Resources Section of this document), each block
+      beginning with signature '8BIM', a 2-byte resource ID, a Pascal-string
+      name padded to even length, a 4-byte data-size field, and resource data
+      padded to even length. Resource IDs of particular interest for TIFF
+      interchange include 0x03ED (1005, ResolutionInfo), 0x0404 (1028,
+      IPTC-NAA record), 0x040F (1039, ICC Profile), 0x0424 (1060, XMP
+      metadata), 0x07D0-0x0BB6 (2000-2997, saved paths), and 0x0BB7 (2999,
+      clipping path name). This document does not state the tag's TIFF data
+      type or count; conventionally implementations treat it as an opaque
+      byte block.
+    values:
+      1005: "ResolutionInfo structure (0x03ED)"
+      1028: "IPTC-NAA record (0x0404) -- duplicates TIFF tag 33723"
+      1039: "ICC Profile, raw ICC profile bytes (0x040F) -- duplicates TIFF tag 34675"
+      1060: "XMP metadata, File info as XML (0x0424) -- duplicates TIFF tag 700"
+      "2000-2997": "Path Information / saved paths (0x07D0-0x0BB6), 26-byte path point records"
+      2999: "Name of clipping path (0x0BB7)"
+    interacts_with: [33723, 34675, 700]
+  - code: 34665
+    hex: "0x8769"
+    name: ExifIFD
+    types: []
+    count: null
+    default: null
+    required: no
+    conformance: PSFF
+    location: ifd0
+    section: "Photoshop-specific TIFF Tags"
+    description: >
+      Exif IFD pointer. This document defers to the Exif specification (cited
+      as a Kodak-hosted PDF, not part of this document) for structure.
+  - code: 34675
+    hex: "0x8773"
+    name: InterColorProfile (ICC Profile)
+    types: []
+    count: null
+    default: null
+    required: no
+    conformance: PSFF
+    location: any-ifd
+    section: "Photoshop-specific TIFF Tags"
+    description: >
+      Holds ICC Profiles. This document defers to the ICC.1v42_2006-05
+      specification (not part of this document) for structure.
+    interacts_with: [34377]
+  - code: 34853
+    hex: "0x8825"
+    name: GPSIFD
+    types: []
+    count: null
+    default: null
+    required: no
+    conformance: PSFF
+    location: ifd0
+    section: "Photoshop-specific TIFF Tags"
+    description: >
+      Exif GPS info IFD pointer. This document defers to the Exif
+      specification (not part of this document) for structure.
+  - code: 37724
+    hex: "0x933C"
+    name: ImageSourceData (tImageSourceData)
+    types: []
+    count: null
+    default: null
+    required: no
+    conformance: PSFF
+    location: any-ifd
+    section: "Photoshop-specific TIFF Tags"
+    description: >
+      "tImageSourceData": begins with the null-terminated ASCII string "Adobe
+      Photoshop Document Data Block" (PSB: "Adobe Photoshop Document Data
+      V0002"), followed by data of various types not further defined in this
+      document (see "Photoshop TIFF.pdf", not part of this document, for a
+      list). This document does not state the tag's TIFF data type or count;
+      conventionally implementations treat it as an opaque byte block.
+  - code: 50255
+    hex: "0xC44F"
+    name: Annotations (tAnnotations)
+    types: []
+    count: null
+    default: null
+    required: no
+    conformance: PSFF
+    location: any-ifd
+    section: "Photoshop-specific TIFF Tags"
+    description: >
+      Holds annotation data; the document cross-references its own
+      "Annotations" section ('Anno' additional layer information block,
+      Photoshop 6.0) for format rather than defining a distinct TIFF-level
+      structure. The internal 'Anno' block layout is out of scope for this
+      extraction (PSD-internal data model).
+dependencies:
+  - id: PSFF-DEP-001
+    requirement: PSFF-026
+    when: "Compression(259) != 1"
+    then: "StripByteCounts(279) is required to be present when Photoshop reads the file."
+    kind: requires
+    tags: [259, 279]
+  - id: PSFF-DEP-002
+    requirement: PSFF-033
+    when: "Compression(259) != 1 AND TileWidth(322)/TileLength(323) present (tiled image)"
+    then: "TileByteCounts(325) is required to be present when Photoshop reads the file."
+    kind: requires
+    tags: [259, 322, 323, 325]
+  - id: PSFF-DEP-003
+    requirement: PSFF-025
+    when: "Compression(259) == 1 (uncompressed)"
+    then: "Photoshop, as a writer, emits a single strip (RowsPerStrip(278) covers the whole image)."
+    kind: selects-default
+    tags: [259, 278]
+  - id: PSFF-DEP-004
+    requirement: PSFF-025
+    when: "Compression(259) != 1 (compressed)"
+    then: "Photoshop, as a writer, emits multiple strips (RowsPerStrip(278) less than the whole image)."
+    kind: selects-default
+    tags: [259, 278]
+  - id: PSFF-DEP-005
+    requirement: PSFF-035
+    when: "PhotometricInterpretation(262) indicates a CMYK image"
+    then: "DotRange(336) is required to be present when Photoshop reads the file."
+    kind: requires
+    tags: [262, 336]
+  - id: PSFF-DEP-006
+    requirement: PSFF-036
+    when: "Photoshop version >= 6.0 (writer)"
+    then: "ExtraSamples(338) is written as 0 or 1 per extra sample (TIFF 6.0 semantics: 0 = unspecified, 1 = associated alpha), rather than always 0 as in Photoshop 5.5 and earlier."
+    kind: modifies-meaning
+    tags: [338]

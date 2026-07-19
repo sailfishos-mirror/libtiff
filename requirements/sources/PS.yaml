@@ -1,0 +1,1644 @@
+document: PS
+title: "Adobe Photoshop(R) TIFF Technical Notes"
+date: "March 22, 2002"
+requirements:
+  - id: PS-001
+    section: "Introduction"
+    heading: "Introduction"
+    page: 1
+    level: SHOULD
+    actor: reader
+    category: tag
+    conformance: extension
+    tags: [330]
+    statement: >
+      TIFF readers that encounter a SubIFD (tag 330, SubIFDs) together with a bit depth
+      (BitsPerSample, 258) other than 8 should ignore the SubIFDs found in the file.
+    notes: >
+      Stated as a WARNING in the document. No further explanation of "bit depth other than
+      8" is given (e.g. whether it means BitsPerSample of the main image, of the SubIFD
+      image, or either); this is ambiguous in the source text.
+
+  - id: PS-002
+    section: "Deflate/Inflate Compression"
+    heading: "Introduction"
+    page: 2
+    level: INFO
+    actor: file
+    category: compression
+    conformance: extension
+    tags: [259]
+    statement: >
+      Compression (tag 259, 0x103) value 8 denotes lossless Deflate compression using the
+      zlib compressed data format. Type SHORT, Count 1.
+
+  - id: PS-003
+    section: "Deflate/Inflate Compression"
+    heading: "Introduction"
+    page: 2
+    level: INFO
+    actor: file
+    category: compression
+    conformance: extension
+    tags: [259, 262, 284]
+    statement: >
+      Deflate compression (Compression(259)=8) is a byte-oriented compression scheme that
+      can be applied to a TIFF image regardless of its PhotometricInterpretation(262),
+      PlanarConfiguration(284), or image data organization (strips or tiles).
+
+  - id: PS-004
+    section: "Deflate/Inflate Compression"
+    heading: "Introduction"
+    page: 2
+    level: MUST
+    actor: file
+    category: compression
+    conformance: extension
+    tags: [259]
+    statement: >
+      When Compression(259)=8, each strip or tile (image segment) is compressed
+      independently and stored as a complete zlib data stream.
+
+  - id: PS-005
+    section: "Deflate/Inflate Compression"
+    heading: "Introduction"
+    page: 2
+    level: INFO
+    actor: both
+    category: compression
+    conformance: extension
+    tags: [259, 317]
+    statement: >
+      The Predictor field (tag 317, defined in TIFF 6.0 Section 14) works well for both
+      Deflate compression (Compression(259)=8) and LZW compression (Compression(259)=5).
+    notes: "Cross-tag dependency; see dependency PS-DEP-001."
+
+  - id: PS-006
+    section: "Deflate/Inflate Compression"
+    heading: "Introduction"
+    page: 2
+    level: INFO
+    actor: file
+    category: compression
+    conformance: extension
+    statement: >
+      At the time of writing, Deflate compression methods are believed to be free of
+      patent restrictions.
+
+  - id: PS-007
+    section: "Deflate/Inflate Compression"
+    heading: "Implementation"
+    page: 2
+    level: SHOULD
+    actor: writer
+    category: compression
+    conformance: extension
+    tags: [259]
+    statement: >
+      When using Deflate compression (Compression(259)=8), larger image segments should
+      give better compression ratios, up to a segment size of about 32K bytes
+      (uncompressed size).
+
+  - id: PS-008
+    section: "Deflate/Inflate Compression"
+    heading: "Implementation"
+    page: 2
+    level: MUST
+    actor: file
+    category: compression
+    conformance: extension
+    tags: [259]
+    statement: >
+      Each Deflate-compressed image segment consists of a single complete zlib data
+      stream: a zlib header, one or more Deflate-format compressed data blocks, and a
+      zlib trailer (RFC 1950 / RFC 1951).
+
+  - id: PS-009
+    section: "Deflate/Inflate Compression"
+    heading: "Implementation"
+    page: 2
+    level: MUST
+    actor: file
+    category: compression
+    conformance: extension
+    tags: [259]
+    statement: >
+      In the zlib header of a Deflate-compressed (Compression(259)=8) image segment, byte
+      0 (Compression Method and Flags, CMF) bits 0-3 must specify the compression method
+      and must equal 8 (deflate); bits 4-7 specify the sliding window size and may be any
+      legal value.
+
+  - id: PS-010
+    section: "Deflate/Inflate Compression"
+    heading: "Implementation"
+    page: 2
+    level: MUST
+    actor: file
+    category: compression
+    conformance: extension
+    tags: [259]
+    statement: >
+      In the zlib header of a Deflate-compressed (Compression(259)=8) image segment, the
+      FDICT flag in byte 1 (Flag byte, FLG) must remain clear, because TIFF does not
+      support preset dictionaries; all other flag bits may contain any legal value.
+
+  - id: PS-011
+    section: "Deflate/Inflate Compression"
+    heading: "Implementation"
+    page: 2
+    level: SHOULD-NOT
+    actor: file
+    category: compression
+    conformance: extension
+    tags: [259]
+    statement: >
+      There should not be a DICTID field present in the zlib header of a Deflate-compressed
+      (Compression(259)=8) image segment.
+
+  - id: PS-012
+    section: "Deflate/Inflate Compression"
+    heading: "Implementation"
+    page: 3
+    level: MUST
+    actor: file
+    category: compression
+    conformance: extension
+    tags: [259]
+    statement: >
+      The zlib trailer of a Deflate-compressed (Compression(259)=8) image segment consists
+      of a 4-byte CRC value computed over the uncompressed data per the zlib specification;
+      the CRC is stored in big-endian byte order regardless of the byte order specified in
+      the TIFF file header.
+
+  - id: PS-013
+    section: "Deflate/Inflate Compression"
+    heading: "Implementation"
+    page: 3
+    level: MUST
+    actor: file
+    category: compression
+    conformance: extension
+    tags: [259]
+    statement: >
+      The compressed data portion of a zlib stream consists of one or more Deflate data
+      blocks: the first block begins on a byte boundary immediately following the header;
+      succeeding blocks are concatenated and need not begin on byte boundaries; the final
+      block is padded to the next byte boundary prior to the CRC trailer.
+
+  - id: PS-014
+    section: "Deflate/Inflate Compression"
+    heading: "Implementation"
+    page: 3
+    level: MUST-NOT
+    actor: writer
+    category: compression
+    conformance: extension
+    tags: [259]
+    statement: >
+      Backward pointers within Deflate-compressed data may cross block boundaries
+      (referencing repeated byte strings up to 32K bytes away) but must not point outside
+      the current zlib data stream, i.e. must not reference a block belonging to another
+      image segment. These backward pointers bear no relationship to TIFF file offsets.
+
+  - id: PS-015
+    section: "Deflate/Inflate Compression"
+    heading: "Implementation"
+    page: 3
+    level: INFO
+    actor: file
+    category: compression
+    conformance: extension
+    tags: [259]
+    statement: >
+      A proprietary ZIP/Flate compression code 32909 (0x80B2) has been used by some
+      software vendors in the Compression(259) field; the compression it denotes is
+      identical to the official Deflate format described for Compression(259)=8. This
+      obsolete code should be considered deprecated.
+
+  - id: PS-016
+    section: "Deflate/Inflate Compression"
+    heading: "Implementation"
+    page: 3
+    level: SHOULD
+    actor: reader
+    category: compression
+    conformance: extension
+    tags: [259]
+    statement: >
+      TIFF readers should recognize and be able to read the obsolete proprietary
+      Compression(259) code 32909 (0x80B2).
+
+  - id: PS-017
+    section: "Deflate/Inflate Compression"
+    heading: "Implementation"
+    page: 3
+    level: SHOULD
+    actor: writer
+    category: compression
+    conformance: extension
+    tags: [259]
+    statement: >
+      TIFF writers should write only the official Deflate Compression(259) code 8, never
+      the obsolete proprietary code 32909 (0x80B2).
+
+  - id: PS-018
+    section: "JPEG Compression"
+    heading: "Introduction"
+    page: 4
+    level: INFO
+    actor: file
+    category: compression
+    conformance: extension
+    tags: [259]
+    statement: >
+      Compression (tag 259) value 7 denotes JPEG compression, using the international
+      standard ISO/IEC 10918-1 for continuous-tone image compression.
+
+  - id: PS-019
+    section: "JPEG Compression"
+    heading: "Introduction"
+    page: 4
+    level: SHOULD-NOT
+    actor: writer
+    category: compression
+    conformance: extension
+    tags: [259]
+    statement: >
+      Use of the optional JPEG arithmetic-coding extension is discouraged in TIFF files
+      (Compression(259)=7) intended for inter-application interchange, due to patent
+      concerns in the US and Japan.
+
+  - id: PS-020
+    section: "JPEG Compression"
+    heading: "Introduction"
+    page: 4
+    level: SHOULD-NOT
+    actor: writer
+    category: compression
+    conformance: extension
+    tags: [259, 262]
+    statement: >
+      Low-bit-depth source data and palette-color images (PhotometricInterpretation(262)=3)
+      are not good candidates for JPEG compression (Compression(259)=7); the JPEG processes
+      work well only on continuous-tone grayscale and full-color data.
+
+  - id: PS-021
+    section: "JPEG Compression"
+    heading: "What data is being compressed?"
+    page: 5
+    level: MUST
+    actor: writer
+    category: color
+    conformance: extension
+    tags: [259, 262, 530]
+    statement: >
+      If color-space conversion (e.g. RGB to YCbCr) or chroma down sampling is applied to
+      image data before JPEG compression (Compression(259)=7), this must be reflected in
+      the regular TIFF fields (e.g. PhotometricInterpretation(262), YCbCrSubSampling(530));
+      such steps are not considered implicit in the JPEG Compression tag value.
+
+  - id: PS-022
+    section: "JPEG Compression"
+    heading: "What data is being compressed?"
+    page: 5
+    level: MUST
+    actor: writer
+    category: color
+    conformance: extension
+    tags: [262, 530]
+    statement: >
+      PhotometricInterpretation(262) and related color/sub-sampling fields shall describe
+      the color space and sub-sampling actually stored in the file, even if the underlying
+      JPEG codec internally performs automatic color conversion or down sampling from a
+      differently-formatted input supplied by the application.
+
+  - id: PS-023
+    section: "JPEG Compression"
+    heading: "What data is being compressed?"
+    page: 5
+    level: INFO
+    actor: writer
+    category: color
+    conformance: extension
+    tags: [530]
+    statement: >
+      Down sampling is permissible for YCbCr and CIE L*a*b* data via the
+      YCbCrSubSampling field (tag 530, TIFF 6.0 Section 21) and the CIELabSubSampling
+      field described in TIFF 6.0 Section 23. The default values of these fields are not
+      1,1, so the default behavior is to apply down sampling.
+    notes: >
+      The document refers to a "CIELabSubSampling field" in TIFF 6.0 Section 23 but does
+      not give it a tag number; TIFF 6.0's CIE L*a*b* section does not define a field of
+      this exact name, so the intended tag is ambiguous in the source document.
+
+  - id: PS-024
+    section: "JPEG Compression"
+    heading: "What data is being compressed?"
+    page: 5
+    level: INFO
+    actor: file
+    category: color
+    conformance: extension
+    tags: [262, 530]
+    statement: >
+      A JPEG-compressed TIFF file (Compression(259)=7) will typically have
+      PhotometricInterpretation(262)=6 (YCbCr) and YCbCrSubSampling(530)=[2,1] or [2,2],
+      unless the source data was grayscale or CMYK.
+
+  - id: PS-025
+    section: "JPEG Compression"
+    heading: "Basic representation of JPEG-compressed images"
+    page: 5
+    level: MUST
+    actor: file
+    category: compression
+    conformance: extension
+    tags: [259]
+    statement: >
+      When Compression(259)=7, each image segment (strip or tile) contains a complete JPEG
+      data stream that is valid according to the ISO JPEG standard (ISO/IEC 10918-1).
+
+  - id: PS-026
+    section: "JPEG Compression"
+    heading: "Basic representation of JPEG-compressed images"
+    page: 5
+    level: MUST-NOT
+    actor: file
+    category: compression
+    conformance: extension
+    tags: [259]
+    statement: >
+      Any sequential JPEG process, including lossless JPEG, may be used with
+      Compression(259)=7, but progressive and hierarchical JPEG processes are not
+      supported.
+
+  - id: PS-027
+    section: "JPEG Compression"
+    heading: "Basic representation of JPEG-compressed images"
+    page: 5
+    level: MUST-NOT
+    actor: file
+    category: color
+    conformance: extension
+    tags: [259, 262]
+    statement: >
+      When Compression(259)=7, PhotometricInterpretation(262) shall not be 3 (palette
+      color) nor 4 (transparency mask).
+
+  - id: PS-028
+    section: "JPEG Compression"
+    heading: "Basic representation of JPEG-compressed images"
+    page: 5
+    level: MUST
+    actor: file
+    category: compression
+    conformance: extension
+    statement: >
+      Each JPEG-compressed image segment shall contain a valid JPEG data stream following
+      the ISO JPEG standard's rules for interchange-format or abbreviated-image-format
+      data, containing a single JPEG frame that stores that segment of the image.
+
+  - id: PS-029
+    section: "JPEG Compression"
+    heading: "Basic representation of JPEG-compressed images"
+    page: 5
+    level: MUST
+    actor: file
+    category: compression
+    conformance: extension
+    statement: >
+      The required JPEG markers within each JPEG-compressed image segment are SOI (must
+      appear at the very beginning of the segment), SOFn, SOS (one for each scan, if there
+      is more than one scan), and EOI (must appear at the very end of the segment).
+
+  - id: PS-030
+    section: "JPEG Compression"
+    heading: "Basic representation of JPEG-compressed images"
+    page: 5
+    level: MAY
+    actor: file
+    category: compression
+    conformance: extension
+    statement: >
+      The actual compressed JPEG data follows the SOS marker and may contain RSTn markers
+      if DRI (Define Restart Interval) is used.
+
+  - id: PS-031
+    section: "JPEG Compression"
+    heading: "Basic representation of JPEG-compressed images"
+    page: 5
+    level: MAY
+    actor: file
+    category: compression
+    conformance: extension
+    statement: >
+      Additional JPEG "tables and miscellaneous" markers (DQT, DHT, DAC, DRI, APPn, COM)
+      may appear between SOI and SOFn, between SOFn and SOS, and before each subsequent SOS
+      if there is more than one scan.
+
+  - id: PS-032
+    section: "JPEG Compression"
+    heading: "Basic representation of JPEG-compressed images"
+    page: 5
+    level: MUST-NOT
+    actor: writer
+    category: compression
+    conformance: extension
+    statement: >
+      A DAC (Define Arithmetic Coding conditioning) marker shall not appear in a
+      JPEG-compressed TIFF image segment unless arithmetic coding is actually used.
+
+  - id: PS-033
+    section: "JPEG Compression"
+    heading: "Basic representation of JPEG-compressed images"
+    page: 5
+    level: MUST
+    actor: reader
+    category: compression
+    conformance: extension
+    statement: "APPn markers occurring in a JPEG-compressed TIFF image segment shall be ignored by TIFF readers."
+
+  - id: PS-034
+    section: "JPEG Compression"
+    heading: "Basic representation of JPEG-compressed images"
+    page: 6
+    level: MUST
+    actor: reader
+    category: compression
+    conformance: extension
+    statement: "COM markers occurring in a JPEG-compressed TIFF image segment shall be ignored by TIFF readers."
+
+  - id: PS-035
+    section: "JPEG Compression"
+    heading: "Basic representation of JPEG-compressed images"
+    page: 6
+    level: MUST-NOT
+    actor: writer
+    category: compression
+    conformance: extension
+    statement: "DNL markers shall not be used in TIFF files."
+
+  - id: PS-036
+    section: "JPEG Compression"
+    heading: "Basic representation of JPEG-compressed images"
+    page: 6
+    level: SHOULD
+    actor: reader
+    category: compression
+    conformance: extension
+    statement: >
+      Readers should abort if any JPEG marker type other than those explicitly permitted
+      is found within an image segment, especially JPEG reserved markers, since occurrence
+      of such a marker is likely to indicate an unsupported JPEG extension.
+
+  - id: PS-037
+    section: "JPEG Compression"
+    heading: "Basic representation of JPEG-compressed images"
+    page: 6
+    level: SHOULD
+    actor: reader
+    category: compression
+    conformance: extension
+    statement: >
+      JPEG tables/miscellaneous markers may appear in any order; although the SOFn marker
+      refers to DQT tables, JPEG does not require those tables to precede SOFn, only SOS.
+      Readers should perform missing-table checks only when SOS is reached.
+
+  - id: PS-038
+    section: "JPEG Compression"
+    heading: "Basic representation of JPEG-compressed images"
+    page: 6
+    level: MUST
+    actor: writer
+    category: compression
+    conformance: extension
+    tags: [347]
+    statement: >
+      If no JPEGTables(347) field is used, each JPEG image segment shall be a complete
+      JPEG interchange data stream defining all tables it references; no segment may rely
+      on tables carried over from a previous segment, so that readers can decode segments
+      in any order.
+
+  - id: PS-039
+    section: "JPEG Compression"
+    heading: "Basic representation of JPEG-compressed images"
+    page: 6
+    level: MAY
+    actor: writer
+    category: compression
+    conformance: extension
+    tags: [347]
+    statement: >
+      When a JPEGTables(347) field is used, JPEG image segments may omit tables that have
+      already been specified in the JPEGTables field.
+
+  - id: PS-040
+    section: "JPEG Compression"
+    heading: "Basic representation of JPEG-compressed images"
+    page: 6
+    level: MUST
+    actor: file
+    category: compression
+    conformance: extension
+    statement: >
+      The SOFn marker shall be of type SOF0 for strict baseline JPEG data, SOF1 for
+      non-baseline lossy JPEG data, or SOF3 for lossless JPEG data. (SOF9 or SOF11 would be
+      used if arithmetic coding is used.)
+
+  - id: PS-041
+    section: "JPEG Compression"
+    heading: "Basic representation of JPEG-compressed images"
+    page: 6
+    level: MUST
+    actor: writer
+    category: compression
+    conformance: extension
+    statement: >
+      All segments of a JPEG-compressed (Compression(259)=7) TIFF image shall use the
+      same JPEG compression process, in particular the same SOFn marker type.
+
+  - id: PS-042
+    section: "JPEG Compression"
+    heading: "Basic representation of JPEG-compressed images"
+    page: 6
+    level: MUST
+    actor: file
+    category: data-layout
+    conformance: extension
+    tags: [258]
+    statement: >
+      The data precision field of the SOFn marker shall agree with the TIFF
+      BitsPerSample(258) field.
+
+  - id: PS-043
+    section: "JPEG Compression"
+    heading: "Basic representation of JPEG-compressed images"
+    page: 6
+    level: MUST
+    actor: file
+    category: data-layout
+    conformance: extension
+    tags: [258, 284]
+    statement: >
+      When PlanarConfiguration(284)=1, all components must have the same
+      BitsPerSample(258) value (since SOFn data precision applies to the whole segment);
+      when PlanarConfiguration(284)=2, different components could have different bit
+      depths.
+
+  - id: PS-044
+    section: "JPEG Compression"
+    heading: "Basic representation of JPEG-compressed images"
+    page: 6
+    level: MUST
+    actor: file
+    category: data-layout
+    conformance: extension
+    tags: [258]
+    statement: >
+      For SOF0 (baseline JPEG) only data precision 8 is permitted; for SOF1 (non-baseline
+      lossy JPEG), precision 8 or 12 is permitted; for SOF3 (lossless JPEG), precisions 2
+      to 16 are permitted.
+
+  - id: PS-045
+    section: "JPEG Compression"
+    heading: "Basic representation of JPEG-compressed images"
+    page: 6
+    level: MUST
+    actor: file
+    category: data-layout
+    conformance: extension
+    tags: [256, 257, 278]
+    statement: >
+      For strip-organized JPEG-compressed images, the SOFn image width shall equal
+      ImageWidth(256) and the SOFn image height shall equal RowsPerStrip(278), except in
+      the last strip, whose SOFn height shall equal the number of rows remaining in
+      ImageLength(257); no padding data is counted in the SOFn dimensions.
+
+  - id: PS-046
+    section: "JPEG Compression"
+    heading: "Basic representation of JPEG-compressed images"
+    page: 6
+    level: MUST
+    actor: file
+    category: data-layout
+    conformance: extension
+    tags: [322, 323]
+    statement: >
+      For tile-organized JPEG-compressed images, each SOFn shall have width equal to
+      TileWidth(322) and height equal to TileLength(323); adding and removing padding
+      needed in edge tiles is handled at a higher level of the TIFF software and is not
+      reflected in the SOFn dimensions.
+
+  - id: PS-047
+    section: "JPEG Compression"
+    heading: "Basic representation of JPEG-compressed images"
+    page: 6
+    level: MUST
+    actor: file
+    category: data-layout
+    conformance: extension
+    tags: [256, 257, 322, 323]
+    statement: >
+      The ISO JPEG standard permits images only up to 65535 pixels in width or height, due
+      to 2-byte fields in the SOFn markers. This limits the size of an individual
+      JPEG-compressed strip or tile (ImageWidth/RowsPerStrip, or TileWidth/TileLength),
+      though the total TIFF image size (ImageWidth(256)/ImageLength(257)) can be greater.
+
+  - id: PS-048
+    section: "JPEG Compression"
+    heading: "Basic representation of JPEG-compressed images"
+    page: 6
+    level: MUST
+    actor: file
+    category: data-layout
+    conformance: extension
+    tags: [277, 284]
+    statement: >
+      The number of components in a JPEG data stream shall equal SamplesPerPixel(277) when
+      PlanarConfiguration(284)=1, and shall be 1 when PlanarConfiguration(284)=2.
+
+  - id: PS-049
+    section: "JPEG Compression"
+    heading: "Basic representation of JPEG-compressed images"
+    page: 6
+    level: MUST
+    actor: file
+    category: data-layout
+    conformance: extension
+    statement: >
+      JPEG components shall be stored in the same order as they are described at the TIFF
+      field level, both in the SOFn marker and in the scan order if multiple JPEG scans
+      are used.
+
+  - id: PS-050
+    section: "JPEG Compression"
+    heading: "Basic representation of JPEG-compressed images"
+    page: 6
+    level: MUST
+    actor: writer
+    category: data-layout
+    conformance: extension
+    statement: >
+      Component ID bytes within a JPEG-compressed image segment are arbitrary so long as
+      each component within the segment is given a distinct ID, but all segments of a
+      TIFF image must use the same ID code for a given component.
+
+  - id: PS-051
+    section: "JPEG Compression"
+    heading: "Basic representation of JPEG-compressed images"
+    page: 6
+    level: MUST
+    actor: file
+    category: color
+    conformance: extension
+    tags: [284, 530]
+    statement: >
+      In PlanarConfiguration(284)=1, the sampling factors given in SOFn markers shall
+      agree with the sampling factors defined by the related TIFF fields (e.g.
+      YCbCrSubSampling(530)), or with their default values if those fields are absent.
+
+  - id: PS-052
+    section: "JPEG Compression"
+    heading: "Basic representation of JPEG-compressed images"
+    page: 6
+    level: MUST
+    actor: file
+    category: data-layout
+    conformance: extension
+    tags: [257, 278, 530]
+    statement: >
+      When DCT-based JPEG is used in a strip-organized TIFF file, RowsPerStrip(278) is
+      required to be a multiple of 8 times the largest vertical sampling factor (i.e. a
+      multiple of the interleaved MCU height), even if the data is not actually
+      interleaved; e.g. if YCbCrSubSampling(530)=[2,2], RowsPerStrip must be a multiple of
+      16. An exception is made for single-strip images (RowsPerStrip(278) >=
+      ImageLength(257)): the exact value of RowsPerStrip is unimportant in that case.
+
+  - id: PS-053
+    section: "JPEG Compression"
+    heading: "Basic representation of JPEG-compressed images"
+    page: 7
+    level: MUST
+    actor: file
+    category: data-layout
+    conformance: extension
+    tags: [322, 323, 530]
+    statement: >
+      When DCT-based JPEG is used in a tiled TIFF file, TileLength(323) is required to be
+      a multiple of 8 times the largest vertical sampling factor, and TileWidth(322) is
+      required to be a multiple of 8 times the largest horizontal sampling factor, even if
+      the data is not actually interleaved. All edge padding then occurs as part of normal
+      TIFF tile padding.
+
+  - id: PS-054
+    section: "JPEG Compression"
+    heading: "Basic representation of JPEG-compressed images"
+    page: 7
+    level: INFO
+    actor: file
+    category: data-layout
+    conformance: extension
+    tags: [278, 322, 323]
+    statement: >
+      Lossless JPEG (SOF3) does not impose the RowsPerStrip(278)/TileWidth(322)/
+      TileLength(323) multiple-of-MCU constraints described above, since it is not
+      DCT-based.
+
+  - id: PS-055
+    section: "JPEG Compression"
+    heading: "Basic representation of JPEG-compressed images"
+    page: 7
+    level: MUST
+    actor: file
+    category: compression
+    conformance: extension
+    statement: >
+      Multibyte values within JPEG data streams appear in the MSB-first order specified by
+      the JPEG standard, regardless of the byte ordering of the surrounding TIFF file.
+
+  - id: PS-056
+    section: "JPEG Compression"
+    heading: "JPEGTables field"
+    page: 7
+    level: MUST
+    actor: file
+    category: tag
+    conformance: extension
+    tags: [347]
+    statement: >
+      The JPEGTables field (tag 347, 0x15B) is required to have type code UNDEFINED, not
+      BYTE. This signals readers that expanding individual bytes to SHORT or LONG integers
+      is not appropriate; a reader generally stores the field value as an uninterpreted
+      byte sequence until it is fed to the JPEG decoder.
+
+  - id: PS-057
+    section: "JPEG Compression"
+    heading: "JPEGTables field"
+    page: 7
+    level: MUST
+    actor: file
+    category: compression
+    conformance: extension
+    tags: [347]
+    statement: >
+      Multibyte quantities within the JPEGTables(347) data follow the ISO JPEG convention
+      of MSB-first storage, regardless of the byte ordering of the surrounding TIFF file.
+
+  - id: PS-058
+    section: "JPEG Compression"
+    heading: "JPEGTables field"
+    page: 7
+    level: MUST
+    actor: file
+    category: tag
+    conformance: extension
+    tags: [347]
+    statement: >
+      When present, JPEGTables(347) shall contain a valid JPEG "abbreviated table
+      specification" data stream: it shall begin with SOI and end with EOI, and may
+      contain zero or more JPEG tables/miscellaneous markers (DQT, DHT, DAC, DRI, APPn,
+      COM). DAC shall not appear unless arithmetic coding is used; APPn and COM markers
+      shall be ignored by TIFF readers.
+
+  - id: PS-059
+    section: "JPEG Compression"
+    heading: "JPEGTables field"
+    page: 8
+    level: SHOULD-NOT
+    actor: writer
+    category: tag
+    conformance: extension
+    tags: [347]
+    statement: >
+      Because the SOI marker resets DAC and DRI decoder state, any DAC or DRI marker
+      values placed in the JPEGTables(347) field cannot carry over into an image segment's
+      data stream and are effectively no-ops there; it is recommended that writers not
+      place DAC or DRI markers in JPEGTables.
+
+  - id: PS-060
+    section: "JPEG Compression"
+    heading: "JPEGTables field"
+    page: 8
+    level: MUST
+    actor: reader
+    category: tag
+    conformance: extension
+    tags: [347]
+    statement: >
+      Readers must properly skip over DAC or DRI markers if they appear in the
+      JPEGTables(347) field.
+
+  - id: PS-061
+    section: "JPEG Compression"
+    heading: "JPEGTables field"
+    page: 8
+    level: MUST
+    actor: reader
+    category: tag
+    conformance: extension
+    tags: [347]
+    statement: >
+      When JPEGTables(347) is present, readers shall load the table specifications it
+      contains before processing image segment data streams; image segments may then refer
+      to these preloaded tables without defining them.
+
+  - id: PS-062
+    section: "JPEG Compression"
+    heading: "JPEGTables field"
+    page: 8
+    level: MUST-NOT
+    actor: writer
+    category: tag
+    conformance: extension
+    tags: [347]
+    statement: >
+      An image segment may not redefine any JPEG table that is already defined in
+      JPEGTables(347). This restriction allows readers to process image segments in random
+      order without having to reload JPEGTables between segments.
+
+  - id: PS-063
+    section: "JPEG Compression"
+    heading: "JPEGTables field"
+    page: 8
+    level: MUST-NOT
+    actor: writer
+    category: tag
+    conformance: extension
+    tags: [347]
+    statement: >
+      An image segment may not reference any locally-defined JPEG table that it does not
+      itself define. Use of JPEGTables(347) thus divides table slots into "global" slots
+      (defined in JPEGTables, usable but not redefinable by segments) and "local" slots
+      (available for local definition and use per segment), to permit random access to
+      segments.
+
+  - id: PS-064
+    section: "JPEG Compression"
+    heading: "Special considerations for Planar Configuration 2"
+    page: 8
+    level: INFO
+    actor: file
+    category: data-layout
+    conformance: extension
+    tags: [284]
+    statement: >
+      In PlanarConfiguration(284)=2, each image segment contains data for only one color
+      component; to avoid confusing the JPEG codec, such segments are made to look like
+      valid single-channel (grayscale) JPEG data streams, requiring different rules for
+      the SOFn parameters than PlanarConfiguration(284)=1.
+
+  - id: PS-065
+    section: "JPEG Compression"
+    heading: "Special considerations for Planar Configuration 2"
+    page: 8
+    level: MUST
+    actor: file
+    category: data-layout
+    conformance: extension
+    tags: [284, 530]
+    statement: >
+      In PlanarConfiguration(284)=2, the dimensions given in the SOFn of a sub sampled
+      component shall be scaled down by the sampling factors, compared to the SOFn
+      dimensions that would be used in PlanarConfiguration(284)=1, to match the actual
+      number of samples stored in that segment.
+
+  - id: PS-066
+    section: "JPEG Compression"
+    heading: "Special considerations for Planar Configuration 2"
+    page: 8
+    level: INFO
+    actor: file
+    category: data-layout
+    conformance: extension
+    tags: [284]
+    statement: >
+      In strip TIFF files with PlanarConfiguration(284)=2, the computed (scaled-down) SOFn
+      component dimensions may need to be rounded up to the next integer; in tiled files
+      the restrictions on tile size make this rounding case impossible.
+
+  - id: PS-067
+    section: "JPEG Compression"
+    heading: "Special considerations for Planar Configuration 2"
+    page: 8
+    level: MUST
+    actor: file
+    category: data-layout
+    conformance: extension
+    tags: [284]
+    statement: >
+      In PlanarConfiguration(284)=2, all SOFn sampling factors shall be given as 1, since
+      sampling factors in a single-channel JPEG data stream have no real effect.
+
+  - id: PS-068
+    section: "JPEG Compression"
+    heading: "Special considerations for Planar Configuration 2"
+    page: 8
+    level: INFO
+    actor: writer
+    category: data-layout
+    conformance: extension
+    tags: [284]
+    statement: >
+      In PlanarConfiguration(284)=2, any down sampling must happen externally to the JPEG
+      codec, since JPEG sampling factors are defined with reference to a full-precision
+      component, and the codec is working on only one component at a time with no
+      reference component to down-sample against.
+
+  - id: PS-069
+    section: "JPEG Compression"
+    heading: "Minimum requirements for TIFF/JPEG"
+    page: 8
+    level: MUST
+    actor: reader
+    category: compression
+    conformance: extension
+    tags: [258]
+    statement: >
+      To claim "core" TIFF/JPEG compatibility, a reader must support the ISO baseline
+      JPEG process: 8-bit data precision, Huffman coding, with no more than 2 DC and 2 AC
+      Huffman tables. This implies BitsPerSample(258)=8 for each component.
+
+  - id: PS-070
+    section: "JPEG Compression"
+    heading: "Minimum requirements for TIFF/JPEG"
+    page: 8
+    level: SHOULD
+    actor: writer
+    category: compression
+    conformance: extension
+    statement: >
+      For maximum cross-application compatibility, writers should confine themselves to
+      the core TIFF/JPEG subset unless there is a good reason to do otherwise; deviation
+      from baseline JPEG is recommended only if 12-bit data precision or lossless coding
+      is required.
+
+  - id: PS-071
+    section: "JPEG Compression"
+    heading: "Minimum requirements for TIFF/JPEG"
+    page: 8
+    level: SHOULD
+    actor: writer
+    category: color
+    conformance: extension
+    tags: [530]
+    statement: >
+      For the core TIFF/JPEG subset, use no sub sampling (all JPEG sampling factors = 1)
+      for color spaces other than YCbCr and CIE L*a*b*.
+
+  - id: PS-072
+    section: "JPEG Compression"
+    heading: "Minimum requirements for TIFF/JPEG"
+    page: 9
+    level: SHOULD
+    actor: writer
+    category: color
+    conformance: extension
+    tags: [530]
+    statement: >
+      For the core TIFF/JPEG subset, for YCbCr and CIE L*a*b* data, use one of: chroma
+      sub-sampling [1,1] giving JPEG sampling factors 1h1v/1h1v/1h1v; [2,1] giving
+      2h1v/1h1v/1h1v; or [2,2] (the default value of YCbCrSubSampling(530)) giving
+      2h2v/1h1v/1h1v.
+
+  - id: PS-073
+    section: "JPEG Compression"
+    heading: "Minimum requirements for TIFF/JPEG"
+    page: 9
+    level: SHOULD
+    actor: writer
+    category: color
+    conformance: extension
+    statement: >
+      RGB source data should be converted to YCbCr for best JPEG compression results;
+      other source data color spaces should probably be left unconverted.
+
+  - id: PS-074
+    section: "JPEG Compression"
+    heading: "Minimum requirements for TIFF/JPEG"
+    page: 9
+    level: MAY
+    actor: reader
+    category: color
+    conformance: extension
+    tags: [262]
+    statement: >
+      A minimal TIFF/JPEG reader need not support JPEG images with color spaces other than
+      YCbCr and grayscale (PhotometricInterpretation(262)=6 or 1).
+
+  - id: PS-075
+    section: "JPEG Compression"
+    heading: "Minimum requirements for TIFF/JPEG"
+    page: 9
+    level: MAY
+    actor: reader
+    category: color
+    conformance: extension
+    tags: [529, 531, 532]
+    statement: >
+      A minimal TIFF/JPEG reader need not support JPEG YCbCr images with non-default
+      values of YCbCrCoefficients(529) or ChromaPositioning (YCbCrPositioning, tag 531),
+      nor with values of ReferenceBlackWhite(532) other than [0,255,128,255,128,255] (the
+      JFIF RGB<=>YCbCr conversion values).
+
+  - id: PS-076
+    section: "JPEG Compression"
+    heading: "Minimum requirements for TIFF/JPEG"
+    page: 9
+    level: SHOULD
+    actor: writer
+    category: data-layout
+    conformance: extension
+    tags: [284]
+    statement: >
+      If any sub sampling is used, writers should prefer PlanarConfiguration(284)=1 over
+      PlanarConfiguration(284)=2, to avoid the more confusing requirements of planar
+      configuration 2.
+
+  - id: PS-077
+    section: "JPEG Compression"
+    heading: "Minimum requirements for TIFF/JPEG"
+    page: 9
+    level: MAY
+    actor: reader
+    category: data-layout
+    conformance: extension
+    tags: [284]
+    statement: >
+      Readers are not required to support PlanarConfiguration(284)=2 for JPEG-compressed
+      images.
+
+  - id: PS-078
+    section: "JPEG Compression"
+    heading: "Minimum requirements for TIFF/JPEG"
+    page: 9
+    level: MUST
+    actor: writer
+    category: compression
+    conformance: extension
+    tags: [277, 530]
+    statement: >
+      Use a single interleaved JPEG scan per image segment where possible. This is not
+      legal JPEG if there are more than 4 SamplesPerPixel(277), or if the sampling factors
+      would require more than 10 blocks per MCU; in those cases a separate scan must be
+      used for each component. The recommended color spaces and sampling factors do not
+      trigger this restriction, so a minimal reader need not support more than one scan per
+      segment.
+
+  - id: PS-079
+    section: "JPEG Compression"
+    heading: "Minimum requirements for TIFF/JPEG"
+    page: 9
+    level: MUST
+    actor: reader
+    category: compression
+    conformance: extension
+    tags: [347]
+    statement: >
+      To claim TIFF/JPEG compatibility, readers shall support multiple-strip TIFF files
+      and the optional JPEGTables(347) field; it is not acceptable for a reader to support
+      only single-data-stream files.
+
+  - id: PS-080
+    section: "JPEG Compression"
+    heading: "Minimum requirements for TIFF/JPEG"
+    page: 9
+    level: SHOULD
+    actor: reader
+    category: compression
+    conformance: extension
+    statement: "Support for tiled TIFF files is strongly recommended for TIFF/JPEG readers, but not required."
+
+  - id: PS-081
+    section: "JPEG Compression"
+    heading: "Minimum requirements for TIFF/JPEG"
+    page: 9
+    level: INFO
+    actor: writer
+    category: color
+    conformance: extension
+    tags: [530, 531]
+    statement: >
+      Photoshop 7.0 writes ChromaSubSampling (YCbCrSubSampling(530)) of [1,1] for JPEG
+      quality settings above 6, with a ChromaPositioning (YCbCrPositioning(531)) value of
+      2.
+    notes: "Vendor-specific (Photoshop 7.0) behavioral note, not a general rule."
+
+  - id: PS-082
+    section: "JPEG Compression"
+    heading: "Other recommendations for implementers"
+    page: 9
+    level: SHOULD
+    actor: reader
+    category: compression
+    conformance: extension
+    tags: [259]
+    statement: >
+      Since Compression(259)=7 guarantees only that the compressed data is represented as
+      ISO JPEG data streams, readers should apply careful error checking to JPEG markers to
+      ensure the compression process is within their capabilities, and should abort if
+      unknown marker codes are seen, to avoid being confused by future JPEG standard
+      extensions.
+
+  - id: PS-083
+    section: "JPEG Compression"
+    heading: "Other recommendations for implementers"
+    page: 9
+    level: SHOULD
+    actor: writer
+    category: compression
+    conformance: extension
+    statement: >
+      Writers should try to ensure that all image segments of a JPEG-compressed TIFF image
+      look as similar as possible (no variation in scan layout, use of options such as
+      DRI, etc.), so that a reader need check only one segment to determine whether it can
+      handle the whole image; ideally, segments are processed identically except perhaps
+      for using different local quantization or entropy-coding tables.
+
+  - id: PS-084
+    section: "JPEG Compression"
+    heading: "Other recommendations for implementers"
+    page: 9
+    level: SHOULD-NOT
+    actor: writer
+    category: compression
+    conformance: extension
+    statement: >
+      Writers should avoid including "noise" JPEG markers (COM and APPn); standard TIFF
+      fields provide a better way to transport non-image data, and some JPEG codecs may
+      change behavior upon seeing an APPn marker they misinterpret, even though the TIFF
+      spec requires such markers to be ignored.
+
+  - id: PS-085
+    section: "JPEG Compression"
+    heading: "Other recommendations for implementers"
+    page: 10
+    level: MUST
+    actor: writer
+    category: tag
+    conformance: extension
+    tags: [347]
+    statement: >
+      There is no default value for JPEGTables(347): standard TIFF files must define all
+      JPEG tables that they reference.
+
+  - id: PS-086
+    section: "JPEG Compression"
+    heading: "Other recommendations for implementers"
+    page: 10
+    level: INFO
+    actor: writer
+    category: tag
+    conformance: extension
+    tags: [347]
+    statement: >
+      Defining a default JPEGTables(347) value, or registering a private field to select
+      one of several default JPEGTables settings (to avoid storing tables in closed
+      systems with many files sharing identical tables), must be regarded as a private
+      extension that will render such files unreadable by other applications.
+
+  - id: PS-087
+    section: "Image Source Data"
+    heading: "Introduction"
+    page: 11
+    level: INFO
+    actor: file
+    category: tag
+    conformance: extension
+    tags: [37724]
+    statement: >
+      ImageSourceData (tag 37724, 0x935C), Type UNDEFINED, Count equal to the number of
+      bytes in the section, is an Adobe-Photoshop-specific field that carries the layer
+      and mask information found in a typical layered Photoshop file.
+
+  - id: PS-088
+    section: "Image Source Data"
+    heading: "Introduction"
+    page: 11
+    level: MUST
+    actor: file
+    category: tag
+    conformance: extension
+    tags: [37724]
+    statement: >
+      The ImageSourceData(37724) value shall start with the character string "Adobe
+      Photoshop Document Data Block", including its null termination character.
+
+  - id: PS-089
+    section: "Image Source Data"
+    heading: "Introduction"
+    page: 11
+    level: MUST
+    actor: file
+    category: tag
+    conformance: extension
+    tags: [37724]
+    statement: >
+      After the leading "Adobe Photoshop Document Data Block" string, the remainder of the
+      ImageSourceData(37724) value (i.e. Count minus the length of that string) is a series
+      of tagged data blocks, each formatted as: 4 bytes Signature ('8BIM'), 4 bytes Type,
+      and 4 bytes Length (the length in bytes, variable per type, padded to a 4-byte
+      offset).
+
+  - id: PS-090
+    section: "Image Source Data"
+    heading: "Introduction"
+    page: 11
+    level: INFO
+    actor: file
+    category: tag
+    conformance: extension
+    tags: [37724]
+    statement: >
+      The defined ImageSourceData(37724) block Types are 'Layr' (Layer Data), 'LMsk' (User
+      Mask, same as the Global layer mask info table), 'Patt' (Pattern), and 'Anno'
+      (Annotations); each is further documented in the Photoshop File Formats
+      specification.
+
+  - id: PS-091
+    section: "L*a*b* Images"
+    heading: "Introduction"
+    page: 12
+    level: INFO
+    actor: file
+    category: color
+    conformance: extension
+    statement: >
+      1976 CIE L*a*b* is computed from CIE XYZ tristimulus values as: L* =
+      116*(Y/Yn)^(1/3) - 16 for Y/Yn > 0.008856, else L* = 903.3*(Y/Yn); a* =
+      500*[(X/Xn)^(1/3) - (Y/Yn)^(1/3)]; b* = 200*[(Y/Yn)^(1/3) - (Z/Zn)^(1/3)]; where Xn,
+      Yn, Zn are the CIE tristimulus values of the reference white. If any ratio X/Xn,
+      Y/Yn, or Z/Zn is <= 0.008856, its cube root is replaced by 7.787*F + 16/116 (F being
+      that ratio).
+
+  - id: PS-092
+    section: "L*a*b* Images"
+    heading: "The TIFF CIELAB Fields"
+    page: 12
+    level: INFO
+    actor: file
+    category: color
+    conformance: extension
+    tags: [262]
+    statement: >
+      PhotometricInterpretation (tag 262, 0x106, Type SHORT, Count 1, Status required)
+      gains two new values for L*a*b* images: 8 = 1976 CIE L*a*b*, normal encoding
+      ("CIELab"); 9 = ICCLab encoding.
+
+  - id: PS-093
+    section: "L*a*b* Images"
+    heading: "The TIFF CIELAB Fields"
+    page: 12
+    level: MUST
+    actor: file
+    category: color
+    conformance: extension
+    tags: [262, 258]
+    statement: >
+      For PhotometricInterpretation(262)=8 (CIELab), the L* component is encoded as an
+      unsigned integer in range [0,255] when BitsPerSample(258)=8, or [0,65535] when
+      BitsPerSample(258)=16; the a* and b* components are signed integers in range
+      [-128,127] for 8-bit, or [-32768,32767] for 16-bit. The 8-bit chrominance values are
+      encoded exactly equal to the 1976 CIE a*/b* values, while the 16-bit values are
+      encoded as 256 times the 1976 CIE a*/b* values.
+
+  - id: PS-094
+    section: "L*a*b* Images"
+    heading: "The TIFF CIELAB Fields"
+    page: 12
+    level: MUST
+    actor: file
+    category: color
+    conformance: extension
+    tags: [262, 258]
+    statement: >
+      For PhotometricInterpretation(262)=9 (ICCLab), the L* component is encoded as an
+      unsigned integer in range [0,255] when BitsPerSample(258)=8, or [0,65280] when
+      BitsPerSample(258)=16; the a* and b* components are unsigned integers in range
+      [0,255] for 8-bit, or [0,65535] for 16-bit. The 8-bit chrominance values equal the
+      1976 CIE a*/b* values plus 128; the 16-bit values equal 256 times the 1976 CIE a*/b*
+      values plus 32768 (equivalently, 256 times the 8-bit encoding). This is designed to
+      match the encoding used by the ICC profile specification version 2 (ICC.1:1998-09,
+      "File Format for Color Profiles").
+
+  - id: PS-095
+    section: "L*a*b* Images"
+    heading: "Usage of other Fields"
+    page: 13
+    level: MUST
+    actor: file
+    category: data-layout
+    conformance: extension
+    tags: [258, 262]
+    statement: >
+      For CIELab/ICCLab images (PhotometricInterpretation(262)=8 or 9), BitsPerSample(258)
+      shall be 8 or 16.
+
+  - id: PS-096
+    section: "L*a*b* Images"
+    heading: "Usage of other Fields"
+    page: 13
+    level: MUST
+    actor: file
+    category: data-layout
+    conformance: extension
+    tags: [277, 338, 262]
+    statement: >
+      For CIELab/ICCLab images (PhotometricInterpretation(262)=8 or 9),
+      SamplesPerPixel(277) minus ExtraSamples(338) is 3 for full L*a*b* data, or 1 if the
+      data is monochrome (L* only).
+
+  - id: PS-097
+    section: "L*a*b* Images"
+    heading: "Usage of other Fields"
+    page: 13
+    level: INFO
+    actor: file
+    category: compression
+    conformance: extension
+    tags: [259, 262]
+    statement: >
+      For CIELab/ICCLab images, Compression(259) usage is the same as for other multi-bit
+      TIFF image formats.
+
+  - id: PS-098
+    section: "L*a*b* Images"
+    heading: "Usage of other Fields"
+    page: 13
+    level: INFO
+    actor: file
+    category: data-layout
+    conformance: extension
+    tags: [284, 262]
+    statement: >
+      For CIELab/ICCLab images, both chunky (PlanarConfiguration(284)=1) and planar
+      (PlanarConfiguration(284)=2) data organization could be supported.
+
+  - id: PS-099
+    section: "L*a*b* Images"
+    heading: "Usage of other Fields"
+    page: 13
+    level: MAY
+    actor: writer
+    category: color
+    conformance: extension
+    tags: [318, 262]
+    statement: >
+      For CIELab/ICCLab images, the default value of WhitePoint(318) is CIE D50; the field
+      may be omitted if the default value applies.
+
+  - id: PS-100
+    section: "L*a*b* Images"
+    heading: "Usage of other Fields"
+    page: 13
+    level: INFO
+    actor: file
+    category: color
+    conformance: extension
+    tags: [319, 262]
+    statement: "PrimaryChromaticities(319) does not apply to CIELab/ICCLab images."
+
+  - id: PS-101
+    section: "L*a*b* Images"
+    heading: "Usage of other Fields"
+    page: 13
+    level: INFO
+    actor: file
+    category: color
+    conformance: extension
+    tags: [301, 262]
+    statement: "TransferFunction(301) does not apply to CIELab/ICCLab images."
+
+  - id: PS-102
+    section: "L*a*b* Images"
+    heading: "Usage of other Fields"
+    page: 13
+    level: INFO
+    actor: file
+    category: data-layout
+    conformance: extension
+    tags: [338, 262]
+    statement: >
+      For CIELab/ICCLab images, alpha channel information (ExtraSamples(338)) follows the
+      convention used for other TIFF data types.
+
+  - id: PS-103
+    section: "L*a*b* Images"
+    heading: "Important note"
+    page: 13
+    level: INFO
+    actor: reader
+    category: color
+    conformance: extension
+    tags: [262]
+    statement: >
+      Some application vendors developed mutually incompatible proprietary encodings for
+      16-bit Lab data in TIFF images before the release of this update. There is no simple
+      way to determine whether a file uses the standard encoding (PS-093/PS-094) or a
+      proprietary encoding, other than opening the image and verifying its appearance in
+      an application known to use the standard encoding. Legacy files using incompatible
+      encodings must be converted to the standard encoding using updated versions of the
+      software that created them, or conversion utilities supplied by that software's
+      vendor.
+
+tags:
+  - code: 259
+    hex: "0x0103"
+    name: Compression
+    types: [SHORT]
+    count: "1"
+    default: null
+    required: no
+    conformance: extension
+    section: "Deflate/Inflate Compression; JPEG Compression"
+    page: 2
+    description: >
+      This document adds two Compression values to those already defined in TIFF 6.0:
+      value 8 for Deflate (zlib) compression, and value 7 for JPEG compression per
+      ISO/IEC 10918-1. The base tag (type SHORT, count 1) and its other values, e.g.
+      default value 1, are defined in TIFF 6.0 and not restated in full here.
+    values:
+      7: "JPEG compression (ISO/IEC 10918-1), Adobe/Photoshop style, using the optional JPEGTables(347) field"
+      8: "Deflate compression, using the zlib compressed data format (RFC 1950/RFC 1951)"
+    interacts_with: [317, 347, 262, 530, 258, 284, 278, 322, 323, 277]
+
+  - code: 347
+    hex: "0x015B"
+    name: JPEGTables
+    types: [UNDEFINED]
+    count: "number of bytes in the tables data stream (typically a few hundred)"
+    default: null
+    required: conditional
+    conformance: extension
+    section: "JPEG Compression"
+    page: 7
+    description: >
+      Optional field used with Compression(259)=7. Provides default JPEG quantization
+      and/or Huffman tables for use by JPEG image segments that do not define their own
+      tables, saving space and processing time by avoiding duplication across segments.
+      There is no default value; if used, all referenced tables must still be defined
+      somewhere (either in JPEGTables or locally per segment).
+    interacts_with: [259]
+
+  - code: 37724
+    hex: "0x935C"
+    name: ImageSourceData
+    types: [UNDEFINED]
+    count: "number of bytes for the section"
+    default: null
+    required: no
+    conformance: extension
+    section: "Image Source Data"
+    page: 11
+    description: >
+      Adobe Photoshop specific field carrying layer and mask information from a layered
+      Photoshop document, as also found in the native Photoshop file format. Begins with
+      a null-terminated identifying string, followed by a series of '8BIM'-tagged data
+      blocks (Layer Data, User Mask, Pattern, Annotations).
+
+  - code: 262
+    hex: "0x0106"
+    name: PhotometricInterpretation
+    types: [SHORT]
+    count: "1"
+    default: null
+    required: yes
+    conformance: extension
+    section: "L*a*b* Images"
+    page: 12
+    description: >
+      This document adds two enumerated values to PhotometricInterpretation, as defined
+      in TIFF 6.0: value 8 for 1976 CIE L*a*b* (normal/"CIELab" encoding) and value 9 for
+      ICCLab encoding. The base tag (type SHORT, count 1, required) and its other values
+      are defined in TIFF 6.0 and not restated in full here.
+    values:
+      8: "1976 CIE L*a*b*, normal encoding (CIELab)"
+      9: "ICCLab encoding, matching ICC profile specification version 2 (ICC.1:1998-09)"
+    interacts_with: [258, 277, 338, 318, 319, 301]
+
+dependencies:
+  - id: PS-DEP-001
+    requirement: PS-005
+    when: "Compression(259) in [5 (LZW), 8 (Deflate)]"
+    then: "Predictor(317) works well and may be applied to improve compression"
+    kind: modifies-meaning
+    tags: [259, 317]
+
+  - id: PS-DEP-002
+    requirement: PS-021
+    when: "Compression(259) == 7 and color conversion or chroma down sampling was applied before compression"
+    then: "PhotometricInterpretation(262) and YCbCrSubSampling(530) (or CIELabSubSampling) must describe the color space and sub-sampling actually stored in the file"
+    kind: requires
+    tags: [259, 262, 530]
+
+  - id: PS-DEP-003
+    requirement: PS-027
+    when: "Compression(259) == 7"
+    then: "PhotometricInterpretation(262) must not be 3 (palette color) or 4 (transparency mask)"
+    kind: forbids
+    tags: [259, 262]
+
+  - id: PS-DEP-004
+    requirement: PS-038
+    when: "JPEGTables(347) is absent"
+    then: "each JPEG-compressed image segment must be a complete interchange stream defining every table it references"
+    kind: requires
+    tags: [347, 259]
+
+  - id: PS-DEP-005
+    requirement: PS-039
+    when: "JPEGTables(347) is present"
+    then: "image segments may omit tables already defined in JPEGTables, but must not redefine them (PS-062) and must not reference undefined local tables (PS-063)"
+    kind: constrains-value
+    tags: [347, 259]
+
+  - id: PS-DEP-006
+    requirement: PS-042
+    when: "Compression(259) == 7"
+    then: "SOFn data precision must equal BitsPerSample(258); allowed precision values depend on SOFn type (SOF0: 8 only; SOF1: 8 or 12; SOF3: 2-16)"
+    kind: constrains-value
+    tags: [259, 258]
+
+  - id: PS-DEP-007
+    requirement: PS-043
+    when: "PlanarConfiguration(284) == 1"
+    then: "BitsPerSample(258) must be identical across all components (a single SOFn precision applies to the whole segment)"
+    kind: constrains-value
+    tags: [284, 258]
+
+  - id: PS-DEP-008
+    requirement: PS-048
+    when: "PlanarConfiguration(284) == 1"
+    then: "the number of JPEG components in a segment equals SamplesPerPixel(277)"
+    kind: constrains-value
+    tags: [284, 277]
+
+  - id: PS-DEP-009
+    requirement: PS-048
+    when: "PlanarConfiguration(284) == 2"
+    then: "the number of JPEG components in a segment is always 1"
+    kind: constrains-value
+    tags: [284, 277]
+
+  - id: PS-DEP-010
+    requirement: PS-051
+    when: "PlanarConfiguration(284) == 1"
+    then: "SOFn sampling factors must agree with YCbCrSubSampling(530) (or its default) and other related TIFF fields"
+    kind: constrains-value
+    tags: [284, 530]
+
+  - id: PS-DEP-011
+    requirement: PS-065
+    when: "PlanarConfiguration(284) == 2"
+    then: "SOFn dimensions of a sub sampled component are scaled down by the sampling factors versus PlanarConfiguration=1, and all SOFn sampling factors are forced to 1 (PS-067)"
+    kind: modifies-meaning
+    tags: [284, 530]
+
+  - id: PS-DEP-012
+    requirement: PS-052
+    when: "Compression(259) == 7 (DCT-based, e.g. SOF0/SOF1) and image is strip-organized, and RowsPerStrip(278) < ImageLength(257)"
+    then: "RowsPerStrip(278) must be a multiple of 8 times the largest vertical JPEG sampling factor (derived from YCbCrSubSampling(530)); if RowsPerStrip(278) >= ImageLength(257) (single-strip image), the exact RowsPerStrip value is unconstrained"
+    kind: constrains-value
+    tags: [259, 278, 257, 530]
+
+  - id: PS-DEP-013
+    requirement: PS-053
+    when: "Compression(259) == 7 (DCT-based) and image is tile-organized"
+    then: "TileLength(323) must be a multiple of 8 times the largest vertical sampling factor, and TileWidth(322) must be a multiple of 8 times the largest horizontal sampling factor"
+    kind: constrains-value
+    tags: [259, 322, 323, 530]
+
+  - id: PS-DEP-014
+    requirement: PS-054
+    when: "SOFn type == SOF3 (lossless JPEG)"
+    then: "the RowsPerStrip/TileWidth/TileLength multiple-of-MCU constraints (PS-052, PS-053) do not apply"
+    kind: modifies-meaning
+    tags: [278, 322, 323]
+
+  - id: PS-DEP-015
+    requirement: PS-001
+    when: "SubIFDs(330) is present and a bit depth other than 8 is used"
+    then: "readers should ignore the SubIFDs found in the file"
+    kind: modifies-meaning
+    tags: [330, 258]
+
+  - id: PS-DEP-016
+    requirement: PS-093
+    requirement2: PS-094
+    when: "PhotometricInterpretation(262) == 8 vs 9, combined with BitsPerSample(258) == 8 vs 16"
+    then: "the numeric encoding and range of the a*/b* components (signed vs unsigned; offset) and of L* differ as specified (PS-093 for value 8/CIELab, PS-094 for value 9/ICCLab)"
+    kind: modifies-meaning
+    tags: [262, 258]
+
+  - id: PS-DEP-017
+    requirement: PS-096
+    when: "SamplesPerPixel(277) minus ExtraSamples(338) == 1 vs 3, for CIELab/ICCLab images"
+    then: "the image is monochrome (L* only) when the difference is 1, or full L*a*b* when the difference is 3"
+    kind: constrains-value
+    tags: [277, 338, 262]
+
+  - id: PS-DEP-018
+    requirement: PS-099
+    when: "no explicit WhitePoint(318) is given, for CIELab/ICCLab images"
+    then: "the default value of WhitePoint(318) is CIE D50 (rather than the generic TIFF 6.0 default)"
+    kind: selects-default
+    tags: [318, 262]

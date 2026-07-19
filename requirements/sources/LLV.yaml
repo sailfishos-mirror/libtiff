@@ -1,0 +1,545 @@
+document: LLV
+title: "The LogLuv Encoding for Full Gamut, High Dynamic Range Images"
+date: "not stated in document text (Journal of Graphics Tools; author web page cites the paper as \"papers/Larson99\"; the encoding is commonly dated 1998)"
+requirements:
+  - id: LLV-001
+    section: "2"
+    heading: "Encoding Method"
+    level: INFO
+    actor: file
+    category: data-layout
+    conformance: LLV
+    tags: []
+    statement: >
+      Two LogLuv pixel encodings are defined for the format described in this paper: a
+      24-bit encoding and a 32-bit encoding. The 32-bit encoding provides greater dynamic
+      range and precision than the 24-bit encoding at the cost of one extra byte per pixel,
+      and it compresses better, such that most 32-bit LogLuv images end up smaller than
+      their 24-bit counterparts.
+    notes: >
+      The paper states it will not further discuss the 24-bit encoding in this article and
+      refers the reader to a companion paper (Larson, "Overcoming Gamut and Dynamic Range
+      Limitations in Digital Images", Color Imaging Conference 1998, cited as [Larson 98])
+      for its details.
+
+  - id: LLV-002
+    section: "2"
+    heading: "Encoding Method"
+    level: INFO
+    actor: file
+    category: data-layout
+    conformance: LLV
+    tags: [259]
+    statement: >
+      The 24-bit LogLuv encoding decomposes into a 10-bit log luminance portion and a
+      14-bit indexed uv chrominance coordinate mapping.
+    notes: >
+      This paper does not describe the 24-bit encoding's exact bit layout, formulas, or
+      index table any further than this one sentence; full details are only in the
+      referenced companion paper [Larson 98]. libtiff associates a 24-bit LogLuv/SGILOG24
+      variant with Compression(259) value 34677 (SGILOG24), per tif_luv.c, but this numeric
+      code is not stated anywhere in the paper's own text -- it is supplied here per the
+      task brief / de facto libtiff implementation, not extracted from the source.
+
+  - id: LLV-003
+    section: "2.1"
+    heading: "32-bit LogLuv Pixel Encoding"
+    level: INFO
+    actor: file
+    category: data-layout
+    conformance: LLV
+    tags: [262]
+    statement: >
+      The 32-bit LogLuv pixel encoding uses 16 bits for luminance information and 16 bits
+      for chrominance information per pixel. Within the 16-bit luminance field, the MSB is
+      a sign bit flagging negative luminances, and the remaining 15 bits (called Le) record
+      a log luminance value covering up to 38 orders of magnitude in 0.27% relative steps.
+      The lower two bytes of the pixel encode the chrominance as two separate 8-bit
+      quantities, ue and ve (Figure 1: bit order is sign+Le, then ue, then ve).
+    notes: >
+      This is the internal bit layout underlying PhotometricInterpretation(262) value 32845
+      (LOGLUV) in libtiff. The paper never states the numeric PhotometricInterpretation
+      code 32845 itself; it is supplied per the task brief / libtiff tiff.h, not from the
+      source text.
+
+  - id: LLV-004
+    section: "2.1"
+    heading: "32-bit LogLuv Pixel Encoding"
+    level: INFO
+    actor: file
+    category: data-layout
+    conformance: LLV
+    tags: [262]
+    statement: >
+      The log luminance field Le is computed from real (sign-removed) luminance Y as
+      Le = 256 x (log2(Y) + 64)  [Eq. 1a], and decoded back to luminance as
+      Y = 2^((Le + 0.5)/256 - 64)  [Eq. 1b]. An Le value of 0 is taken to decode to exactly
+      Y = 0.0, as a special case. The sign bit is extracted from Y before applying Eq. 1a
+      to encode, and is reapplied to the decoded Y after applying Eq. 1b to decode.
+    notes: "Exact formulas as printed in the paper (Eq. 1a/1b)."
+
+  - id: LLV-005
+    section: "2.1"
+    heading: "32-bit LogLuv Pixel Encoding"
+    level: INFO
+    actor: file
+    category: data-layout
+    conformance: LLV
+    tags: [262]
+    statement: >
+      Using the Eq. 1 log luminance encoding, the maximum representable luminance is
+      1.84x10^19 and the smallest representable non-zero magnitude is 5.44x10^-20.
+
+  - id: LLV-006
+    section: "2.1"
+    heading: "32-bit LogLuv Pixel Encoding"
+    level: INFO
+    actor: file
+    category: data-layout
+    conformance: LLV
+    tags: [262]
+    statement: >
+      The 8-bit chrominance indices are computed from CIE 1976 u',v' chromaticity
+      coordinates as ue = 410 x u'  [Eq. 2a] and ve = 410 x v'  [Eq. 2b], and decoded back
+      as u' = (ue + 0.5)/410  [Eq. 2c] and v' = (ve + 0.5)/410  [Eq. 2d].
+    notes: "Exact formulas as printed in the paper (Eq. 2a-2d)."
+
+  - id: LLV-007
+    section: "2.1"
+    heading: "32-bit LogLuv Pixel Encoding"
+    level: INFO
+    actor: file
+    category: color
+    conformance: LLV
+    tags: [262]
+    statement: >
+      The scale factor of 410 used in Eq. 2 was chosen because the gamut of perceivable
+      u' and v' values lies between 0 and 0.62, matching that range onto the available
+      8-bit [0,255] integer range per chrominance component. Some ue/ve codes outside the
+      visible gamut remain unused. This gives a uv-space quantization tolerance of about
+      0.0017 units, which the paper states is already well below the visible threshold.
+
+  - id: LLV-008
+    section: "3"
+    heading: "TIFF Input/Output Library"
+    level: INFO
+    actor: both
+    category: compression
+    conformance: LLV
+    tags: [259]
+    statement: >
+      The LogLuv encoding is embedded as a new compression type, referred to in the paper
+      only as "SGILOG", in Sam Leffler's TIFF I/O library.
+    notes: >
+      libtiff in fact defines two distinct Compression(259) values for this family:
+      SGILOG = 34676 (used for 32-bit LogLuv and 16-bit LogL data) and SGILOG24 = 34677
+      (used for 24-bit LogLuv data). The paper does not name or numerically distinguish
+      these two values; it speaks generically of a single "SGILOG compression type" whose
+      codec "writes out 24-bit or 32-bit compressed LogLuv-encoded values." The numeric
+      values 34676 / 34677 are supplied per the task brief and libtiff's tiff.h header, not
+      extracted from the source text.
+
+  - id: LLV-009
+    section: "3"
+    heading: "TIFF Input/Output Library"
+    level: MUST
+    actor: writer
+    category: behavior
+    conformance: LLV
+    tags: [259, 262]
+    statement: >
+      When writing a high-dynamic-range TIFF image, the LogLuv encoder's input data format
+      is floating-point CIE XYZ scanline values; the encoder writes out 24-bit or 32-bit
+      compressed LogLuv-encoded pixel values (per the layouts in LLV-002/LLV-003).
+
+  - id: LLV-010
+    section: "3"
+    heading: "TIFF Input/Output Library"
+    level: MUST
+    actor: reader
+    category: behavior
+    conformance: LLV
+    tags: [259, 262]
+    statement: >
+      When reading a LogLuv-compressed HDR TIFF, the decoder performs the reverse
+      conversion, recovering floating-point CIE XYZ scanline values from the stored
+      LogLuv-encoded pixel data.
+
+  - id: LLV-011
+    section: "3"
+    heading: "TIFF Input/Output Library"
+    level: MAY
+    actor: reader
+    category: behavior
+    conformance: LLV
+    tags: [259, 262]
+    statement: >
+      The library additionally provides an optional conversion from decoded LogLuv data to
+      24-bit gamma-compressed RGB, for the convenience of applications that do not know how
+      to handle high-dynamic-range pixel data directly.
+
+  - id: LLV-012
+    section: "3"
+    heading: "TIFF Input/Output Library"
+    level: INFO
+    actor: file
+    category: metadata
+    conformance: LLV
+    tags: [37439]
+    statement: >
+      An additional field, named TIFFTAG_STONITS in the library ("StoNits" = "samples to
+      Nits", where Nits/candelas per square meter, cd/m^2, is the photometric unit for
+      luminance), is provided for absolute luminance calibration. It is a single
+      floating-point value that may be used to convert decoded Y (luminance) sample values
+      to absolute luminance in cd/m^2.
+    notes: >
+      The paper never states StoNits' numeric TIFF tag code; 37439 is supplied per the task
+      brief and libtiff's tiff.h (TIFFTAG_STONITS), not from the source text. The paper also
+      does not state the tag's TIFF field type/count explicitly, beyond describing it as "a
+      single floating point value" (i.e. count = 1, a floating-point type).
+
+  - id: LLV-013
+    section: "3"
+    heading: "TIFF Input/Output Library"
+    level: SHOULD
+    actor: writer
+    category: metadata
+    conformance: LLV
+    tags: [37439]
+    statement: >
+      TIFFTAG_STONITS(37439) is set by the application that writes out an HDR TIFF, to
+      permit prescaling of luminance values to a reasonable brightness range for display,
+      where a Y value of 1.0 will be displayed at the maximum output of the destination
+      device. This is intended to avoid requiring the reading application to determine a
+      suitable exposure level for absolute luminances on its own.
+
+  - id: LLV-014
+    section: "3"
+    heading: "TIFF Input/Output Library"
+    level: MAY
+    actor: writer
+    category: metadata
+    conformance: LLV
+    tags: [37439]
+    statement: >
+      If the source image data is uncalibrated (i.e. its absolute luminances are unknown),
+      there is no need to store TIFFTAG_STONITS(37439), regardless of whether the stored
+      sample values themselves happen to be scaled.
+
+  - id: LLV-015
+    section: "4.2"
+    heading: "Luminance Calibration"
+    level: INFO
+    actor: writer
+    category: metadata
+    conformance: LLV
+    tags: [37439]
+    statement: >
+      When the absolute luminance for a given pixel or subimage is known to the writer, the
+      value to store in TIFFTAG_STONITS(37439) is that absolute luminance divided by the
+      corresponding output Y (luminance) sample value, since the multiplier "is also known,
+      since it equals the absolute luminance divided by the output Y value."
+
+  - id: LLV-016
+    section: "4.2"
+    heading: "Luminance Calibration"
+    level: SHOULD
+    actor: reader
+    category: metadata
+    conformance: LLV
+    tags: [37439]
+    statement: >
+      When TIFFTAG_STONITS(37439) is present, a reading application may retrieve its value
+      and multiply it by each decoded pixel's Y value to obtain that pixel's absolute
+      luminance in cd/m^2.
+
+  - id: LLV-017
+    section: "3.1"
+    heading: "Run-length Compression"
+    level: MUST
+    actor: both
+    category: compression
+    conformance: LLV
+    tags: [259, 262]
+    statement: >
+      For the 32-bit LogLuv encoding, compression is performed by separating each
+      scanline's pixel bytes into four separate byte streams by byte position across the
+      pixel -- (1) the byte containing the sign bit and the upper 7 bits of Le, (2) the byte
+      containing the lower 8 bits of Le, (3) the ue byte, and (4) the ve byte -- and
+      independently compressing each of the four streams with an adaptive run-length
+      encoding scheme.
+    notes: >
+      The adaptive run-length algorithm itself (the actual op-codes/thresholds) is defined
+      in the external reference [Glassner 91], "Adaptive Run-Length Encoding" (Graphics
+      Gems II); this paper describes only the four-stream byte-separation strategy, not the
+      run-length bitstream format itself. The concrete implementation is libtiff's
+      tif_luv.c, which this paper does not reproduce.
+
+  - id: LLV-018
+    section: "3.1"
+    heading: "Run-length Compression"
+    level: INFO
+    actor: file
+    category: compression
+    conformance: LLV
+    tags: []
+    statement: >
+      The top byte stream (sign bit plus upper log-luminance bits) typically changes very
+      slowly across a scanline and so submits well to run-length encoding; the ue and ve
+      byte streams likewise compress well over image regions of near-constant chrominance.
+
+  - id: LLV-019
+    section: "4.5"
+    heading: "LogLuv Image Compression"
+    level: INFO
+    actor: file
+    category: compression
+    conformance: LLV
+    tags: [259]
+    statement: >
+      The SGILOG adaptive run-length compression scheme never grows the data beyond its
+      uncompressed size, unlike LZW compression, which the paper notes "is sometimes worse
+      than no compression at all" and can occasionally produce output larger than the
+      uncompressed input.
+
+  - id: LLV-020
+    section: "3.2"
+    heading: "Grayscale Images"
+    level: INFO
+    actor: file
+    category: data-layout
+    conformance: LLV
+    tags: [262, 259]
+    statement: >
+      A pure-luminance grayscale mode, using 16-bit log luminance (LogL) values, is
+      provided by the codec for maximum flexibility. It stores and retrieves run-length
+      encoded 16-bit log luminance values (Le, per the Eq. 1 formula in LLV-004) using the
+      same run-length compression scheme as applied to the 32-bit LogLuv encoding.
+    notes: >
+      This is the basis of PhotometricInterpretation(262) value 32844 (LOGL). The numeric
+      value 32844 is not stated in the paper text; it is supplied per the task brief /
+      libtiff tiff.h. The paper does not explicitly say the LogL run-length scheme operates
+      on exactly two byte streams (versus the four used for 32-bit LogLuv in LLV-017); this
+      is inferred from "the same scheme" being applied to a value that has only the two
+      luminance bytes and no ue/ve bytes, but is not stated verbatim.
+
+  - id: LLV-021
+    section: "3.2"
+    heading: "Grayscale Images"
+    level: INFO
+    actor: file
+    category: data-layout
+    conformance: LLV
+    tags: [262]
+    statement: >
+      There is no real space saving from using the 16-bit LogL encoding instead of full
+      32-bit LogLuv for genuinely grayscale data, since the ue/ve chrominance byte-streams
+      of a grayscale image already compress to practically nothing under the 32-bit scheme.
+      The LogL mode instead exists to give TIFF readers an explicit, unambiguous way to
+      identify floating-point luminance-only images.
+
+  - id: LLV-022
+    section: "3.3"
+    heading: "Raw I/O"
+    level: MAY
+    actor: reader
+    category: behavior
+    conformance: LLV
+    tags: [262]
+    statement: >
+      It is possible to decode the raw 32-bit LogLuv pixel data retrieved from an HDR TIFF
+      directly, without full conversion to floating-point XYZ; the paper notes this has
+      advantages for implementing fast tone-mapping and display algorithms.
+
+  - id: LLV-023
+    section: "3.3"
+    heading: "Raw I/O"
+    level: INFO
+    actor: reader
+    category: behavior
+    conformance: LLV
+    tags: [262]
+    statement: >
+      For the 32-bit format, a fast tone-mapped, gamma-compressed RGB result can be
+      produced by using the raw Le value and the combined raw uv (ue,ve) value as indices
+      into a precomputed 32K-entry Le lookup table and a 64K-entry uv lookup table, and
+      multiplying the two table outputs together -- provided the tone-mapping algorithm can
+      separate chrominance from luminance.
+    notes: >
+      32K entries corresponds to the 15-bit (0-32767) range of Le; 64K entries corresponds
+      to the combined 16-bit range of (ue,ve) index pairs (8-bit x 8-bit = 65536
+      combinations).
+
+  - id: LLV-024
+    section: "4.2"
+    heading: "Luminance Calibration"
+    level: INFO
+    actor: writer
+    category: metadata
+    conformance: LLV
+    tags: [37439]
+    statement: >
+      For 35mm photographic scans, the paper suggests the TIFFTAG_STONITS(37439) multiplier
+      may be approximated from exposure parameters using m = (200/(pi*S)) * f^2 * t [Eq. 6],
+      where S is film speed (ISO/ASA), f is aperture (f-stop), and t is exposure time
+      (seconds); this formula (borrowed from the IES Lighting Handbook) assumes the maximum
+      image brightness corresponds to a Y value of 1.0. For photographic negatives, the
+      paper suggests this "maximum" corresponds to a density of about 1.5 (3% negative
+      transmittance), since negatives hold about 2 orders of magnitude of extended dynamic
+      range beyond white.
+    notes: "This is offered as one illustrative estimation method, not a normative requirement of the file format."
+
+  - id: LLV-025
+    section: "4.5"
+    heading: "LogLuv Image Compression"
+    level: MAY
+    actor: writer
+    category: data-layout
+    conformance: LLV
+    tags: [262]
+    statement: >
+      A high-dynamic-range alpha channel may be stored as a separate 16-bit LogL TIFF
+      image/layer (i.e. using PhotometricInterpretation(262)=32844/LOGL), since compositing
+      HDR image data by multiplying a floating-point value by a low-precision integer alpha
+      can otherwise produce wrong results or severe quantization artifacts when one operand
+      is much smaller than the other.
+
+  - id: LLV-026
+    section: "3"
+    heading: "TIFF Input/Output Library"
+    level: INFO
+    actor: file
+    category: tag
+    conformance: LLV
+    tags: [258, 262, 277, 339]
+    statement: >
+      This paper does not specify the companion TIFF tag requirements -- BitsPerSample(258),
+      SamplesPerPixel(277), or SampleFormat(339) values -- needed to fully describe LOGL or
+      LOGLUV pixels within a conforming TIFF IFD. It describes only the internal bit layout
+      of the encoded sample value itself (see LLV-003, LLV-004, LLV-020).
+    notes: >
+      Per the extraction brief, this gap is flagged rather than filled in from libtiff's de
+      facto implementation. This paper simply does not state how the encoded 16-bit LogL or
+      32-bit LogLuv values map onto the standard BitsPerSample/SamplesPerPixel/SampleFormat
+      tags -- that mapping is defined only by libtiff's tif_luv.c (e.g. its
+      SGILOGDATAFMT_* output-format switch), which is outside the scope of this paper and
+      is not asserted here as fact.
+
+tags:
+  - code: 262
+    hex: "0x0106"
+    name: PhotometricInterpretation
+    types: [SHORT]
+    count: "1"
+    default: null
+    required: conditional
+    conformance: LLV
+    section: "2.1, 3.2"
+    location: ifd0
+    description: >
+      Extended by this document with two new values for HDR log-luminance/chrominance
+      encodings: LOGL (grayscale log luminance) and LOGLUV (log luminance + uv
+      chrominance). Both encodings and their bit layouts are described in this paper; the
+      numeric codes themselves are not printed in the paper's text.
+    values:
+      32844: "LOGL -- grayscale log-luminance image, 16-bit LogL encoding (section 3.2); numeric code not stated in paper text, supplied per task brief/libtiff."
+      32845: "LOGLUV -- full-gamut log-luminance + uv chrominance image, 24-bit or 32-bit LogLuv encoding (sections 2, 2.1); numeric code not stated in paper text, supplied per task brief/libtiff."
+    interacts_with: [259, 37439]
+
+  - code: 259
+    hex: "0x0103"
+    name: Compression
+    types: [SHORT]
+    count: "1"
+    default: null
+    required: conditional
+    conformance: LLV
+    section: "3, 3.1"
+    location: ifd0
+    description: >
+      Extended by this document (via the associated libtiff implementation) with
+      compression scheme(s) implementing the adaptive run-length encoding described for
+      LogLuv/LogL pixel data. The paper itself refers only generically to a single "SGILOG
+      compression type"; it does not name or number a separate scheme for 24-bit LogLuv.
+    values:
+      34676: "SGILOG -- adaptive run-length compression for 32-bit LogLuv and 16-bit LogL data (section 3.1); numeric code not stated in paper text, supplied per task brief/libtiff."
+      34677: "SGILOG24 -- compression associated with the 24-bit LogLuv variant (section 2); numeric code not stated in paper text, supplied per task brief/libtiff; the paper does not separately describe this scheme's run-length behavior."
+    interacts_with: [262]
+
+  - code: 37439
+    hex: "0x923F"
+    name: StoNits
+    types: [DOUBLE]
+    count: "1"
+    default: null
+    required: no
+    conformance: LLV
+    section: "3, 4.2"
+    location: ifd0
+    description: >
+      TIFFTAG_STONITS ("samples to Nits"). A single floating-point multiplier used to
+      convert decoded Y (luminance) sample values to absolute luminance in candelas per
+      square meter (cd/m^2). Set by the writer when the absolute luminance of the source
+      data is known/calibrated; omitted when the source data is uncalibrated.
+    values: {}
+    interacts_with: [262]
+    notes: >
+      The paper describes this only as "a single floating point value"; it does not state
+      an exact TIFF field type. TYPE DOUBLE is supplied per the task brief/libtiff
+      convention (TIFFTAG_STONITS is defined as TIFF_DOUBLE, count 1, in libtiff's
+      tif_dirinfo.c), not extracted from the paper's own text.
+
+dependencies:
+  - id: LLV-DEP-001
+    requirement: LLV-008
+    when: "PhotometricInterpretation(262) == 32845 (LOGLUV)"
+    then: >
+      Compression(259) is associated with the SGILOG family: value 34676 (SGILOG) for the
+      32-bit LogLuv encoding, or value 34677 (SGILOG24) for the 24-bit LogLuv encoding.
+    kind: constrains-value
+    tags: [262, 259]
+
+  - id: LLV-DEP-002
+    requirement: LLV-020
+    when: "PhotometricInterpretation(262) == 32844 (LOGL)"
+    then: >
+      Compression(259) is associated with value 34676 (SGILOG), using the same run-length
+      scheme as 32-bit LogLuv but applied only to the 16-bit log-luminance (Le) bytes.
+    kind: constrains-value
+    tags: [262, 259]
+
+  - id: LLV-DEP-003
+    requirement: LLV-003
+    when: "PhotometricInterpretation(262) == 32845 (LOGLUV), 32-bit variant"
+    then: >
+      Each pixel sample value decomposes into a 1-bit sign, a 15-bit log-luminance field
+      Le, an 8-bit chrominance index ue, and an 8-bit chrominance index ve, in that order
+      (Figure 1).
+    kind: constrains-value
+    tags: [262]
+
+  - id: LLV-DEP-004
+    requirement: LLV-016
+    when: "StoNits(37439) is present in the IFD"
+    then: >
+      A reader may compute a pixel's absolute luminance as StoNits(37439) value multiplied
+      by that pixel's decoded Y sample value, yielding cd/m^2.
+    kind: modifies-meaning
+    tags: [37439]
+
+  - id: LLV-DEP-005
+    requirement: LLV-014
+    when: "the source image data's absolute luminance is unknown/uncalibrated"
+    then: "StoNits(37439) need not be stored in the IFD."
+    kind: selects-default
+    tags: [37439]
+
+  - id: LLV-DEP-006
+    requirement: LLV-023
+    when: "decoding raw 32-bit LogLuv data (LLV-022) without reconstructing floating-point XYZ"
+    then: >
+      A tone-mapped, gamma-compressed RGB pixel can be obtained via a 32K-entry Le lookup
+      table and a 64K-entry uv lookup table, multiplying their outputs, provided the
+      tone-mapping algorithm can separate chrominance from luminance.
+    kind: constrains-value
+    tags: [262]

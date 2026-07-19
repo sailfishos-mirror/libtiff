@@ -1,0 +1,2829 @@
+document: T6X
+title: "TIFF Revision 6.0 - Part 2 (TIFF Extensions, Sections 11-23) and Part 3 (Appendices)"
+date: "June 3, 1992"
+requirements:
+  # ------------------------------------------------------------------
+  # Part 2 preamble
+  # ------------------------------------------------------------------
+  - id: T6X-001
+    section: "Part 2"
+    heading: "TIFF Extensions"
+    page: 48
+    level: INFO
+    actor: both
+    category: behavior
+    conformance: extension
+    statement: >
+      Part 2 defines TIFF Extensions: features beyond Baseline TIFF that may not be
+      supported by all TIFF readers. Creators using these features must coordinate closely
+      with readers in their industry segment to ensure successful interchange. All features
+      in Part 2 were either in earlier versions of the specification or approved by the
+      TIFF Advisory Committee.
+
+  # ------------------------------------------------------------------
+  # Section 11: CCITT Bilevel Encodings
+  # ------------------------------------------------------------------
+  - id: T6X-002
+    section: "11"
+    heading: "CCITT Bilevel Encodings"
+    page: 49
+    level: MAY
+    actor: file
+    category: compression
+    conformance: extension
+    tags: [259]
+    statement: >
+      Compression (259) = 3 selects T4-encoding: CCITT T.4 bi-level encoding (Group 3
+      facsimile) as specified in section 4 of CCITT Recommendation T.4 (Geneva, 1988).
+      Coding options such as 1D vs 2D are controlled by the T4Options (292) field.
+
+  - id: T6X-003
+    section: "11"
+    heading: "CCITT Bilevel Encodings"
+    page: 49
+    level: MAY
+    actor: file
+    category: compression
+    conformance: extension
+    tags: [259]
+    statement: >
+      Compression (259) = 4 selects T6-encoding: CCITT T.6 bi-level encoding (Group 4
+      facsimile) as specified in section 2 of CCITT Recommendation T.6 (Geneva, 1988).
+      Coding options such as escape into uncompressed mode are controlled by the
+      T6Options (293) field.
+
+  - id: T6X-004
+    section: "11"
+    heading: "PhotometricInterpretation"
+    page: 50
+    level: INFO
+    actor: file
+    category: color
+    conformance: extension
+    tags: [262, 259]
+    statement: >
+      The normal PhotometricInterpretation (262) for bilevel CCITT compressed data is
+      WhiteIsZero (0). In this case CCITT white runs are interpreted as white and CCITT
+      black runs as black.
+
+  - id: T6X-005
+    section: "11"
+    heading: "PhotometricInterpretation"
+    page: 50
+    level: MUST
+    actor: reader
+    category: color
+    conformance: extension
+    tags: [262, 259]
+    statement: >
+      If PhotometricInterpretation (262) is BlackIsZero (1) for CCITT compressed data, the
+      TIFF reader must reverse the meaning of white and black when displaying and printing
+      the image.
+
+  - id: T6X-006
+    section: "11"
+    heading: "FillOrder"
+    page: 51
+    level: SHOULD
+    actor: writer
+    category: data-layout
+    conformance: extension
+    tags: [266, 259]
+    statement: >
+      Whenever CCITT bi-level encodings are used, FillOrder (266) should always be
+      explicitly specified in the file.
+
+  - id: T6X-007
+    section: "11"
+    heading: "FillOrder"
+    page: 51
+    level: SHOULD
+    actor: writer
+    category: data-layout
+    conformance: extension
+    tags: [266, 259]
+    statement: >
+      For CCITT encodings, FillOrder (266) = 1 should be employed wherever possible in
+      persistent material intended for interchange; it is the only reliable case for
+      widespread interchange among computer systems.
+
+  - id: T6X-008
+    section: "11"
+    heading: "FillOrder"
+    page: 51
+    level: SHOULD
+    actor: both
+    category: data-layout
+    conformance: extension
+    tags: [266, 259]
+    statement: >
+      For CCITT encodings, FillOrder (266) = 2 should occur only in highly localized and
+      preferably transient material (such as a facsimile server supporting Group 3
+      equipment); the tag should be present as a safeguard so readers can detect and warn.
+
+  - id: T6X-009
+    section: "11"
+    heading: "FillOrder"
+    page: 50
+    level: INFO
+    actor: both
+    category: data-layout
+    conformance: extension
+    tags: [266, 259]
+    statement: >
+      In interchange situations where fill order is not distinguished (e.g. filtering CCITT
+      encoding into a PostScript Level 2 image operation), FillOrder (266) = 1 is assumed,
+      and any padding to a multiple of 8 bits is accomplished by adding 0-bits to the end of
+      the sequence.
+
+  - id: T6X-010
+    section: "11"
+    heading: "Strips and Tiles"
+    page: 50
+    level: MUST
+    actor: writer
+    category: compression
+    conformance: extension
+    tags: [259]
+    statement: >
+      When CCITT bi-level encoding is used with strips (Section 3) or tiles (Section 15),
+      the image must be decomposed into segments (strip or tile pixel arrays) and each
+      segment individually encoded according to the specified CCITT bi-level encoding as if
+      it were a separate raster-graphic image, because CCITT encodings are progressive and
+      strips/tiles must each be independently usable.
+
+  - id: T6X-011
+    section: "11"
+    heading: "Strips and Tiles"
+    page: 50
+    level: SHOULD
+    actor: writer
+    category: compression
+    conformance: extension
+    statement: >
+      CCITT encoding procedures are applied most flexibly if each strip or tile segment has
+      a multiple of 4 lines.
+
+  - id: T6X-012
+    section: "11"
+    heading: "T4Options"
+    page: 51
+    level: MUST
+    actor: file
+    category: tag
+    conformance: extension
+    tags: [292]
+    statement: >
+      T4Options (292, LONG, count 1) is a set of 32 flag bits used with Compression (259)=3.
+      Unused bits must be set to 0. Bit 0 is the low-order bit. Default is 0 (basic
+      1-dimensional coding).
+
+  - id: T6X-013
+    section: "11"
+    heading: "T4Options"
+    page: 51
+    level: MUST
+    actor: file
+    category: compression
+    conformance: extension
+    tags: [292, 278]
+    statement: >
+      T4Options (292) bit 0 = 1 selects 2-dimensional coding (otherwise 1-dimensional). For
+      2-D coding, if more than one strip is specified, each strip must begin with a
+      1-dimensionally coded line; that is, RowsPerStrip (278) should be a multiple of
+      "Parameter K" as documented in the CCITT specification.
+
+  - id: T6X-014
+    section: "11"
+    heading: "T4Options"
+    page: 51
+    level: MAY
+    actor: file
+    category: compression
+    conformance: extension
+    tags: [292]
+    statement: >
+      T4Options (292) bit 1 = 1 indicates that uncompressed mode is used.
+
+  - id: T6X-015
+    section: "11"
+    heading: "T4Options"
+    page: 51
+    level: MAY
+    actor: file
+    category: compression
+    conformance: extension
+    tags: [292]
+    statement: >
+      T4Options (292) bit 2 = 1 indicates that fill bits have been added as necessary before
+      EOL codes such that EOL always ends on a byte boundary, ensuring an EOL sequence of one
+      byte preceded by a zero nibble: xxxx-0000 0000-0001.
+
+  - id: T6X-016
+    section: "11"
+    heading: "T6Options"
+    page: 52
+    level: MUST
+    actor: file
+    category: tag
+    conformance: extension
+    tags: [293]
+    statement: >
+      T6Options (293, LONG, count 1) is a set of 32 flag bits used with Compression (259)=4.
+      Unused bits must be set to 0. Bit 0 is the low-order bit and is unused and always 0.
+      The default value is 0 (all bits 0). This tag was named Group4Options in earlier TIFF
+      versions; the meaning is unchanged and compatible.
+
+  - id: T6X-017
+    section: "11"
+    heading: "T6Options"
+    page: 52
+    level: MAY
+    actor: file
+    category: compression
+    conformance: extension
+    tags: [293]
+    statement: >
+      T6Options (293) bit 1 = 1 indicates that uncompressed mode is allowed in the encoding.
+
+  - id: T6X-018
+    section: "11"
+    heading: "T6Options"
+    page: 52
+    level: MUST
+    actor: reader
+    category: compression
+    conformance: extension
+    tags: [293]
+    statement: >
+      Readers should honor the T6Options (293) tag, and only this option tag, whenever
+      T.6-Encoding (Compression=4) is specified.
+
+  - id: T6X-019
+    section: "11"
+    heading: "T6Options"
+    page: 52
+    level: MUST
+    actor: writer
+    category: compression
+    conformance: extension
+    tags: [293, 259]
+    statement: >
+      For T.6-Encoding, each segment (strip or tile) is encoded as if it were a separate
+      image, and the encoded string from each segment starts a fresh byte. There are no
+      one-dimensional line encodings in T.6; even the first row is encoded two-dimensionally
+      assuming an invisible preceding row of all-white pixels.
+
+  - id: T6X-020
+    section: "11"
+    heading: "T6Options"
+    page: 52
+    level: MUST
+    actor: writer
+    category: compression
+    conformance: extension
+    tags: [259]
+    statement: >
+      In T.6-Encoding, the encoding of the last line of the pixel array is immediately
+      followed by a 24-bit End-of-Facsimile Block (EOFB) 000000000001000000000001 (binary),
+      which is then followed by enough 0-bit padding to fit the entire stream into a sequence
+      of 8-bit bytes.
+
+  - id: T6X-021
+    section: "11"
+    heading: "T6Options"
+    page: 52
+    level: SHOULD
+    actor: reader
+    category: compression
+    conformance: extension
+    statement: >
+      TIFF readers of T.6-encoded data should always ignore bits beyond the EOFB; some
+      writers produce additional pad bytes beyond the byte containing the final EOFB bit,
+      and robust readers must not be disturbed by this.
+
+  - id: T6X-022
+    section: "11"
+    heading: "T6Options"
+    page: 53
+    level: MUST
+    actor: both
+    category: compression
+    conformance: extension
+    tags: [256, 322]
+    statement: >
+      A T.6-Encoding cannot be correctly decoded without exact knowledge of the number of
+      pixels per line. ImageWidth (256) (or TileWidth (322), if used) must be stated exactly
+      and accurately; overscanned/extraneous pixels must be counted and cropping done by
+      other means. Failure of any row to complete as expected is cause for abandoning
+      decoding of the entire segment.
+
+  - id: T6X-023
+    section: "11"
+    heading: "T6Options"
+    page: 53
+    level: MAY
+    actor: reader
+    category: compression
+    conformance: extension
+    statement: >
+      If a reader encounters EOFB before the expected number of T.6 lines has been extracted,
+      it is appropriate to assume the missing rows consist entirely of white pixels. Readers
+      that successfully decode the expected number of lines (RowsPerStrip, TileLength, or
+      residual ImageLength) are not required to verify that an EOFB follows; it is generally
+      appropriate to stop when the expected lines are decoded or EOFB is detected, whichever
+      occurs first.
+
+  - id: T6X-024
+    section: "11"
+    heading: "T6Options"
+    page: 53
+    level: SHOULD
+    actor: writer
+    category: compression
+    conformance: extension
+    tags: [279, 325]
+    statement: >
+      TIFF writers should always encode the full prescribed number of rows with a proper
+      EOFB immediately following, pad with the least number of 0-bits needed to occupy a
+      multiple of 8 bits, use only 0-bits for padding, and ensure StripByteCounts (279) (or
+      TileByteCounts (325)) does not extend to any bytes not containing properly formed
+      T.6-encoding.
+
+  - id: T6X-025
+    section: "11"
+    heading: "T6Options"
+    page: 53
+    level: SHOULD
+    actor: writer
+    category: compression
+    conformance: extension
+    statement: >
+      For best interchange with T.6-encoding, writers are encouraged (though not required by
+      T.6 rules) to arrange for the number of pixels per line and the number of lines per
+      strip to be multiples of eight.
+
+  - id: T6X-026
+    section: "11"
+    heading: "Uncompressed Mode"
+    page: 54
+    level: MUST
+    actor: writer
+    category: compression
+    conformance: extension
+    tags: [293]
+    statement: >
+      Writers that are unable to guarantee the absence of uncompressed-mode material in any
+      T.6-encoded segment must set the T6Options (293) uncompressed-mode flag (bit 1). The
+      flag should be cleared or defaulted only when the absence of uncompressed-mode material
+      is assured.
+
+  - id: T6X-027
+    section: "11"
+    heading: "Uncompressed Mode"
+    page: 54
+    level: SHOULD
+    actor: writer
+    category: compression
+    conformance: extension
+    statement: >
+      Writers able to inhibit the generation of uncompressed-mode extensions are encouraged
+      to do so to maximize acceptability of their T.6-encoding strings, and should confine
+      uncompressed-mode sequences to the interiors of individual rows, never wrapping from
+      one row to the next.
+
+  - id: T6X-028
+    section: "11"
+    heading: "Uncompressed Mode"
+    page: 54
+    level: MAY
+    actor: reader
+    category: compression
+    conformance: extension
+    tags: [293]
+    statement: >
+      Readers with no provision for uncompressed mode will generally reject any case in which
+      the T6Options (293) uncompressed-mode flag is set. Readers able to process
+      uncompressed-mode content can safely ignore the flag and process any uncompressed-mode
+      occurrences correctly.
+
+  - id: T6X-029
+    section: "11"
+    heading: "Uncompressed Mode"
+    page: 54
+    level: INFO
+    actor: both
+    category: compression
+    conformance: extension
+    statement: >
+      Uncompressed mode within a T.6 stream is signalled by the 10-bit extension code
+      0000001111 (binary) outside any run-length make-up code; a 1-bit is inserted after
+      every block of five consecutive original 0-bits; and return to compressed mode uses the
+      8-bit exit sequence 0000001t (binary), where the trailing bit t specifies the color
+      assumed for the next compressed-mode run. Uncompressed mode is not well specified and
+      its use is discouraged.
+
+  # ------------------------------------------------------------------
+  # Section 12: Document Storage and Retrieval
+  # ------------------------------------------------------------------
+  - id: T6X-030
+    section: "12"
+    heading: "Document Storage and Retrieval"
+    page: 55
+    level: INFO
+    actor: both
+    category: metadata
+    conformance: extension
+    statement: >
+      The fields in Section 12 (DocumentName, PageName, PageNumber, XPosition, YPosition)
+      may be useful for document storage and retrieval applications and will very likely be
+      ignored by other applications.
+
+  - id: T6X-031
+    section: "12"
+    heading: "DocumentName"
+    page: 55
+    level: MAY
+    actor: file
+    category: tag
+    conformance: extension
+    tags: [269]
+    statement: >
+      DocumentName (269, ASCII) gives the name of the document from which the image was
+      scanned.
+
+  - id: T6X-032
+    section: "12"
+    heading: "PageName"
+    page: 55
+    level: MAY
+    actor: file
+    category: tag
+    conformance: extension
+    tags: [285]
+    statement: >
+      PageName (285, ASCII) gives the name of the page from which the image was scanned. No
+      default.
+
+  - id: T6X-033
+    section: "12"
+    heading: "PageNumber"
+    page: 55
+    level: MAY
+    actor: file
+    category: tag
+    conformance: extension
+    tags: [297]
+    statement: >
+      PageNumber (297, SHORT, count 2) specifies page numbers of a multiple-page document.
+      PageNumber[0] is the page number (first page numbered 0); PageNumber[1] is the total
+      number of pages, or 0 if the total is unavailable. Pages need not appear in numerical
+      order. No default.
+
+  - id: T6X-034
+    section: "12"
+    heading: "XPosition"
+    page: 55
+    level: MAY
+    actor: file
+    category: tag
+    conformance: extension
+    tags: [286, 296]
+    statement: >
+      XPosition (286, RATIONAL, count 1) is the X offset in ResolutionUnits (296) of the left
+      side of the image relative to the left side of the page. No default.
+
+  - id: T6X-035
+    section: "12"
+    heading: "YPosition"
+    page: 56
+    level: MAY
+    actor: file
+    category: tag
+    conformance: extension
+    tags: [287, 296]
+    statement: >
+      YPosition (287, RATIONAL, count 1) is the Y offset in ResolutionUnits (296) of the top
+      of the image relative to the top of the page. In the TIFF coordinate scheme positive Y
+      is down, so YPosition is always positive. No default.
+
+  # ------------------------------------------------------------------
+  # Section 13: LZW Compression
+  # ------------------------------------------------------------------
+  - id: T6X-036
+    section: "13"
+    heading: "LZW Compression"
+    page: 57
+    level: INFO
+    actor: file
+    category: compression
+    conformance: extension
+    tags: [259]
+    statement: >
+      Compression (259) = 5 selects LZW, an adaptive lossless compression scheme for raster
+      images that works for images of various bit depths.
+
+  - id: T6X-037
+    section: "13"
+    heading: "Restrictions"
+    page: 57
+    level: INFO
+    actor: both
+    category: compression
+    conformance: extension
+    statement: >
+      The LZW compression method is reported to be the subject of US patent 4,558,302 and
+      corresponding foreign patents owned by Unisys Corporation; developers may be required to
+      license this patent to develop and market products using the TIFF LZW option. Other
+      companies may also hold patents affecting LZW implementors.
+    notes: >
+      Legal/licensing note, not a technical requirement.
+
+  - id: T6X-038
+    section: "13"
+    heading: "The Algorithm"
+    page: 58
+    level: MUST
+    actor: both
+    category: compression
+    conformance: extension
+    tags: [278]
+    statement: >
+      Each strip is compressed independently under LZW. It is strongly recommended that
+      RowsPerStrip (278) be chosen so each strip contains about 8K bytes before compression,
+      so compressed and uncompressed versions can be kept in memory while maintaining near
+      optimal compression ratios.
+
+  - id: T6X-039
+    section: "13"
+    heading: "The Algorithm"
+    page: 58
+    level: MUST
+    actor: both
+    category: compression
+    conformance: extension
+    statement: >
+      The TIFF LZW implementation uses variable-length codes with a maximum code length of
+      12 bits, and the string table is different for every strip. The "characters" of the
+      LZW strings are bytes of TIFF uncompressed (Compression=1) image data; pixels are
+      packed into bytes before compression (e.g. BitsPerSample=4 gives two 4-bit pixels per
+      8-bit character, and 16-bit pixels span two characters).
+
+  - id: T6X-040
+    section: "13"
+    heading: "The Algorithm"
+    page: 59
+    level: MUST
+    actor: both
+    category: compression
+    conformance: extension
+    statement: >
+      The LZW string table is initialized with all 256 single-byte strings (codes 0-255).
+      Code 256 is reserved as the ClearCode and code 257 is reserved as the EndOfInformation
+      code, so the first multiple-character table entry is added at position 258.
+
+  - id: T6X-041
+    section: "13"
+    heading: "The Algorithm"
+    page: 60
+    level: MUST
+    actor: both
+    category: compression
+    conformance: extension
+    statement: >
+      LZW codes are written using as few bits as possible: 9-bit codes are used starting out,
+      switching to 10-bit codes after adding table entry 511, to 11-bit codes after entry
+      1023, and to 12-bit codes after entry 2047. The table is limited to at most 4096
+      entries (12-bit maximum) and must not be larger. Every code written counts toward the
+      code-length bump decision.
+
+  - id: T6X-042
+    section: "13"
+    heading: "The Algorithm"
+    page: 60
+    level: MUST
+    actor: writer
+    category: compression
+    conformance: extension
+    statement: >
+      When the LZW string table fills, the compressor must write a (12-bit) ClearCode as soon
+      as entry 4094 is used (not later, or the decompressor might interpret the ClearCode as a
+      13-bit code), then reinitialize the string table and resume writing 9-bit codes.
+
+  - id: T6X-043
+    section: "13"
+    heading: "The Algorithm"
+    page: 60
+    level: MUST
+    actor: both
+    category: compression
+    conformance: extension
+    statement: >
+      Each LZW-compressed strip must begin with a ClearCode and end with an EndOfInformation
+      code.
+
+  - id: T6X-044
+    section: "13"
+    heading: "The Algorithm"
+    page: 60
+    level: MUST
+    actor: both
+    category: compression
+    conformance: extension
+    tags: [266]
+    statement: >
+      Every LZW-compressed strip must begin on a byte boundary (it need not begin on a word
+      boundary). LZW compression codes are stored into bytes in high-to-low-order fashion,
+      i.e. FillOrder (266) is assumed to be 1, and codes are written as bytes (not words) so
+      the compressed data is identical for 'II' and 'MM' files.
+
+  - id: T6X-045
+    section: "13"
+    heading: "LZW Decoding"
+    page: 61
+    level: MUST
+    actor: reader
+    category: compression
+    conformance: extension
+    statement: >
+      The LZW decoder must track bit boundaries: the first code is a 9-bit code, switching to
+      10-bit codes after string 510 is stored, to 11-bit codes after 1022, and to 12-bit
+      codes after 2046. (These thresholds are one less than the encoder's because the decoder
+      lags by one table entry.)
+
+  - id: T6X-046
+    section: "13"
+    heading: "When SamplesPerPixel Is Greater Than 1"
+    page: 62
+    level: MAY
+    actor: both
+    category: compression
+    conformance: extension
+    tags: [284, 277]
+    statement: >
+      For LZW compression of multi-sample (e.g. RGB) data, either PlanarConfiguration (284)=1
+      or 2 may be used since compression ratios are nearly identical; simply compress the
+      bytes in the strip.
+
+  # ------------------------------------------------------------------
+  # Section 14: Differencing Predictor
+  # ------------------------------------------------------------------
+  - id: T6X-047
+    section: "14"
+    heading: "Predictor"
+    page: 64
+    level: MUST
+    actor: file
+    category: tag
+    conformance: extension
+    tags: [317, 259]
+    statement: >
+      Predictor (317, SHORT, count 1) specifies a mathematical operator applied to image data
+      before encoding. Values: 1 = no prediction scheme used before coding; 2 = horizontal
+      differencing. Default is 1. It is currently used only with LZW (Compression (259)=5).
+
+  - id: T6X-048
+    section: "14"
+    heading: "The algorithm"
+    page: 64
+    level: INFO
+    actor: both
+    category: compression
+    conformance: extension
+    tags: [317]
+    statement: >
+      Horizontal differencing (Predictor=2) replaces each pixel value with the difference
+      between it and the preceding pixel in the row; two's complement arithmetic makes the
+      process reversible without loss and without expanding the bit depth. Components must be
+      expanded to one-per-byte (or one-per-16-bit-word for >8-bit components) before
+      differencing, then repacked in normal TIFF fashion.
+
+  - id: T6X-049
+    section: "14"
+    heading: "The algorithm"
+    page: 65
+    level: MUST
+    actor: both
+    category: compression
+    conformance: extension
+    tags: [317, 284, 277, 258]
+    statement: >
+      With Predictor (317)=2 and PlanarConfiguration (284)=2, differencing works the same as
+      for grayscale data. With PlanarConfiguration (284)=1, horizontal differences must be
+      taken with an offset of SamplesPerPixel (277) (e.g. 3 for RGB) so that each component is
+      differenced against the same component (red from red, etc.). In the
+      PlanarConfiguration=1 color case, BitsPerSample (258) is required to be the same for all
+      components.
+
+  # ------------------------------------------------------------------
+  # Section 15: Tiled Images
+  # ------------------------------------------------------------------
+  - id: T6X-050
+    section: "15"
+    heading: "Relationship to existing fields"
+    page: 66
+    level: MUST
+    actor: file
+    category: data-layout
+    conformance: extension
+    tags: [322, 323, 324, 325, 273, 279, 278]
+    statement: >
+      When the tiling fields are used, they replace the StripOffsets (273), StripByteCounts
+      (279), and RowsPerStrip (278) fields. Both strip-oriented and tile-oriented fields must
+      not be used in the same TIFF file.
+
+  - id: T6X-051
+    section: "15"
+    heading: "Padding"
+    page: 66
+    level: MUST
+    actor: file
+    category: data-layout
+    conformance: extension
+    tags: [322, 323]
+    statement: >
+      All tiles in an image are the same size (same pixel dimensions) as defined by TileWidth
+      (322) and TileLength (323). Boundary tiles are padded out to the tile boundaries; the
+      value used for padding does not matter because good readers display only the pixels
+      defined by ImageWidth (256) and ImageLength (257).
+
+  - id: T6X-052
+    section: "15"
+    heading: "Padding"
+    page: 66
+    level: SHOULD
+    actor: writer
+    category: data-layout
+    conformance: extension
+    statement: >
+      Some compression schemes work best if tile padding is accomplished by replicating the
+      last column and last row rather than padding with 0's.
+
+  - id: T6X-053
+    section: "15"
+    heading: "Padding"
+    page: 66
+    level: MUST
+    actor: both
+    category: compression
+    conformance: extension
+    statement: >
+      Tiles are compressed individually, just as strips are; each row of data in a tile is
+      treated as a separate scanline when compressing. Compression includes any padded areas
+      of the rightmost and bottom tiles so that all tiles in an image are the same size when
+      uncompressed.
+
+  - id: T6X-054
+    section: "15"
+    heading: "Fields"
+    page: 66
+    level: MUST
+    actor: file
+    category: image-class
+    conformance: extension
+    tags: [322, 323, 324, 325]
+    statement: >
+      All of the following fields are required for tiled images: TileWidth (322), TileLength
+      (323), TileOffsets (324), and TileByteCounts (325).
+
+  - id: T6X-055
+    section: "15"
+    heading: "TileWidth"
+    page: 67
+    level: INFO
+    actor: both
+    category: data-layout
+    conformance: extension
+    tags: [322, 323, 256, 257]
+    statement: >
+      Useful computed tile values (integer arithmetic, not TIFF fields):
+      TilesAcross = (ImageWidth + TileWidth - 1) / TileWidth;
+      TilesDown = (ImageLength + TileLength - 1) / TileLength;
+      TilesPerImage = TilesAcross * TilesDown, using ImageWidth (256), TileWidth (322),
+      ImageLength (257), and TileLength (323).
+
+  - id: T6X-056
+    section: "15"
+    heading: "TileWidth"
+    page: 67
+    level: MUST
+    actor: file
+    category: tag
+    conformance: extension
+    tags: [322]
+    statement: >
+      TileWidth (322, SHORT or LONG, count 1) is the number of columns in each tile.
+      TileWidth must be a multiple of 16 (improves performance in some graphics environments
+      and enhances compatibility with compression schemes such as JPEG). Tiles need not be
+      square. No default.
+
+  - id: T6X-057
+    section: "15"
+    heading: "TileWidth"
+    page: 67
+    level: SHOULD
+    actor: writer
+    category: data-layout
+    conformance: extension
+    tags: [322, 323]
+    statement: >
+      It is recommended to choose TileWidth (322) and TileLength (323) so the resulting tiles
+      are about 4K to 32K bytes before compression.
+
+  - id: T6X-058
+    section: "15"
+    heading: "TileLength"
+    page: 67
+    level: MUST
+    actor: file
+    category: tag
+    conformance: extension
+    tags: [323, 278]
+    statement: >
+      TileLength (323, SHORT or LONG, count 1) is the number of rows (height) in each tile.
+      TileLength must be a multiple of 16 (for compatibility with compression schemes such as
+      JPEG). It replaces RowsPerStrip (278) in tiled TIFF files. No default.
+
+  - id: T6X-059
+    section: "15"
+    heading: "TileOffsets"
+    page: 68
+    level: MUST
+    actor: file
+    category: tag
+    conformance: extension
+    tags: [324, 284, 277]
+    statement: >
+      TileOffsets (324, LONG) gives, for each tile, the byte offset (from the beginning of
+      the file) of that tile as compressed and stored on disk. Count = TilesPerImage for
+      PlanarConfiguration (284)=1, or SamplesPerPixel (277)*TilesPerImage for
+      PlanarConfiguration=2. Offsets are ordered left-to-right and top-to-bottom; for
+      PlanarConfiguration=2 all offsets of the first component plane come first, then the
+      second plane, etc. Each tile has an independent location. No default.
+
+  - id: T6X-060
+    section: "15"
+    heading: "TileByteCounts"
+    page: 68
+    level: MUST
+    actor: file
+    category: tag
+    conformance: extension
+    tags: [325, 284, 277]
+    statement: >
+      TileByteCounts (325, SHORT or LONG) gives, for each tile, the number of compressed bytes
+      in that tile. Count = TilesPerImage for PlanarConfiguration (284)=1, or
+      SamplesPerPixel (277)*TilesPerImage for PlanarConfiguration=2, ordered as for
+      TileOffsets (324). No default.
+
+  # ------------------------------------------------------------------
+  # Section 16: CMYK Images
+  # ------------------------------------------------------------------
+  - id: T6X-061
+    section: "16"
+    heading: "CMYK Images"
+    page: 69
+    level: SHOULD-NOT
+    actor: both
+    category: image-class
+    conformance: extension
+    tags: [262]
+    statement: >
+      Separated (usually CMYK) images are device-specific and restricted to color prepress
+      use; they should not be used for general image data interchange, but only for prepress
+      applications where the imagesetter, paper, ink, and printing press characteristics are
+      known by the creator.
+
+  - id: T6X-062
+    section: "16"
+    heading: "Requirements"
+    page: 69
+    level: MUST
+    actor: file
+    category: image-class
+    conformance: extension
+    tags: [277, 258, 262]
+    statement: >
+      A separated (CMYK) TIFF file must satisfy Baseline TIFF requirements plus:
+      SamplesPerPixel (277) = N (number of inks; N=4 for CMYK); BitsPerSample (258) =
+      8 repeated SamplesPerPixel times (only 8-bit components recommended for now);
+      PhotometricInterpretation (262) = 5 (Separated), where larger component values
+      represent higher percentage ink dot coverage.
+
+  - id: T6X-063
+    section: "16"
+    heading: "InkSet"
+    page: 70
+    level: MAY
+    actor: file
+    category: tag
+    conformance: extension
+    tags: [332, 333]
+    statement: >
+      InkSet (332, SHORT, count 1) identifies the set of inks in a separated
+      (PhotometricInterpretation=5) image. 1 = CMYK (component order cyan, magenta, yellow,
+      black; usually 0 = 0% coverage and 255 = 100% coverage, but see DotRange); 2 = not CMYK
+      (see InkNames). Default is 1 (CMYK). The InkNames (333) field should not exist when
+      InkSet=1.
+
+  - id: T6X-064
+    section: "16"
+    heading: "NumberOfInks"
+    page: 70
+    level: MAY
+    actor: file
+    category: tag
+    conformance: extension
+    tags: [334, 277, 338]
+    statement: >
+      NumberOfInks (334, SHORT, count 1) is the number of inks, usually equal to
+      SamplesPerPixel (277) unless there are extra samples (see ExtraSamples (338)). Default
+      is 4.
+
+  - id: T6X-065
+    section: "16"
+    heading: "InkNames"
+    page: 70
+    level: MUST
+    actor: file
+    category: tag
+    conformance: extension
+    tags: [333, 334]
+    statement: >
+      InkNames (333, ASCII) is the name of each ink in a separated (PhotometricInterpretation=5)
+      image, written as concatenated NUL-terminated strings. The count is the total number of
+      characters including the NULs, and the number of strings must equal NumberOfInks (334).
+      The samples are in the same order as the ink names. No default.
+
+  - id: T6X-066
+    section: "16"
+    heading: "DotRange"
+    page: 71
+    level: MUST
+    actor: file
+    category: tag
+    conformance: extension
+    tags: [336, 258]
+    statement: >
+      DotRange (336, BYTE or SHORT, count 2 or 2*SamplesPerPixel) gives the component values
+      corresponding to a 0% dot (DotRange[0]) and a 100% dot (DotRange[1]). If a pair is
+      included per component, values are stored together (Cyan pair first, then Magenta, etc.).
+      DotRange[0] and DotRange[1] must be within [0, (2**BitsPerSample)-1]. Default:
+      DotRange[0]=0 and DotRange[1]=(2**BitsPerSample)-1.
+
+  - id: T6X-067
+    section: "16"
+    heading: "DotRange"
+    page: 71
+    level: SHOULD
+    actor: writer
+    category: tag
+    conformance: extension
+    tags: [336]
+    statement: >
+      Use of multiple dot ranges is strongly discouraged in the interests of simplicity and
+      compatibility with ANSI IT8 standards. A CMYK TIFF writer is strongly recommended not
+      to use DotRange (336) to reverse the sense of pixel values; DotRange[0] should be less
+      than DotRange[1].
+
+  - id: T6X-068
+    section: "16"
+    heading: "TargetPrinter"
+    page: 71
+    level: MAY
+    actor: file
+    category: tag
+    conformance: extension
+    tags: [337]
+    statement: >
+      TargetPrinter (337, ASCII, any count) is a description of the printing environment for
+      which the separation is intended.
+
+  # ------------------------------------------------------------------
+  # Section 17: HalftoneHints
+  # ------------------------------------------------------------------
+  - id: T6X-069
+    section: "17"
+    heading: "HalftoneHints"
+    page: 72
+    level: MAY
+    actor: file
+    category: tag
+    conformance: extension
+    tags: [321]
+    statement: >
+      HalftoneHints (321, SHORT, count 2) conveys the range of gray levels that should retain
+      tonal detail. The first word is the highlight gray level to be halftoned at the lightest
+      printable tint, and the second word is the shadow gray level to be halftoned at the
+      darkest printable tint. The two 16-bit values fit wholly within the field. There is no
+      default value.
+
+  - id: T6X-070
+    section: "17"
+    heading: "HalftoneHints"
+    page: 72
+    level: INFO
+    actor: both
+    category: color
+    conformance: extension
+    tags: [321, 262]
+    statement: >
+      HalftoneHints (321) defines an achromatic function usable with color or monochrome
+      images. With opponent color spaces (CIE L*a*b* or YCbCr) it refers to the achromatic
+      component only (L* or Y); with tri-stimulus spaces such as RGB it suggests retaining
+      tonal detail for colors with an NTSC gray component within the R=G=B=Highlight to
+      R=G=B=Shadow range.
+
+  - id: T6X-071
+    section: "17"
+    heading: "Comments for TIFF Writers"
+    page: 73
+    level: SHOULD
+    actor: writer
+    category: color
+    conformance: extension
+    tags: [321, 258]
+    statement: >
+      TIFF writers are encouraged to include the HalftoneHints (321) field in all color or
+      grayscale images where BitsPerSample (258) > 1.
+
+  - id: T6X-072
+    section: "17"
+    heading: "Comments for TIFF Writers"
+    page: 73
+    level: MUST
+    actor: writer
+    category: color
+    conformance: extension
+    tags: [262, 291, 301]
+    statement: >
+      PhotometricInterpretation (262) value 0 or 1 (grayscale) implies linear data because no
+      gamma is specified; value 2 (RGB) specifies the NTSC gamma of 2.2 as a default. If data
+      is written as something other than the default, a GrayResponseCurve (291) field or a
+      TransferFunction (301) field must be present to define the deviation.
+
+  - id: T6X-073
+    section: "17"
+    heading: "Comments for TIFF Readers"
+    page: 74
+    level: SHOULD
+    actor: reader
+    category: color
+    conformance: extension
+    tags: [321, 291, 301, 258]
+    statement: >
+      To determine highlight and shadow gray levels, a reader should look for a HalftoneHints
+      (321) field first (it takes precedence); otherwise, if the image is colorimetric (has a
+      GrayResponseCurve (291) or TransferFunction (301) field) use gamut mapping; if neither
+      condition holds, treat the file as if HalftoneHints indicated a highlight at gray level 1
+      and a shadow at gray level 2**BitsPerSample-2 (or vice versa depending on
+      PhotometricInterpretation (262)).
+
+  # ------------------------------------------------------------------
+  # Section 18: Associated Alpha Handling
+  # ------------------------------------------------------------------
+  - id: T6X-074
+    section: "18"
+    heading: "Associated Alpha Handling"
+    page: 77
+    level: MUST
+    actor: file
+    category: tag
+    conformance: extension
+    tags: [338, 277, 258]
+    statement: >
+      ExtraSamples (338, SHORT, count 1 in this section) must have a value of 1 (associated
+      alpha data with pre-multiplied color components). The associated alpha data is stored in
+      component SamplesPerPixel-1 (277) of each pixel and contains the pixel's opacity; its
+      size is defined by BitsPerSample (258).
+
+  - id: T6X-075
+    section: "18"
+    heading: "Introduction"
+    page: 77
+    level: MUST
+    actor: writer
+    category: color
+    conformance: extension
+    tags: [338, 262]
+    statement: >
+      When associated alpha data is included with RGB data, the RGB components must be stored
+      premultiplied by the associated alpha component. For each pixel (r,g,b) with opacity A
+      (all in [0,1]), (A*r, A*g, A*b, A) must be stored; component values in
+      [0, 2**BitsPerSample-1] are implicitly mapped onto [0,1]. If A is zero, the color
+      components should be interpreted as zero.
+
+  - id: T6X-076
+    section: "18"
+    heading: "Comments"
+    page: 78
+    level: MUST
+    actor: reader
+    category: data-layout
+    conformance: extension
+    tags: [338, 277, 262]
+    statement: >
+      Because ExtraSamples (338) is independent of the PhotometricInterpretation (262) field,
+      TIFF readers must not derive SamplesPerPixel (277) from PhotometricInterpretation (e.g.
+      assuming SamplesPerPixel is 3 for RGB); the extra alpha component means the actual
+      SamplesPerPixel count must be used.
+
+  - id: T6X-077
+    section: "18"
+    heading: "Comments"
+    page: 78
+    level: INFO
+    actor: both
+    category: color
+    conformance: extension
+    tags: [338, 320]
+    statement: >
+      ExtraSamples associated alpha is independent of the PhotometricInterpretation and data
+      storage fields, so alpha may accompany grayscale or other data. Note that a palette-color
+      image with associated alpha does not have the colormap indices pre-multiplied; rather the
+      RGB ColorMap (320) values are pre-multiplied.
+
+  - id: T6X-078
+    section: "18"
+    heading: "Unassociated Alpha and Transparency Masks"
+    page: 78
+    level: INFO
+    actor: both
+    category: color
+    conformance: extension
+    tags: [338]
+    statement: >
+      Associated alpha (described here) describes fractional opacity/coverage at each pixel and
+      is an integral part of the image, differing from unassociated alpha (transparency masks,
+      soft-edge masks) which describe a boolean 0%/100% coverage relationship and are ancillary.
+
+  # ------------------------------------------------------------------
+  # Section 19: Data Sample Format
+  # ------------------------------------------------------------------
+  - id: T6X-079
+    section: "19"
+    heading: "SampleFormat"
+    page: 80
+    level: MAY
+    actor: file
+    category: tag
+    conformance: extension
+    tags: [339, 258]
+    statement: >
+      SampleFormat (339, SHORT, count SamplesPerPixel) specifies how to interpret each data
+      sample. Values: 1 = unsigned integer; 2 = two's complement signed integer; 3 = IEEE
+      floating point; 4 = undefined data format. It does not specify sample size (BitsPerSample
+      (258) does). Default is 1 (unsigned integer).
+
+  - id: T6X-080
+    section: "19"
+    heading: "SampleFormat"
+    page: 80
+    level: MAY
+    actor: reader
+    category: data-layout
+    conformance: extension
+    tags: [339]
+    statement: >
+      A SampleFormat (339) value of 4 (undefined) is a statement by the writer that it did not
+      know how to interpret the data samples; a reader would typically treat such an image as
+      if the field were not present (i.e. as unsigned integer data).
+
+  - id: T6X-081
+    section: "19"
+    heading: "SMinSampleValue"
+    page: 80
+    level: MAY
+    actor: file
+    category: tag
+    conformance: extension
+    tags: [340, 341]
+    statement: >
+      SMinSampleValue (340, type best matching the sample data, count SamplesPerPixel)
+      specifies the minimum sample value, with one value per data sample. The default for
+      SMinSampleValue and SMaxSampleValue (341) is the full range of the data type.
+
+  - id: T6X-082
+    section: "19"
+    heading: "SMaxSampleValue"
+    page: 81
+    level: MAY
+    actor: file
+    category: tag
+    conformance: extension
+    tags: [341, 340]
+    statement: >
+      SMaxSampleValue (341, type best matching the sample data, count SamplesPerPixel)
+      specifies the maximum sample value, one per data sample. Presence of SMinSampleValue
+      (340) and SMaxSampleValue lets readers assume samples are bound to
+      [SMinSampleValue, SMaxSampleValue] without scanning the image data.
+
+  # ------------------------------------------------------------------
+  # Section 20: RGB Image Colorimetry
+  # ------------------------------------------------------------------
+  - id: T6X-083
+    section: "20"
+    heading: "RGB Image Colorimetry"
+    page: 82
+    level: MUST
+    actor: file
+    category: color
+    conformance: extension
+    tags: [318, 319]
+    statement: >
+      An image has a colorimetric interpretation if and only if both the WhitePoint (318) and
+      PrimaryChromaticities (319) fields are present. An image without these fields will be
+      displayed in an application- and hardware-dependent manner.
+
+  - id: T6X-084
+    section: "20"
+    heading: "WhitePoint"
+    page: 83
+    level: MAY
+    actor: file
+    category: tag
+    conformance: extension
+    tags: [318]
+    statement: >
+      WhitePoint (318, RATIONAL, count 2) is the chromaticity of the white point of the image
+      (when each primary has its ReferenceWhite value), described on the 1931 CIE xy
+      chromaticity diagram, ordered white[x], white[y]. No default.
+
+  - id: T6X-085
+    section: "20"
+    heading: "PrimaryChromaticities"
+    page: 83
+    level: MAY
+    actor: file
+    category: tag
+    conformance: extension
+    tags: [319]
+    statement: >
+      PrimaryChromaticities (319, RATIONAL, count 6) gives the chromaticities of the primaries
+      on the 1931 CIE xy chromaticity diagram, ordered red[x], red[y], green[x], green[y],
+      blue[x], blue[y]. No default.
+
+  - id: T6X-086
+    section: "20"
+    heading: "TransferFunction"
+    page: 84
+    level: MAY
+    actor: file
+    category: tag
+    conformance: extension
+    tags: [301, 258, 342]
+    statement: >
+      TransferFunction (301, SHORT, count {1 or 3}*(1 << BitsPerSample)) describes a transfer
+      function in tabular style, mapping non-linear BitsPerSample (258) pixel components into a
+      16-bit linear form. If N = 1 << BitsPerSample, one table is shared by all channels (all
+      channels must have equal BitsPerSample); if N = 3*(1 << BitsPerSample), there are three
+      separate non-interleaved tables ordered as the PhotometricInterpretation components.
+      Each entry is 16 bits; normally 0 = minimum and 65535 = maximum intensity, unless
+      TransferRange (342) is present.
+
+  - id: T6X-087
+    section: "20"
+    heading: "TransferFunction"
+    page: 84
+    level: MAY
+    actor: both
+    category: color
+    conformance: extension
+    tags: [301, 262]
+    statement: >
+      The TransferFunction (301) can be applied to images with PhotometricInterpretation (262)
+      of RGB, Palette, YCbCr, WhiteIsZero, and BlackIsZero, and is not used with other
+      PhotometricInterpretation types. For WhiteIsZero and BlackIsZero, a TransferFunction
+      value of 0 represents black and 65535 represents white regardless of the photometric
+      sense; this extension is intended to replace the GrayResponseCurve field.
+
+  - id: T6X-088
+    section: "20"
+    heading: "TransferFunction"
+    page: 85
+    level: SHOULD
+    actor: reader
+    category: color
+    conformance: extension
+    tags: [301, 532]
+    statement: >
+      For RGB images with non-default ReferenceBlackWhite (532) coding-range expansion and for
+      YCbCr images, TransferFunction (301) resolution may be insufficient after rounding to
+      index the tables; applications needing extra accuracy should interpolate between table
+      elements, with linear interpolation recommended.
+
+  - id: T6X-089
+    section: "20"
+    heading: "TransferFunction"
+    page: 85
+    level: SHOULD
+    actor: both
+    category: color
+    conformance: extension
+    tags: [301]
+    statement: >
+      The default TransferFunction (301) is a single table (used for each channel)
+      corresponding to the NTSC standard gamma value of 2.2, generated by:
+      NValues = 1 << BitsPerSample; TF[0]=0; for i=1..NValues-1
+      TF[i] = floor(pow(i/(NValues-1.0), 2.2) * 65535 + 0.5).
+
+  - id: T6X-090
+    section: "20"
+    heading: "TransferRange"
+    page: 86
+    level: MAY
+    actor: file
+    category: tag
+    conformance: extension
+    tags: [342, 301, 258]
+    statement: >
+      TransferRange (342, SHORT, count 6) expands the range of the TransferFunction (301). The
+      first value of each pair is TransferBlack and the second is TransferWhite, ordered as the
+      PhotometricInterpretation components. It is defined only for RGB and YCbCr
+      PhotometricInterpretations. Default is [0, NV, 0, NV, 0, NV] where NV =
+      (1 << BitsPerSample) - 1.
+
+  - id: T6X-091
+    section: "20"
+    heading: "ReferenceBlackWhite"
+    page: 86
+    level: MAY
+    actor: file
+    category: tag
+    conformance: extension
+    tags: [532, 262, 258]
+    statement: >
+      ReferenceBlackWhite (532, RATIONAL, count 6) specifies a headroom/footroom pair (code)
+      for each pixel component: the first is ReferenceBlack, the second ReferenceWhite, ordered
+      as the PhotometricInterpretation (262) components. It can be applied to RGB or YCbCr
+      images and is not used with other PhotometricInterpretation values. Default is
+      [0, NV, 0, NV, 0, NV] where NV = 2**BitsPerSample - 1.
+
+  - id: T6X-092
+    section: "20"
+    heading: "ReferenceBlackWhite"
+    page: 86
+    level: INFO
+    actor: both
+    category: color
+    conformance: extension
+    tags: [532]
+    statement: >
+      The full-range component value is converted from the code by
+      FullRangeValue = (code - ReferenceBlack) * CodingRange / (ReferenceWhite -
+      ReferenceBlack). For RGB images and the Y component of YCbCr, CodingRange =
+      2**BitsPerSample - 1; for the Cb and Cr components of YCbCr, CodingRange = 127.
+
+  # ------------------------------------------------------------------
+  # Section 21: YCbCr Images
+  # ------------------------------------------------------------------
+  - id: T6X-093
+    section: "21"
+    heading: "YCbCr Images"
+    page: 89
+    level: MUST
+    actor: file
+    category: image-class
+    conformance: extension
+    tags: [262, 532]
+    statement: >
+      Class Y (YCbCr) images use PhotometricInterpretation (262) = 6 (YCbCr) and have three
+      components: Y (luminance), Cb and Cr (chrominance). ReferenceBlackWhite (532) is required
+      by Class Y; since its default is inappropriate for Class Y, it must be specified
+      explicitly.
+
+  - id: T6X-094
+    section: "21"
+    heading: "YCbCrCoefficients"
+    page: 90
+    level: MAY
+    actor: file
+    category: tag
+    conformance: extension
+    tags: [529]
+    statement: >
+      YCbCrCoefficients (529, RATIONAL, count 3) gives the RGB-to-YCbCr transformation as
+      three luminance coefficients LumaRed, LumaGreen, LumaBlue (proportions of R, G, B in
+      luminance Y). Y = LumaRed*R + LumaGreen*G + LumaBlue*B; Cb = (B-Y)/(2-2*LumaBlue);
+      Cr = (R-Y)/(2-2*LumaRed). Default values are CCIR Recommendation 601-1: 299/1000,
+      587/1000, 114/1000 for LumaRed, LumaGreen, LumaBlue respectively.
+
+  - id: T6X-095
+    section: "21"
+    heading: "YCbCrSubSampling"
+    page: 91
+    level: MAY
+    actor: file
+    category: tag
+    conformance: extension
+    tags: [530]
+    statement: >
+      YCbCrSubSampling (530, SHORT, count 2) specifies chrominance subsampling factors:
+      Short 0 YCbCrSubsampleHoriz (1 = chroma width equals luma width; 2 = half; 4 =
+      one-quarter) and Short 1 YCbCrSubsampleVert (1, 2, or 4, analogously for height). Both Cb
+      and Cr have the same subsampling ratio. Default is [2, 2].
+
+  - id: T6X-096
+    section: "21"
+    heading: "YCbCrSubSampling"
+    page: 91
+    level: MUST
+    actor: file
+    category: data-layout
+    conformance: extension
+    tags: [530]
+    statement: >
+      YCbCrSubsampleVert (YCbCrSubSampling (530) Short 1) must always be less than or equal to
+      YCbCrSubsampleHoriz (Short 0).
+
+  - id: T6X-097
+    section: "21"
+    heading: "YCbCrSubSampling"
+    page: 91
+    level: MUST
+    actor: file
+    category: data-layout
+    conformance: extension
+    tags: [530, 256, 257, 322, 323, 278]
+    statement: >
+      ImageWidth (256) and ImageLength (257) are constrained to be integer multiples of
+      YCbCrSubsampleHoriz and YCbCrSubsampleVert respectively (YCbCrSubSampling (530)).
+      TileWidth (322) and TileLength (323) have the same constraints. RowsPerStrip (278) must
+      be an integer multiple of YCbCrSubsampleVert.
+
+  - id: T6X-098
+    section: "21"
+    heading: "YCbCrPositioning"
+    page: 92
+    level: MAY
+    actor: file
+    category: tag
+    conformance: extension
+    tags: [531]
+    statement: >
+      YCbCrPositioning (531, SHORT, count 1) specifies the positioning of subsampled
+      chrominance samples relative to luminance samples. 1 = centered
+      (Xoffset[0,0] = ChromaSubsampleHoriz/2 - 0.5, Yoffset[0,0] = ChromaSubsampleVert/2 - 0.5);
+      2 = cosited (Xoffset[0,0] = 0, Yoffset[0,0] = 0). Default is 1 (centered).
+
+  - id: T6X-099
+    section: "21"
+    heading: "YCbCrPositioning"
+    page: 92
+    level: MUST
+    actor: both
+    category: color
+    conformance: extension
+    tags: [531]
+    statement: >
+      YCbCrPositioning (531) value 1 (centered) must be specified for compatibility with
+      industry standards such as PostScript Level 2 and QuickTime; value 2 (cosited) must be
+      specified for compatibility with most digital video standards such as CCIR
+      Recommendation 601-1.
+
+  - id: T6X-100
+    section: "21"
+    heading: "Ordering of Component Samples"
+    page: 93
+    level: MUST
+    actor: file
+    category: data-layout
+    conformance: extension
+    tags: [284, 530]
+    statement: >
+      For PlanarConfiguration (284) = 1 (interleaved), YCbCr component samples are stored in
+      data units, each consisting of ChromaSubsampleVert rows of ChromaSubsampleHoriz Y
+      samples, followed by one Cb sample and one Cr sample. For PlanarConfiguration = 2, the
+      three components are stored as separate planes ordered as for other
+      PhotometricInterpretation values.
+
+  - id: T6X-101
+    section: "21"
+    heading: "Minimum Requirements for YCbCr Images"
+    page: 94
+    level: MUST
+    actor: file
+    category: image-class
+    conformance: extension
+    tags: [277, 258, 259, 262, 532]
+    statement: >
+      In addition to Baseline TIFF requirements, a YCbCr file must have: SamplesPerPixel (277)
+      = 3; BitsPerSample (258) = 8,8,8; Compression (259) = none (1), LZW (5), or JPEG (6);
+      PhotometricInterpretation (262) = 6 (YCbCr); and ReferenceBlackWhite (532) = 6 RATIONALs
+      specifying reference black and white values. If the conversion from RGB is not according
+      to CCIR Recommendation 601-1, YCbCrCoefficients (529) must be coded.
+
+  # ------------------------------------------------------------------
+  # Section 22: JPEG Compression
+  # ------------------------------------------------------------------
+  - id: T6X-102
+    section: "22"
+    heading: "JPEG Compression"
+    page: 103
+    level: INFO
+    actor: file
+    category: compression
+    conformance: extension
+    tags: [259, 262]
+    statement: >
+      Compression (259) = 6 selects JPEG. JPEG is effective only on continuous-tone color
+      spaces: Grayscale (PhotometricInterpretation (262)=1), RGB (2), CMYK (5), and YCbCr (6).
+      Only the JPEG baseline sequential process and the lossless process with Huffman coding
+      are supported by this version of TIFF (arithmetic entropy coding is not supported).
+
+  - id: T6X-103
+    section: "22"
+    heading: "Strips and Tiles"
+    page: 103
+    level: MUST
+    actor: file
+    category: compression
+    conformance: extension
+    tags: [273, 324, 515]
+    statement: >
+      For multiple strips or tiles in JPEG compressed images, restart markers delineate restart
+      intervals that reset the coding state to default values. TIFF strip and tile offsets
+      (StripOffsets (273)/TileOffsets (324)) shall always point to the start of a restart
+      interval; equivalently, each strip or tile contains an integral number of restart
+      intervals. Restart markers need not be present; they are implicitly coded at the start of
+      every strip or tile.
+
+  - id: T6X-104
+    section: "22"
+    heading: "Strips and Tiles"
+    page: 103
+    level: INFO
+    actor: file
+    category: compression
+    conformance: extension
+    tags: [513, 273, 324]
+    statement: >
+      A JPEG interchange-format bitstream can be converted to TIFF by defining a single strip
+      or tile for the entire image and concatenating TIFF image fields to the JPEG data; the
+      strip or tile offset points directly to the start of the entropy-coded data (not to a
+      JPEG marker).
+
+  - id: T6X-105
+    section: "22"
+    heading: "Strips and Tiles"
+    page: 104
+    level: MUST
+    actor: file
+    category: compression
+    conformance: extension
+    tags: [322, 323, 256, 513]
+    statement: >
+      When the tile width is shorter than the image width and the JPEGInterchangeFormat (513)
+      field is present and non-zero, the tile height (TileLength (323)) must be equal to the
+      height of one JPEG Minimum Coded Unit (MCU). This ensures TIFF files can be converted to
+      JPEG interchange format without decompression.
+
+  - id: T6X-106
+    section: "22"
+    heading: "PlanarConfiguration"
+    page: 102
+    level: INFO
+    actor: file
+    category: compression
+    conformance: extension
+    tags: [284]
+    statement: >
+      PlanarConfiguration (284) specifies whether the compressed JPEG data is interleaved. For
+      any JPEG DCT-based process, the interleaved data units are coded 8x8 blocks rather than
+      component samples.
+
+  - id: T6X-107
+    section: "22"
+    heading: "JPEGProc"
+    page: 104
+    level: MUST
+    actor: file
+    category: tag
+    conformance: extension
+    tags: [512, 259]
+    statement: >
+      JPEGProc (512, SHORT, count 1) indicates the JPEG process used, with values consistent
+      with ISO DIS 10918-2: 1 = Baseline sequential process; 14 = Lossless process with
+      Huffman coding. This field is mandatory whenever Compression (259) is JPEG (no default).
+      When the lossless process (14) is selected, the Huffman tables are specified by
+      JPEGDCTables (520) and JPEGACTables (521) is not used.
+
+  - id: T6X-108
+    section: "22"
+    heading: "JPEGInterchangeFormat"
+    page: 105
+    level: MAY
+    actor: file
+    category: tag
+    conformance: extension
+    tags: [513]
+    statement: >
+      JPEGInterchangeFormat (513, LONG, count 1) indicates whether a JPEG interchange-format
+      bitstream is present; if present, it points to the Start of Image (SOI) marker code. If
+      this field is zero or not present, no JPEG interchange-format bitstream is present.
+
+  - id: T6X-109
+    section: "22"
+    heading: "JPEGInterchangeFormatLength"
+    page: 105
+    level: MAY
+    actor: file
+    category: tag
+    conformance: extension
+    tags: [514, 513]
+    statement: >
+      JPEGInterchangeFormatLength (514, LONG, count 1) indicates the length in bytes of the
+      JPEG interchange-format bitstream. It is relevant only if JPEGInterchangeFormat (513) is
+      present and non-zero.
+
+  - id: T6X-110
+    section: "22"
+    heading: "JPEGRestartInterval"
+    page: 105
+    level: MAY
+    actor: file
+    category: tag
+    conformance: extension
+    tags: [515]
+    statement: >
+      JPEGRestartInterval (515, SHORT, count 1) indicates the number of Minimum Coded Units
+      (MCUs) between restart markers. If this field is zero or not present, the compressed data
+      does not contain restart markers.
+
+  - id: T6X-111
+    section: "22"
+    heading: "JPEGLosslessPredictors"
+    page: 106
+    level: MUST
+    actor: file
+    category: tag
+    conformance: extension
+    tags: [517, 512]
+    statement: >
+      JPEGLosslessPredictors (517, SHORT, count SamplesPerPixel) lists a lossless
+      predictor-selection value per component: 1=A, 2=B, 3=C, 4=A+B-C, 5=A+((B-C)/2),
+      6=B+((A-C)/2), 7=(A+B)/2, where A, B, C are the samples to the left, above, and
+      diagonally left-above. This field is mandatory whenever JPEGProc (512) specifies a
+      lossless process (no default).
+
+  - id: T6X-112
+    section: "22"
+    heading: "JPEGPointTransforms"
+    page: 106
+    level: MAY
+    actor: file
+    category: tag
+    conformance: extension
+    tags: [518, 512]
+    statement: >
+      JPEGPointTransforms (518, SHORT, count SamplesPerPixel) lists a point-transform value per
+      component, relevant only for lossless processes. If nonzero for a component, the input is
+      divided by 2**Pt before lossless coding and the decoder output is rescaled by multiplying
+      by 2**Pt. Default is 0 for each component (no scaling).
+
+  - id: T6X-113
+    section: "22"
+    heading: "JPEGQTables"
+    page: 107
+    level: MUST
+    actor: file
+    category: tag
+    conformance: extension
+    tags: [519, 512]
+    statement: >
+      JPEGQTables (519, LONG, count SamplesPerPixel) lists offsets to quantization tables, one
+      per component; each table is 64 BYTES (one per DCT coefficient) stored in zigzag order.
+      This field is mandatory whenever JPEGProc (512) specifies a DCT-based process (no
+      default).
+
+  - id: T6X-114
+    section: "22"
+    heading: "JPEGDCTables"
+    page: 107
+    level: MUST
+    actor: file
+    category: tag
+    conformance: extension
+    tags: [520, 512]
+    statement: >
+      JPEGDCTables (520, LONG, count SamplesPerPixel) lists offsets to the DC Huffman tables
+      (or the lossless Huffman tables), one per component. Each table is 16 BYTES of "BITS"
+      (number of codes of lengths 1 to 16) followed by up to 17 BYTES of "VALUES". This field
+      is mandatory for all JPEG processes (no default).
+
+  - id: T6X-115
+    section: "22"
+    heading: "JPEGACTables"
+    page: 107
+    level: MUST
+    actor: file
+    category: tag
+    conformance: extension
+    tags: [521, 512]
+    statement: >
+      JPEGACTables (521, LONG, count SamplesPerPixel) lists offsets to the AC Huffman tables,
+      one per component. Each table is 16 BYTES of "BITS" (number of codes of lengths 1 to 16)
+      followed by up to 256 BYTES of "VALUES". This field is mandatory whenever JPEGProc (512)
+      specifies a DCT-based process (no default).
+
+  - id: T6X-116
+    section: "22"
+    heading: "JPEG Fields"
+    page: 107
+    level: SHOULD
+    actor: writer
+    category: compression
+    conformance: extension
+    tags: [519, 520, 521]
+    statement: >
+      It is strongly recommended that, within the TIFF file, each component be assigned
+      separate JPEG quantization tables (JPEGQTables 519), DC Huffman tables (JPEGDCTables 520),
+      and AC Huffman tables (JPEGACTables 521).
+
+  - id: T6X-117
+    section: "22"
+    heading: "Minimum Requirements for TIFF with JPEG Compression"
+    page: 108
+    level: MUST
+    actor: file
+    category: image-class
+    conformance: extension
+    tags: [254, 256, 257, 258, 259, 262, 277, 282, 283, 284, 296, 322, 323, 324, 325, 512, 519, 520, 521]
+    statement: >
+      A tiled TIFF file containing Baseline-process JPEG data must include: NewSubfileType
+      (254)=0, ImageWidth (256), ImageLength (257), BitsPerSample (258)=8 per sample,
+      Compression (259)=6, PhotometricInterpretation (262) (0/1 mono, 2 RGB, 5 CMYK, 6 YCbCr),
+      SamplesPerPixel (277) (1 mono, 3 RGB/YCbCr, 4 CMYK), XResolution (282), YResolution
+      (283), PlanarConfiguration (284), ResolutionUnit (296), TileWidth (322) and TileLength
+      (323) (each a multiple of 8), TileOffsets (324), TileByteCounts (325), JPEGProc (512)=1,
+      JPEGQTables (519), JPEGDCTables (520), and JPEGACTables (521).
+    notes: >
+      The minimum-requirements table gives TileWidth/TileLength as "Multiple of 8", whereas the
+      Tiled Images section (T6X-056/T6X-058) requires TileWidth and TileLength to be a multiple
+      of 16. This is an internal inconsistency in the document.
+
+  - id: T6X-118
+    section: "22"
+    heading: "JPEG Compression"
+    page: 95
+    level: INFO
+    actor: both
+    category: compression
+    conformance: extension
+    statement: >
+      The JPEG baseline process accepts only images with 8 bits per component; images with
+      fewer than 8 bits per component may be compressed by left-justifying each input component
+      within a byte before compression. Before the forward DCT, input pixels are level-shifted
+      to range -128 to +127 and transformed in 8x8 blocks. The baseline process provides for up
+      to 4 quantization tables. The JPEG lossless processes support 2 to 16 bits per component,
+      compute prediction differences modulo 2**16, and extend the DC Huffman table to 17
+      entries.
+
+  # ------------------------------------------------------------------
+  # Section 23: CIE L*a*b* Images
+  # ------------------------------------------------------------------
+  - id: T6X-119
+    section: "23"
+    heading: "CIE L*a*b* Images"
+    page: 110
+    level: MAY
+    actor: file
+    category: image-class
+    conformance: extension
+    tags: [262]
+    statement: >
+      PhotometricInterpretation (262) = 8 selects 1976 CIE L*a*b*, a colorimetric,
+      approximately perceptually uniform color space with separate lightness (L*) and chroma
+      (a*, b*) channels.
+
+  - id: T6X-120
+    section: "23"
+    heading: "The TIFF CIELAB Fields"
+    page: 111
+    level: MUST
+    actor: file
+    category: image-class
+    conformance: extension
+    tags: [262, 258, 277, 338, 259]
+    statement: >
+      For CIE L*a*b* (PhotometricInterpretation (262)=8) images: BitsPerSample (258) = 8 per
+      component; SamplesPerPixel (277) minus ExtraSamples (338) = 3 for L*a*b* (1 implies L*
+      only, monochrome). Each quantity is encoded in 8 bits, giving 256 levels of L* (range
+      0-100) and 256 levels (+/- 127) each of a* and b* (signed 8-bit, range -127 to +127).
+      Compression is the same as other multi-bit formats, and JPEG compression applies.
+
+  - id: T6X-121
+    section: "23"
+    heading: "The TIFF CIELAB Fields"
+    page: 111
+    level: INFO
+    actor: file
+    category: color
+    conformance: extension
+    tags: [318, 319, 301]
+    statement: >
+      For CIE L*a*b* images, WhitePoint (318), PrimaryChromaticities (319), and
+      TransferFunction (301) do not apply. The reference white is the perfect reflecting
+      diffuser. PlanarConfiguration may be chunky or planar, and alpha channel information
+      follows the lead of other data types.
+
+  # ------------------------------------------------------------------
+  # Part 3: Appendices
+  # ------------------------------------------------------------------
+  - id: T6X-122
+    section: "Part 3"
+    heading: "Appendices"
+    page: 116
+    level: INFO
+    actor: both
+    category: metadata
+    conformance: extension
+    statement: >
+      Part 3 (Appendices) contains additional information that is not part of the TIFF
+      specification but may be of use to developers.
+
+  - id: T6X-123
+    section: "Appendix B"
+    heading: "Operating System Considerations - Extensions and Filetypes"
+    page: 119
+    level: SHOULD
+    actor: both
+    category: metadata
+    conformance: extension
+    statement: >
+      The recommended MS-DOS, UNIX, and OS/2 file extension for TIFF files is ".TIF". On an
+      Apple Macintosh, the recommended Filetype is "TIFF"; it is a good idea to also use a
+      ".TIF" extension so files can be imported easily if transferred to another operating
+      system.
+
+tags:
+  - code: 259
+    hex: "0x0103"
+    name: Compression
+    types: [SHORT]
+    count: "1"
+    default: 1
+    required: no
+    conformance: extension
+    section: "11, 22"
+    page: 49
+    description: >
+      Compression scheme used on the image data. Part 2 adds extension values 3 (CCITT T.4/
+      Group 3), 4 (CCITT T.6/Group 4), 5 (LZW), and 6 (JPEG) to the baseline values.
+    values:
+      3: "CCITT T.4 bi-level encoding (Group 3 fax); see T4Options (292)"
+      4: "CCITT T.6 bi-level encoding (Group 4 fax); see T6Options (293)"
+      5: "LZW compression"
+      6: "JPEG compression"
+    interacts_with: [262, 266, 292, 293, 317, 512]
+
+  - code: 262
+    hex: "0x0106"
+    name: PhotometricInterpretation
+    types: [SHORT]
+    count: "1"
+    default: null
+    required: conditional
+    conformance: extension
+    section: "16, 21, 23"
+    page: 69
+    description: >
+      Color space of the image. Part 2 adds extension values 5 (Separated/CMYK), 6 (YCbCr),
+      and 8 (1976 CIE L*a*b*).
+    values:
+      5: "Separated - usually CMYK; larger values = higher ink dot coverage"
+      6: "YCbCr color space"
+      8: "1976 CIE L*a*b*"
+    interacts_with: [258, 277, 332, 529, 530, 531, 532, 301, 342, 338]
+
+  - code: 266
+    hex: "0x010A"
+    name: FillOrder
+    types: [SHORT]
+    count: "1"
+    default: 1
+    required: no
+    conformance: extension
+    section: "11"
+    page: 50
+    description: >
+      Logical order of bits within a byte. For CCITT encodings should be explicitly specified;
+      FillOrder=1 recommended for interchange, FillOrder=2 only for localized/transient
+      facsimile material. LZW assumes FillOrder=1.
+    interacts_with: [259]
+
+  - code: 269
+    hex: "0x010D"
+    name: DocumentName
+    types: [ASCII]
+    count: "any"
+    default: null
+    required: no
+    conformance: extension
+    section: "12"
+    page: 55
+    description: >
+      Name of the document from which the image was scanned.
+    interacts_with: [285]
+
+  - code: 285
+    hex: "0x011D"
+    name: PageName
+    types: [ASCII]
+    count: "any"
+    default: null
+    required: no
+    conformance: extension
+    section: "12"
+    page: 55
+    description: >
+      Name of the page from which the image was scanned. No default.
+    interacts_with: [269]
+
+  - code: 286
+    hex: "0x011E"
+    name: XPosition
+    types: [RATIONAL]
+    count: "1"
+    default: null
+    required: no
+    conformance: extension
+    section: "12"
+    page: 55
+    description: >
+      X offset in ResolutionUnits of the left side of the image relative to the left of the
+      page. No default.
+    interacts_with: [287, 296]
+
+  - code: 287
+    hex: "0x011F"
+    name: YPosition
+    types: [RATIONAL]
+    count: "1"
+    default: null
+    required: no
+    conformance: extension
+    section: "12"
+    page: 56
+    description: >
+      Y offset in ResolutionUnits of the top of the image relative to the top of the page.
+      Positive Y is down, so always positive. No default.
+    interacts_with: [286, 296]
+
+  - code: 292
+    hex: "0x0124"
+    name: T4Options
+    types: [LONG]
+    count: "1"
+    default: 0
+    required: conditional
+    conformance: extension
+    section: "11"
+    page: 51
+    description: >
+      32 flag bits for CCITT T.4 (Group 3) encoding (used with Compression=3). Unused bits
+      must be 0.
+    values:
+      0: "Bit 0 = 2-dimensional coding (else 1-D)"
+      1: "Bit 1 = uncompressed mode used"
+      2: "Bit 2 = fill bits added so EOL always ends on a byte boundary"
+    interacts_with: [259, 278]
+
+  - code: 293
+    hex: "0x0125"
+    name: T6Options
+    types: [LONG]
+    count: "1"
+    default: 0
+    required: conditional
+    conformance: extension
+    section: "11"
+    page: 52
+    description: >
+      32 flag bits for CCITT T.6 (Group 4) encoding (used with Compression=4). Formerly named
+      Group4Options. Bit 0 unused (always 0); unused bits must be 0.
+    values:
+      1: "Bit 1 = uncompressed mode allowed in the encoding"
+    interacts_with: [259]
+
+  - code: 297
+    hex: "0x0129"
+    name: PageNumber
+    types: [SHORT]
+    count: "2"
+    default: null
+    required: no
+    conformance: extension
+    section: "12"
+    page: 55
+    description: >
+      PageNumber[0] = page number (first page 0); PageNumber[1] = total pages (0 if unknown).
+      Pages need not be in order. No default.
+
+  - code: 301
+    hex: "0x012D"
+    name: TransferFunction
+    types: [SHORT]
+    count: "{1 or 3} * (1 << BitsPerSample)"
+    default: "single table for NTSC gamma 2.2"
+    required: no
+    conformance: extension
+    section: "20"
+    page: 84
+    description: >
+      Tabular transfer function mapping non-linear pixel components to a 16-bit linear form.
+      One shared table or three per-channel tables. Applies to RGB, Palette, YCbCr,
+      WhiteIsZero, and BlackIsZero. Replaces GrayResponseCurve for grayscale.
+    interacts_with: [258, 262, 342, 532, 320]
+
+  - code: 317
+    hex: "0x013D"
+    name: Predictor
+    types: [SHORT]
+    count: "1"
+    default: 1
+    required: no
+    conformance: extension
+    section: "14"
+    page: 64
+    description: >
+      Mathematical operator applied before encoding (currently only with LZW).
+    values:
+      1: "No prediction scheme used before coding"
+      2: "Horizontal differencing"
+    interacts_with: [259, 284, 277, 258]
+
+  - code: 318
+    hex: "0x013E"
+    name: WhitePoint
+    types: [RATIONAL]
+    count: "2"
+    default: null
+    required: conditional
+    conformance: extension
+    section: "20"
+    page: 83
+    description: >
+      Chromaticity of the image white point on the 1931 CIE xy diagram (white[x], white[y]).
+      No default. Required together with PrimaryChromaticities for a colorimetric image.
+    interacts_with: [319]
+
+  - code: 319
+    hex: "0x013F"
+    name: PrimaryChromaticities
+    types: [RATIONAL]
+    count: "6"
+    default: null
+    required: conditional
+    conformance: extension
+    section: "20"
+    page: 83
+    description: >
+      Chromaticities of the primaries on the 1931 CIE xy diagram, ordered red[x], red[y],
+      green[x], green[y], blue[x], blue[y]. No default.
+    interacts_with: [318]
+
+  - code: 321
+    hex: "0x0141"
+    name: HalftoneHints
+    types: [SHORT]
+    count: "2"
+    default: null
+    required: no
+    conformance: extension
+    section: "17"
+    page: 72
+    description: >
+      Two 16-bit values: highlight gray level (to render at lightest printable tint) and shadow
+      gray level (darkest printable tint) that should retain tonal detail. No default.
+    interacts_with: [262, 258, 291, 301]
+
+  - code: 322
+    hex: "0x0142"
+    name: TileWidth
+    types: [SHORT, LONG]
+    count: "1"
+    default: null
+    required: conditional
+    conformance: extension
+    section: "15"
+    page: 67
+    description: >
+      Number of columns in each tile. Must be a multiple of 16. Required for tiled images. No
+      default.
+    interacts_with: [323, 324, 325, 256]
+
+  - code: 323
+    hex: "0x0143"
+    name: TileLength
+    types: [SHORT, LONG]
+    count: "1"
+    default: null
+    required: conditional
+    conformance: extension
+    section: "15"
+    page: 67
+    description: >
+      Number of rows (height) in each tile. Must be a multiple of 16. Replaces RowsPerStrip in
+      tiled files. Required for tiled images. No default.
+    interacts_with: [322, 324, 325, 257, 278]
+
+  - code: 324
+    hex: "0x0144"
+    name: TileOffsets
+    types: [LONG]
+    count: "TilesPerImage (PlanarConfiguration=1) or SamplesPerPixel*TilesPerImage (PlanarConfiguration=2)"
+    default: null
+    required: conditional
+    conformance: extension
+    section: "15"
+    page: 68
+    description: >
+      Byte offset of each compressed tile from the start of the file, ordered left-to-right and
+      top-to-bottom (planes consecutive for PlanarConfiguration=2). Required for tiled images.
+      No default.
+    interacts_with: [322, 323, 325, 284, 277]
+
+  - code: 325
+    hex: "0x0145"
+    name: TileByteCounts
+    types: [SHORT, LONG]
+    count: "TilesPerImage (PlanarConfiguration=1) or SamplesPerPixel*TilesPerImage (PlanarConfiguration=2)"
+    default: null
+    required: conditional
+    conformance: extension
+    section: "15"
+    page: 68
+    description: >
+      Number of compressed bytes in each tile, ordered as for TileOffsets. Required for tiled
+      images. No default.
+    interacts_with: [322, 323, 324, 284, 277]
+
+  - code: 332
+    hex: "0x014C"
+    name: InkSet
+    types: [SHORT]
+    count: "1"
+    default: 1
+    required: no
+    conformance: extension
+    section: "16"
+    page: 70
+    description: >
+      Set of inks used in a separated (PhotometricInterpretation=5) image.
+    values:
+      1: "CMYK (order cyan, magenta, yellow, black); InkNames should not exist"
+      2: "not CMYK; see InkNames"
+    interacts_with: [262, 333, 334]
+
+  - code: 333
+    hex: "0x014D"
+    name: InkNames
+    types: [ASCII]
+    count: "total characters in all ink name strings, including NULs"
+    default: null
+    required: conditional
+    conformance: extension
+    section: "16"
+    page: 70
+    description: >
+      Concatenated NUL-terminated names of each ink; number of strings must equal
+      NumberOfInks. No default.
+    interacts_with: [332, 334]
+
+  - code: 334
+    hex: "0x014E"
+    name: NumberOfInks
+    types: [SHORT]
+    count: "1"
+    default: 4
+    required: no
+    conformance: extension
+    section: "16"
+    page: 70
+    description: >
+      Number of inks, usually equal to SamplesPerPixel unless there are extra samples.
+    interacts_with: [277, 333, 338]
+
+  - code: 336
+    hex: "0x0150"
+    name: DotRange
+    types: [BYTE, SHORT]
+    count: "2 or 2*SamplesPerPixel"
+    default: "[0, (2**BitsPerSample)-1]"
+    required: no
+    conformance: extension
+    section: "16"
+    page: 71
+    description: >
+      Component values corresponding to a 0% dot (DotRange[0]) and 100% dot (DotRange[1]).
+      Both must be within [0, (2**BitsPerSample)-1]; DotRange[0] should be less than
+      DotRange[1]. Multiple dot ranges strongly discouraged.
+    interacts_with: [258, 262]
+
+  - code: 337
+    hex: "0x0151"
+    name: TargetPrinter
+    types: [ASCII]
+    count: "any"
+    default: null
+    required: no
+    conformance: extension
+    section: "16"
+    page: 71
+    description: >
+      Description of the printing environment for which the separation is intended.
+
+  - code: 338
+    hex: "0x0152"
+    name: ExtraSamples
+    types: [BYTE, SHORT]
+    count: "number of extra components per pixel"
+    default: null
+    required: no
+    conformance: extension
+    section: "18"
+    page: 77
+    description: >
+      Describes extra components. In Section 18 the value 1 = associated alpha data with
+      pre-multiplied color components, stored in component SamplesPerPixel-1. Independent of
+      PhotometricInterpretation.
+    values:
+      1: "Associated alpha data (with pre-multiplied color)"
+    interacts_with: [277, 258, 262, 320, 334]
+    notes: >
+      Appendix A lists ExtraSamples as type BYTE; Section 18 describes it as Type = SHORT.
+      Inconsistency in the document.
+
+  - code: 339
+    hex: "0x0153"
+    name: SampleFormat
+    types: [SHORT]
+    count: "SamplesPerPixel"
+    default: 1
+    required: no
+    conformance: extension
+    section: "19"
+    page: 80
+    description: >
+      How to interpret each data sample; does not specify sample size (BitsPerSample does).
+    values:
+      1: "unsigned integer data"
+      2: "two's complement signed integer data"
+      3: "IEEE floating point data"
+      4: "undefined data format"
+    interacts_with: [258, 340, 341]
+
+  - code: 340
+    hex: "0x0154"
+    name: SMinSampleValue
+    types: [BYTE, SHORT, LONG, RATIONAL, SBYTE, UNDEFINED, SSHORT, SLONG, SRATIONAL, FLOAT, DOUBLE]
+    count: "SamplesPerPixel"
+    default: "full range of the data type"
+    required: no
+    conformance: extension
+    section: "19"
+    page: 80
+    description: >
+      Minimum sample value, one per data sample. Type is whichever best matches the sample
+      data.
+    interacts_with: [339, 341]
+
+  - code: 341
+    hex: "0x0155"
+    name: SMaxSampleValue
+    types: [BYTE, SHORT, LONG, RATIONAL, SBYTE, UNDEFINED, SSHORT, SLONG, SRATIONAL, FLOAT, DOUBLE]
+    count: "SamplesPerPixel"
+    default: "full range of the data type"
+    required: no
+    conformance: extension
+    section: "19"
+    page: 81
+    description: >
+      Maximum sample value, one per data sample. Type is whichever best matches the sample
+      data.
+    interacts_with: [339, 340]
+
+  - code: 342
+    hex: "0x0156"
+    name: TransferRange
+    types: [SHORT]
+    count: "6"
+    default: "[0, NV, 0, NV, 0, NV] where NV = (1<<BitsPerSample)-1"
+    required: no
+    conformance: extension
+    section: "20"
+    page: 86
+    description: >
+      Expands the range of the TransferFunction. Each pair is (TransferBlack, TransferWhite),
+      ordered as PhotometricInterpretation components. Defined only for RGB and YCbCr.
+    interacts_with: [301, 262, 258]
+
+  - code: 512
+    hex: "0x0200"
+    name: JPEGProc
+    types: [SHORT]
+    count: "1"
+    default: null
+    required: conditional
+    conformance: extension
+    section: "22"
+    page: 104
+    description: >
+      JPEG process used. Mandatory whenever Compression is JPEG (no default).
+    values:
+      1: "Baseline sequential process"
+      14: "Lossless process with Huffman coding"
+    interacts_with: [259, 517, 518, 519, 520, 521]
+
+  - code: 513
+    hex: "0x0201"
+    name: JPEGInterchangeFormat
+    types: [LONG]
+    count: "1"
+    default: null
+    required: no
+    conformance: extension
+    section: "22"
+    page: 105
+    description: >
+      If non-zero, points to the SOI marker of a JPEG interchange-format bitstream in the file;
+      zero or absent means none present.
+    interacts_with: [514, 322, 323]
+
+  - code: 514
+    hex: "0x0202"
+    name: JPEGInterchangeFormatLength
+    types: [LONG]
+    count: "1"
+    default: null
+    required: no
+    conformance: extension
+    section: "22"
+    page: 105
+    description: >
+      Length in bytes of the JPEG interchange-format bitstream. Relevant only if
+      JPEGInterchangeFormat is present and non-zero.
+    interacts_with: [513]
+
+  - code: 515
+    hex: "0x0203"
+    name: JPEGRestartInterval
+    types: [SHORT]
+    count: "1"
+    default: null
+    required: no
+    conformance: extension
+    section: "22"
+    page: 105
+    description: >
+      Number of MCUs between restart markers. Zero or absent means no restart markers in the
+      compressed data.
+    interacts_with: [273, 324]
+
+  - code: 517
+    hex: "0x0205"
+    name: JPEGLosslessPredictors
+    types: [SHORT]
+    count: "SamplesPerPixel"
+    default: null
+    required: conditional
+    conformance: extension
+    section: "22"
+    page: 106
+    description: >
+      Lossless predictor-selection value per component (1..7). Mandatory whenever JPEGProc
+      specifies a lossless process (no default).
+    values:
+      1: "A (left)"
+      2: "B (above)"
+      3: "C (diagonal left-above)"
+      4: "A+B-C"
+      5: "A+((B-C)/2)"
+      6: "B+((A-C)/2)"
+      7: "(A+B)/2"
+    interacts_with: [512, 518]
+
+  - code: 518
+    hex: "0x0206"
+    name: JPEGPointTransforms
+    types: [SHORT]
+    count: "SamplesPerPixel"
+    default: 0
+    required: no
+    conformance: extension
+    section: "22"
+    page: 106
+    description: >
+      Point-transform value per component (lossless only). Nonzero divides input by 2**Pt
+      before coding; decoder rescales by 2**Pt. Default 0 (no scaling).
+    interacts_with: [512, 517]
+
+  - code: 519
+    hex: "0x0207"
+    name: JPEGQTables
+    types: [LONG]
+    count: "SamplesPerPixel"
+    default: null
+    required: conditional
+    conformance: extension
+    section: "22"
+    page: 107
+    description: >
+      Offsets to quantization tables, one per component; each table is 64 BYTES in zigzag
+      order. Mandatory for DCT-based processes (no default).
+    interacts_with: [512]
+
+  - code: 520
+    hex: "0x0208"
+    name: JPEGDCTables
+    types: [LONG]
+    count: "SamplesPerPixel"
+    default: null
+    required: conditional
+    conformance: extension
+    section: "22"
+    page: 107
+    description: >
+      Offsets to DC (or lossless) Huffman tables, one per component; each table is 16 BYTES of
+      BITS plus up to 17 BYTES of VALUES. Mandatory for all JPEG processes (no default).
+    interacts_with: [512]
+
+  - code: 521
+    hex: "0x0209"
+    name: JPEGACTables
+    types: [LONG]
+    count: "SamplesPerPixel"
+    default: null
+    required: conditional
+    conformance: extension
+    section: "22"
+    page: 107
+    description: >
+      Offsets to AC Huffman tables, one per component; each table is 16 BYTES of BITS plus up
+      to 256 BYTES of VALUES. Mandatory for DCT-based processes (no default).
+    interacts_with: [512]
+
+  - code: 529
+    hex: "0x0211"
+    name: YCbCrCoefficients
+    types: [RATIONAL]
+    count: "3"
+    default: "299/1000, 587/1000, 114/1000 (CCIR 601-1)"
+    required: no
+    conformance: extension
+    section: "21"
+    page: 90
+    description: >
+      RGB-to-YCbCr luminance coefficients LumaRed, LumaGreen, LumaBlue used to compute Y.
+    interacts_with: [262, 532]
+
+  - code: 530
+    hex: "0x0212"
+    name: YCbCrSubSampling
+    types: [SHORT]
+    count: "2"
+    default: "[2, 2]"
+    required: no
+    conformance: extension
+    section: "21"
+    page: 91
+    description: >
+      Chrominance subsampling factors: Short 0 = YCbCrSubsampleHoriz, Short 1 =
+      YCbCrSubsampleVert (each 1, 2, or 4). SubsampleVert must be <= SubsampleHoriz.
+    values:
+      1: "chroma dimension equal to luma dimension"
+      2: "chroma dimension half of luma dimension"
+      4: "chroma dimension one-quarter of luma dimension"
+    interacts_with: [262, 256, 257, 322, 323, 278]
+
+  - code: 531
+    hex: "0x0213"
+    name: YCbCrPositioning
+    types: [SHORT]
+    count: "1"
+    default: 1
+    required: no
+    conformance: extension
+    section: "21"
+    page: 92
+    description: >
+      Positioning of subsampled chrominance samples relative to luminance samples.
+    values:
+      1: "centered (for PostScript Level 2, QuickTime compatibility)"
+      2: "cosited (for CCIR 601-1 and most digital video)"
+    interacts_with: [262, 530]
+
+  - code: 532
+    hex: "0x0214"
+    name: ReferenceBlackWhite
+    types: [RATIONAL, LONG]
+    count: "6 (2*SamplesPerPixel)"
+    default: "[0, NV, 0, NV, 0, NV] where NV = 2**BitsPerSample - 1"
+    required: conditional
+    conformance: extension
+    section: "20, 21"
+    page: 86
+    description: >
+      Headroom/footroom code pairs (ReferenceBlack, ReferenceWhite) per component, ordered as
+      PhotometricInterpretation components. Applies to RGB and YCbCr only. Required (and must be
+      explicit) for YCbCr images.
+    interacts_with: [262, 258, 529, 301, 342]
+    notes: >
+      Section 20 states Type = RATIONAL, count 6; Appendix A lists Type = LONG, count
+      2*SamplesPerPixel. Inconsistency in the document.
+
+dependencies:
+  - id: T6X-DEP-001
+    requirement: T6X-005
+    when: "Compression(259) in [3,4] AND PhotometricInterpretation(262) == 1 (BlackIsZero)"
+    then: "Reader must reverse the meaning of white and black when displaying/printing"
+    kind: modifies-meaning
+    tags: [259, 262]
+
+  - id: T6X-DEP-002
+    requirement: T6X-013
+    when: "Compression(259) == 3 AND T4Options(292) bit 0 == 1 (2-D) AND more than one strip"
+    then: "Each strip must begin with a 1-dimensionally coded line; RowsPerStrip(278) should be a multiple of Parameter K"
+    kind: constrains-value
+    tags: [259, 292, 278]
+
+  - id: T6X-DEP-003
+    requirement: T6X-026
+    when: "Compression(259) == 4 AND writer cannot guarantee absence of uncompressed-mode material"
+    then: "T6Options(293) bit 1 (uncompressed mode allowed) must be set"
+    kind: requires
+    tags: [259, 293]
+
+  - id: T6X-DEP-004
+    requirement: T6X-018
+    when: "Compression(259) == 4 (T.6-Encoding)"
+    then: "Readers should honor T6Options(293), and only that option tag"
+    kind: modifies-meaning
+    tags: [259, 293]
+
+  - id: T6X-DEP-005
+    requirement: T6X-022
+    when: "Compression(259) == 4"
+    then: "ImageWidth(256) (or TileWidth(322) if tiled) must state the exact pixel count per line"
+    kind: requires
+    tags: [259, 256, 322]
+
+  - id: T6X-DEP-006
+    requirement: T6X-047
+    when: "Predictor(317) == 2 (horizontal differencing)"
+    then: "Predictor is currently used only with Compression(259) == 5 (LZW)"
+    kind: constrains-value
+    tags: [317, 259]
+
+  - id: T6X-DEP-007
+    requirement: T6X-049
+    when: "Predictor(317) == 2 AND PlanarConfiguration(284) == 1 AND SamplesPerPixel(277) > 1"
+    then: "Horizontal differencing uses an offset of SamplesPerPixel; BitsPerSample(258) must be the same for all components"
+    kind: constrains-value
+    tags: [317, 284, 277, 258]
+
+  - id: T6X-DEP-008
+    requirement: T6X-050
+    when: "Tiling fields (TileWidth 322, TileLength 323, TileOffsets 324, TileByteCounts 325) are used"
+    then: "They replace StripOffsets(273), StripByteCounts(279), RowsPerStrip(278); strip and tile fields must not both be present"
+    kind: forbids
+    tags: [322, 323, 324, 325, 273, 279, 278]
+
+  - id: T6X-DEP-009
+    requirement: T6X-054
+    when: "Image is tiled"
+    then: "TileWidth(322), TileLength(323), TileOffsets(324), TileByteCounts(325) are all required"
+    kind: requires
+    tags: [322, 323, 324, 325]
+
+  - id: T6X-DEP-010
+    requirement: T6X-056
+    when: "Image is tiled"
+    then: "TileWidth(322) must be a multiple of 16"
+    kind: constrains-value
+    tags: [322]
+
+  - id: T6X-DEP-011
+    requirement: T6X-058
+    when: "Image is tiled"
+    then: "TileLength(323) must be a multiple of 16"
+    kind: constrains-value
+    tags: [323]
+
+  - id: T6X-DEP-012
+    requirement: T6X-059
+    when: "Image is tiled"
+    then: "TileOffsets(324) count = TilesPerImage if PlanarConfiguration(284)==1, else SamplesPerPixel(277)*TilesPerImage"
+    kind: constrains-value
+    tags: [324, 284, 277]
+
+  - id: T6X-DEP-013
+    requirement: T6X-060
+    when: "Image is tiled"
+    then: "TileByteCounts(325) count = TilesPerImage if PlanarConfiguration(284)==1, else SamplesPerPixel(277)*TilesPerImage"
+    kind: constrains-value
+    tags: [325, 284, 277]
+
+  - id: T6X-DEP-014
+    requirement: T6X-062
+    when: "PhotometricInterpretation(262) == 5 (Separated/CMYK)"
+    then: "SamplesPerPixel(277)=N inks; BitsPerSample(258)=8 repeated N times"
+    kind: constrains-value
+    tags: [262, 277, 258]
+
+  - id: T6X-DEP-015
+    requirement: T6X-063
+    when: "InkSet(332) == 1 (CMYK)"
+    then: "InkNames(333) field should not exist"
+    kind: forbids
+    tags: [332, 333]
+
+  - id: T6X-DEP-016
+    requirement: T6X-065
+    when: "InkNames(333) is present"
+    then: "Number of NUL-terminated strings must equal NumberOfInks(334); samples ordered as ink names"
+    kind: constrains-value
+    tags: [333, 334]
+
+  - id: T6X-DEP-017
+    requirement: T6X-066
+    when: "DotRange(336) is present"
+    then: "DotRange[0] and DotRange[1] must be within [0, (2**BitsPerSample)-1] and DotRange[0] < DotRange[1]"
+    kind: constrains-value
+    tags: [336, 258]
+
+  - id: T6X-DEP-018
+    requirement: T6X-074
+    when: "PhotometricInterpretation is RGB AND associated alpha is used"
+    then: "ExtraSamples(338) must be 1; RGB components must be stored premultiplied by alpha; alpha stored in component SamplesPerPixel-1"
+    kind: requires
+    tags: [338, 277, 258]
+
+  - id: T6X-DEP-019
+    requirement: T6X-076
+    when: "ExtraSamples(338) is present"
+    then: "Reader must not derive SamplesPerPixel(277) from PhotometricInterpretation(262)"
+    kind: modifies-meaning
+    tags: [338, 277, 262]
+
+  - id: T6X-DEP-020
+    requirement: T6X-086
+    when: "TransferFunction(301) is present with N == 1 << BitsPerSample"
+    then: "One table shared by all channels; requires each channel have equal BitsPerSample(258)"
+    kind: constrains-value
+    tags: [301, 258]
+
+  - id: T6X-DEP-021
+    requirement: T6X-087
+    when: "PhotometricInterpretation(262) not in [RGB, Palette, YCbCr, WhiteIsZero, BlackIsZero]"
+    then: "TransferFunction(301) is not used"
+    kind: forbids
+    tags: [301, 262]
+
+  - id: T6X-DEP-022
+    requirement: T6X-090
+    when: "PhotometricInterpretation(262) not in [RGB(2), YCbCr(6)]"
+    then: "TransferRange(342) is not defined/used"
+    kind: forbids
+    tags: [342, 262]
+
+  - id: T6X-DEP-023
+    requirement: T6X-091
+    when: "PhotometricInterpretation(262) not in [RGB(2), YCbCr(6)]"
+    then: "ReferenceBlackWhite(532) is not used"
+    kind: forbids
+    tags: [532, 262]
+
+  - id: T6X-DEP-024
+    requirement: T6X-083
+    when: "WhitePoint(318) AND PrimaryChromaticities(319) are both present"
+    then: "The image has a colorimetric interpretation (else application/hardware dependent)"
+    kind: modifies-meaning
+    tags: [318, 319]
+
+  - id: T6X-DEP-025
+    requirement: T6X-093
+    when: "PhotometricInterpretation(262) == 6 (YCbCr)"
+    then: "ReferenceBlackWhite(532) is required and must be specified explicitly (default is inappropriate)"
+    kind: requires
+    tags: [262, 532]
+
+  - id: T6X-DEP-026
+    requirement: T6X-101
+    when: "PhotometricInterpretation(262) == 6 (YCbCr)"
+    then: "SamplesPerPixel(277)=3; BitsPerSample(258)=8,8,8; Compression(259) in [1,5,6]"
+    kind: constrains-value
+    tags: [262, 277, 258, 259]
+
+  - id: T6X-DEP-027
+    requirement: T6X-101
+    when: "PhotometricInterpretation(262) == 6 AND RGB conversion is not per CCIR 601-1"
+    then: "YCbCrCoefficients(529) must be coded"
+    kind: requires
+    tags: [262, 529]
+
+  - id: T6X-DEP-028
+    requirement: T6X-096
+    when: "YCbCrSubSampling(530) is present"
+    then: "YCbCrSubsampleVert (Short 1) must be <= YCbCrSubsampleHoriz (Short 0)"
+    kind: constrains-value
+    tags: [530]
+
+  - id: T6X-DEP-029
+    requirement: T6X-097
+    when: "YCbCrSubSampling(530) is present"
+    then: "ImageWidth(256) and TileWidth(322) must be integer multiples of YCbCrSubsampleHoriz; ImageLength(257) and TileLength(323) must be integer multiples of YCbCrSubsampleVert; RowsPerStrip(278) must be an integer multiple of YCbCrSubsampleVert"
+    kind: constrains-value
+    tags: [530, 256, 257, 322, 323, 278]
+
+  - id: T6X-DEP-030
+    requirement: T6X-100
+    when: "PhotometricInterpretation(262) == 6 AND PlanarConfiguration(284) == 1"
+    then: "Component samples are stored as data units of (ChromaSubsampleVert x ChromaSubsampleHoriz) Y samples plus one Cb and one Cr, per YCbCrSubSampling(530)"
+    kind: modifies-meaning
+    tags: [262, 284, 530]
+
+  - id: T6X-DEP-031
+    requirement: T6X-107
+    when: "Compression(259) == 6 (JPEG)"
+    then: "JPEGProc(512) is mandatory (no default)"
+    kind: requires
+    tags: [259, 512]
+
+  - id: T6X-DEP-032
+    requirement: T6X-107
+    when: "JPEGProc(512) == 14 (lossless with Huffman)"
+    then: "Huffman tables specified by JPEGDCTables(520); JPEGACTables(521) is not used; JPEGLosslessPredictors(517) and JPEGPointTransforms(518) apply; JPEGQTables(519) does not apply"
+    kind: modifies-meaning
+    tags: [512, 520, 521, 517, 518, 519]
+
+  - id: T6X-DEP-033
+    requirement: T6X-111
+    when: "JPEGProc(512) specifies a lossless process"
+    then: "JPEGLosslessPredictors(517) is mandatory (no default)"
+    kind: requires
+    tags: [512, 517]
+
+  - id: T6X-DEP-034
+    requirement: T6X-113
+    when: "JPEGProc(512) specifies a DCT-based process"
+    then: "JPEGQTables(519) and JPEGACTables(521) are mandatory (no default)"
+    kind: requires
+    tags: [512, 519, 521]
+
+  - id: T6X-DEP-035
+    requirement: T6X-114
+    when: "Compression(259) == 6 (any JPEG process)"
+    then: "JPEGDCTables(520) is mandatory (no default)"
+    kind: requires
+    tags: [259, 512, 520]
+
+  - id: T6X-DEP-036
+    requirement: T6X-105
+    when: "Compression(259) == 6 AND TileWidth(322) < ImageWidth(256) AND JPEGInterchangeFormat(513) present and non-zero"
+    then: "TileLength(323) must equal the height of one JPEG MCU"
+    kind: constrains-value
+    tags: [259, 322, 323, 256, 513]
+
+  - id: T6X-DEP-037
+    requirement: T6X-103
+    when: "Compression(259) == 6 AND multiple strips/tiles"
+    then: "StripOffsets(273)/TileOffsets(324) shall point to the start of a restart interval; each strip/tile contains an integral number of restart intervals"
+    kind: constrains-value
+    tags: [259, 273, 324, 515]
+
+  - id: T6X-DEP-038
+    requirement: T6X-120
+    when: "PhotometricInterpretation(262) == 8 (CIE L*a*b*)"
+    then: "BitsPerSample(258)=8 per component; SamplesPerPixel(277) - ExtraSamples(338) == 3 (L*a*b*) or 1 (L* only)"
+    kind: constrains-value
+    tags: [262, 258, 277, 338]
+
+  - id: T6X-DEP-039
+    requirement: T6X-121
+    when: "PhotometricInterpretation(262) == 8 (CIE L*a*b*)"
+    then: "WhitePoint(318), PrimaryChromaticities(319), TransferFunction(301) do not apply"
+    kind: forbids
+    tags: [262, 318, 319, 301]
+
+  - id: T6X-DEP-040
+    requirement: T6X-072
+    when: "PhotometricInterpretation(262) implies a non-default gamma (data other than the implied linear for 0/1 or NTSC 2.2 for RGB)"
+    then: "GrayResponseCurve(291) or TransferFunction(301) must be present to define the deviation"
+    kind: requires
+    tags: [262, 291, 301]
+
+  - id: T6X-DEP-041
+    requirement: T6X-038
+    when: "Compression(259) == 5 (LZW)"
+    then: "Each strip is compressed independently and must begin with a ClearCode and end with an EndOfInformation code, beginning on a byte boundary with FillOrder(266) assumed 1"
+    kind: constrains-value
+    tags: [259, 266]
+
+  - id: T6X-DEP-042
+    requirement: T6X-064
+    when: "PhotometricInterpretation(262) == 5 AND ExtraSamples(338) present"
+    then: "NumberOfInks(334) usually equals SamplesPerPixel(277) minus extra samples"
+    kind: constrains-value
+    tags: [262, 334, 277, 338]
